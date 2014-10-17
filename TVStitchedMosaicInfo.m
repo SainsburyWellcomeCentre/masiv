@@ -11,7 +11,7 @@ classdef TVStitchedMosaicInfo
     end
     
     methods
-        function obj=TVStitchedDatasetInfo(baseDirectory)
+        function obj=TVStitchedMosaicInfo(baseDirectory)
             
             %% Error checking
             if nargin<1
