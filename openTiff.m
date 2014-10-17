@@ -1,4 +1,4 @@
-function I = quickOpenStitchedImageRegion( fileName, regionSpec , methodFlag)
+function I = openTiff( fileName, regionSpec , downSample, methodFlag)
 %
 % regionSpec: [x y w h], origin top left corner. 1 based.
 %
@@ -11,8 +11,13 @@ elseif ~exist(fileName, 'file')
 end
 
 
+% Downsample: default to 1
+if nargin<3||isempty(downSample)
+    downSample=1;
+end
+
 % Default to fastest method
-if nargin<3
+if nargin<4||isempty(methodFlag)
     methodFlag=2;
 end
 % Crop spec
@@ -60,6 +65,11 @@ switch methodFlag
         I=swapbytes(I)';
 end
 
+
+%% Methods 0-3 do not have inbuilt downsampling, so downsample the loaded image if requested
+if downSample~=1
+    I=imresize(I, 1/downSample, 'bicubic');
+end
 end
 
 
