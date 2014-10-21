@@ -54,6 +54,7 @@ switch methodFlag
         fseek(fh, info.StripOffsets+(y-1)*info.Width*info.BitDepth/8, 'bof');
         I=fread(fh, [info.Width, h], ['*' selectMATLABDataType(info)], 0, 'ieee-be');
         I=I(x:x2, :)';
+        fclose(fh);
     case 3 %memmap method
         info=imfinfo(fileName);
         if ~doCrop
