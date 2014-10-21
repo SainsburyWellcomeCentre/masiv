@@ -9,6 +9,10 @@ classdef TVStitchedMosaicInfo
         stitchedImagePaths
         metaData
     end
+    properties(Dependent, SetAccess=protected)
+        downscaledStacks
+        downscaledStackList
+    end
     
     methods
         function obj=TVStitchedMosaicInfo(baseDirectory)
@@ -28,6 +32,20 @@ classdef TVStitchedMosaicInfo
             obj.sampleName=obj.metaData.SampleID;
             
             obj=getStitchedImagePaths(obj);
+            %% Get available downscaled stacks
+        end
+        function ds=get.downscaledStacks(obj)
+            pathToDSObjsFile=fullfile(obj.baseDirectory, [obj.sampleName '_GBStacks'], [obj.sampleName '_GBStackInfo.mat']);
+            if ~exist(pathToDSObjsFile, 'file')
+                ds=[];
+            else
+                a=load(pathToDSObjsFile);
+                ds=a.stacks;
+            end
+        end
+        function dsl=get.downscaledStackList(obj)
+            dsl=obj.downscaledStacks.list;
+            dsl=dsl(:);
         end
         
     end
@@ -106,6 +124,4 @@ for ii=1:numel(listFilePaths)
     obj.stitchedImagePaths.(channelName)=channelFilePaths{1};
 end
 end
-
-
 
