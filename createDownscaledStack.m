@@ -17,12 +17,15 @@ end
 
 %% Start default parallel pool if not already
 gcp;
+
+%% Generate full file path
+pths=fullfile(mosaicInfo.baseDirectory, mosaicInfo.stitchedImagePaths.(channel));
 %% Get file information to determine crop
 info=cell(numel(idx), 1);
 
 fprintf('Getting file information...')
 parfor ii=1:numel(idx)
-    info{ii}=imfinfo(mosaicInfo.stitchedImagePaths.(channel){idx(ii)});
+    info{ii}=imfinfo(pths{ii});
 end
 
 fprintf('Done\n')
@@ -43,7 +46,7 @@ fprintf('Loading stack...\n')
 
 
 parfor ii=1:numel(idx)
-    fName=mosaicInfo.stitchedImagePaths.(channel){idx(ii)};
+    fName=fullfile(mosaicInfo.baseDirectory, mosaicInfo.stitchedImagePaths.(channel){idx(ii)});
     I(:,:,ii)=openTiff(fName, [1 1 minWidth minHeight], q.downSample);
     fprintf('\tSlice %u loaded\n', idx(ii))
 end

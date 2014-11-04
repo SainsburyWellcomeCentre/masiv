@@ -118,10 +118,13 @@ for ii=1:numel(listFilePaths)
     channelFilePaths=textscan(fh, '%s', 'Delimiter', delimiterInTextFile);
     %% Close
     fclose(fh);
+    
+    %% strip out absolute path to get relative file paths
+    channelFilePaths=strrep(channelFilePaths{1}, [fileparts(fileparts(channelFilePaths{1}{1})) '/'], '');
     %% Get channel name
     channelName=strrep(strrep(listFilePaths(ii).name, searchPattern, ''), '.txt', '');
     %% Assign
-    obj.stitchedImagePaths.(channelName)=channelFilePaths{1};
+    obj.stitchedImagePaths.(channelName)=channelFilePaths;
 end
 end
 

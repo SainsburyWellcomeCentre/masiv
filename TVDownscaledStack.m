@@ -37,10 +37,8 @@ classdef TVDownscaledStack<handle
     methods
         %% Constructor
         function obj=TVDownscaledStack(varargin)
-            % There are two ways to create a downscaledStack object:
+            % There is currently one way to create a downscaledStack object:
             % 1. pass a stitchedMosaicInfo object, a channel, index and downscaling factor
-            % 2. pass a YAML filename, to extract available downscaled
-            % stacks
             switch class(varargin{1})
                 case 'TVStitchedMosaicInfo'
                     [obj.mosaicInfo, obj.channel, obj.idx]=varargin{1:3};
