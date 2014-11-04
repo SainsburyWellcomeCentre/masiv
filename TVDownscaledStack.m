@@ -15,6 +15,7 @@ classdef TVDownscaledStack<handle
         channel
         idx
         xyds
+        
     end
     
     properties(Access=protected)
@@ -28,6 +29,10 @@ classdef TVDownscaledStack<handle
                 
         imageInMemory
         fileOnDisk
+        
+        xCoords
+        yCoords
+        zCoords
     end
     
     properties(Dependent, Access=protected)
@@ -55,6 +60,8 @@ classdef TVDownscaledStack<handle
                     %% Get base directory for stacks and fileName for this stacks
                     obj.gbStackDirectory=getGBStackPath(obj.mosaicInfo);
                     obj.fileName=createGBStackFileNameForOutput(obj);
+                    
+                    
             end
         end
         %% Methods
@@ -63,6 +70,7 @@ classdef TVDownscaledStack<handle
                 error('Image already in memory')
             end
             obj.I_internal = createDownscaledStack( obj.mosaicInfo, obj.channel, obj.idx, obj.xyds);
+           
         end
         function writeStackToDisk(obj)
             if obj.fileOnDisk
@@ -102,6 +110,34 @@ classdef TVDownscaledStack<handle
         end
         function onDisk=get.fileOnDisk(obj)
             onDisk=exist(obj.fileName, 'file')~=0;
+        end
+        
+        function x=get.xCoords(obj)
+            persistent xInt
+            
+            if isempty(xInt)
+                xInt=1:size(obj.I_internal, 2)*obj.xyds;
+            end
+            
+            x=xInt;
+        end
+        function y=get.yCoords(obj)
+            persistent yInt
+            
+            if isempty(yInt)
+                yInt=1:size(obj.I_internal, 1)*obj.xyds;
+            end
+            
+            y=yInt;
+        end
+        function z=get.zCoords(obj)
+            persistent zInt
+            
+            if isempty(zInt)
+                zInt=obj.idx*obj.mosaicInfo.metaData.zres*2;
+            end
+            
+            z=zInt;
         end
         
         %% List
