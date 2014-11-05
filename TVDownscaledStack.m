@@ -20,8 +20,7 @@ classdef TVDownscaledStack<handle
     
     properties(Access=protected)
         mosaicInfo
-        I_internal
-        
+        I_internal        
     end
     
     properties(Dependent, SetAccess=protected)
@@ -33,6 +32,8 @@ classdef TVDownscaledStack<handle
         xCoords
         yCoords
         zCoords
+        
+        originalStitchedFilePaths
     end
     
     properties(Dependent, Access=protected)
@@ -69,8 +70,13 @@ classdef TVDownscaledStack<handle
             if obj.imageInMemory
                 error('Image already in memory')
             end
-            obj.I_internal = createDownscaledStack( obj.mosaicInfo, obj.channel, obj.idx, obj.xyds);
-           
+            obj.I_internal = createDownscaledStack( obj.mosaicInfo, obj.channel, obj.idx, obj.xyds);         
+        end
+        function loadStackFromDisk(obj)
+             if obj.imageInMemory
+                error('Image already in memory')
+             end
+            obj.I_internal=loadTiffStack(obj.fileName);
         end
         function writeStackToDisk(obj)
             if obj.fileOnDisk
@@ -100,7 +106,7 @@ classdef TVDownscaledStack<handle
                     obj.generateStack
                 else
                     fprintf('Image not in memory; file found on disk. Loading...\n')
-                    obj.I_internal=loadTiffStack(obj.fileName);
+                    obj.loadStackFromDisk;
                 end
             end    
             I=obj.I_internal;
@@ -118,8 +124,11 @@ classdef TVDownscaledStack<handle
             if isempty(xInt)
                 xInt=1:size(obj.I_internal, 2)*obj.xyds;
             end
-            
-            x=xInt;
+            if isempty(xInt)
+                x=NaN;
+            else
+                x=xInt;
+            end
         end
         function y=get.yCoords(obj)
             persistent yInt
@@ -127,8 +136,11 @@ classdef TVDownscaledStack<handle
             if isempty(yInt)
                 yInt=1:size(obj.I_internal, 1)*obj.xyds;
             end
-            
-            y=yInt;
+            if isempty(yInt)
+                y=NaN;
+            else
+                y=yInt;
+            end
         end
         function z=get.zCoords(obj)
             persistent zInt
@@ -138,6 +150,10 @@ classdef TVDownscaledStack<handle
             end
             
             z=zInt;
+        end
+        
+        function osfp=get.originalStitchedFilePaths(obj)
+           osfp= obj.mosaicInfo.stitchedImagePaths.(obj.channel);
         end
         
         %% List

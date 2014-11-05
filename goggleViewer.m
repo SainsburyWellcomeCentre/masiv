@@ -2,7 +2,9 @@ function goggleViewer(t)
 %% Preferences
 panelBkgdColor=[0.5 0.5 0.5];
 mainFigurePosition=[2561 196 1680 1028];
-panIncrement=[30 120];
+
+panIncrement=[10 120];
+zoomRate=2;
 %% Main object definitions
 hFig=figure(...
     'Name', sprintf('GoggleBox: %s', t.experimentName), ...
@@ -11,7 +13,7 @@ hFig=figure(...
     'Position', mainFigurePosition, ...
     'ColorMap', gray(256), ...
     'KeyPressFcn', @hFigMain_KeyPress, ...
-    'BusyAction', 'cancel');
+    'BusyAction', 'cancel'); %#ok<NASGU>
 hImgAx=axes(...
     'Box', 'on', ...
     'YDir', 'reverse', ...
@@ -24,6 +26,8 @@ hAxContrastHist=axes(...
     'Color', panelBkgdColor, ...
     'XTick', [], 'YTick', [], ...
     'Position', [0.83 0.87 0.16 0.11]);
+%% Background variables
+
 %% Run
 dsStack=TVDownscaledStackDisplay(t.downscaledStacks(1), hImgAx); %Default to the first available
 dsStack.contrastLims=[0 2000];
@@ -38,49 +42,64 @@ axis(hImgAx, 'equal')
         if isempty(panMode)
             panMode=0;
         end
-        %%
-        p=panIncrementBasedOnShiftKey(eventdata);
+        %% Have we moved?
+        movedFlag=0;
         switch eventdata.Key
             case 'shift'
             case 'leftarrow'
                 dsStack.previousImage();
+                movedFlag=1;
             case 'rightarrow'
                 dsStack.advanceImage();
+                movedFlag=1;
             case 'uparrow'
-                zoom(2)
+                disp('up')
+                zoom(zoomRate)
+                movedFlag=1;
             case 'downarrow'
-                zoom(0.5)
+                zoom(1/zoomRate)
+                movedFlag=1;
+            case {'w' 'a' 's' 'd'}
+                keyPan(eventdata)
+                movedFlag=1;
             case 'p'
-                if panMode
-                    pan off
-                    panMode=panMode-1;
-                else
-                    pan on
-                    %% Override the annoying lack of ability to control keypress
-                    hManager = uigetmodemanager(gcf);
-                    hManager.currentMode.WindowKeyPressFcn=@hFigMain_KeyPress;
-                    panMode=2; % The keypress function will be called TWICE, the first from the uimodemanager. So we want to 'turn it off' twice
-                end
-            case 'w'
-                ylim(hImgAx,ylim(hImgAx)+range(ylim(hImgAx))/p);
-            case 's'
-                ylim(hImgAx,ylim(hImgAx)-range(ylim(hImgAx))/p);
-            case 'a'
-                xlim(hImgAx,xlim(hImgAx)-range(xlim(hImgAx))/p);
-            case 'd'
-                xlim(hImgAx,xlim(hImgAx)+range(xlim(hImgAx))/p);
+                %% Not currently allowed
+%                 if panMode
+%                     pan off
+%                     panMode=panMode-1;
+%                 else
+%                     pan on
+%                     % Override the annoying lack of ability to control keypress
+%                     hManager = uigetmodemanager(gcf);
+%                     hManager.currentMode.WindowKeyPressFcn=@hFigMain_KeyPress;
+%                     panMode=2; % The keypress function will be called TWICE, the first from the uimodemanager. So we want to 'turn it off' twice
+%                 end
+           
             case 'c'
                 updateContrastHistogram(dsStack, hAxContrastHist)
             otherwise
                 disp(eventdata.Key)
         end
+        if movedFlag
+            dsStack.createZoomedView
+        end
     end
-    function p=panIncrementBasedOnShiftKey(eventdata)
+    function keyPan(eventdata)
         mods=eventdata.Modifier;
         if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
-            p=panIncrement(1);
+            p=panIncrement(1); 
         else
-            p=panIncrement(2);
+            p=panIncrement(2); 
+        end
+        switch eventdata.Key
+             case 'w'
+                ylim(hImgAx,ylim(hImgAx)+range(ylim(hImgAx))/p);
+            case 's'
+                ylim(hImgAx,ylim(hImgAx)-range(ylim(hImgAx))/p);
+            case 'a'
+                xlim(hImgAx,xlim(hImgAx)+range(xlim(hImgAx))/p);
+            case 'd'
+                xlim(hImgAx,xlim(hImgAx)-range(xlim(hImgAx))/p);              
         end
     end
 end

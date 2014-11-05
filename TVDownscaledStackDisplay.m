@@ -9,16 +9,24 @@ classdef TVDownscaledStackDisplay<handle
     end
     properties
         contrastLims
+        minZoomLevelForDetailedLoad=2;
     end
     
     properties(Dependent, Access=protected)
         currentPlaneData
+    end
+    properties(Dependent, SetAccess=protected)
+        currentZPlaneOriginalCoords
+        zoomLevel
     end
     
     methods
         %% Constructor
         function obj=TVDownscaledStackDisplay(TVDSS, hAx)
            obj.tvdss=TVDSS;
+           if ~obj.tvdss.imageInMemory
+               obj.tvdss.loadStackFromDisk;
+           end
            obj.axes=hAx;
            obj.hImg=[];
            obj.currentIndex=1;
@@ -42,7 +50,9 @@ classdef TVDownscaledStackDisplay<handle
                 stdout=1;
             end
         end
-        function drawNow(obj)        
+        function drawNow(obj)   
+            % Draws the correct plane from the downscaled stack in to the
+            % axes
             if ~isempty(obj.hImg)
                 obj.hImg.CData=obj.currentPlaneData;
             else
@@ -51,12 +61,41 @@ classdef TVDownscaledStackDisplay<handle
                     'Parent', obj.axes);  
             end
             caxis(obj.axes, obj.contrastLims);
+        end 
+        
+       
+        function createZoomedView(obj)
+            if obj.zoomLevel>obj.minZoomLevelForDetailedLoad
+                tic
+                [img, xPos, yPos]=getTiffRegionForDisplay(obj);
+                image( 'XData', xPos, 'YData', yPos,'CData', img, 'CDataMapping', 'Scaled', 'Parent', obj.axes);
+                toc
+            end
         end
-        %% Getters
+       
         function cpd=get.currentPlaneData(obj)
             cpd=obj.tvdss.I(:,:,obj.currentIndex);
+        end
+        function czpoc=get.currentZPlaneOriginalCoords(obj)
+            czpoc=obj.tvdss.idx(obj.currentIndex);
+        end
+        function zl=get.zoomLevel(obj)
+            zl=range(obj.tvdss.xCoords)./range(xlim(obj.axes));
         end
     end
 end
 
 
+function [img, xl, yl] = getTiffRegionForDisplay(obj)
+%% Params
+resolution=1500;
+%%
+xl=round(xlim(obj.axes));
+yl=round(ylim(obj.axes));
+
+stitchedFileName=obj.tvdss.originalStitchedFilePaths{obj.currentZPlaneOriginalCoords};
+ds = ceil(range(xl)/resolution);
+
+img=openTiff(stitchedFileName, [xl(1) yl(1) range(xl) range(yl)], ds);
+
+end
