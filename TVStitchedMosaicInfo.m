@@ -44,7 +44,12 @@ classdef TVStitchedMosaicInfo
             end
         end
         function dsl=get.downscaledStackList(obj)
-            dsl=obj.downscaledStacks.list;
+            ds=obj.downscaledStacks;
+            if ~isempty(ds)
+                dsl=ds.list;
+            else
+                dsl=[];
+            end
             dsl=dsl(:);
         end
         

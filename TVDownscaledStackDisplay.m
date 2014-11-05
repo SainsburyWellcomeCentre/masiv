@@ -9,7 +9,7 @@ classdef TVDownscaledStackDisplay<handle
     end
     properties
         contrastLims
-        minZoomLevelForDetailedLoad=2;
+        minZoomLevelForDetailedLoad=1.5;
     end
     
     properties(Dependent, Access=protected)
@@ -35,24 +35,27 @@ classdef TVDownscaledStackDisplay<handle
         end
         %% Methods
         function stdout=advanceImage(obj)
-            stdout=0;
-            if obj.currentIndex < numel(obj.tvdss.idx)
-                obj.currentIndex=obj.currentIndex+1;
-                obj.drawNow();
-                stdout=1;
-            end
+           stdout=seekZ(obj, +1);
         end
         function stdout=previousImage(obj)
+            stdout=seekZ(obj, -1);
+        end
+        function stdout=seekZ(obj, n)
             stdout=0;
-             if obj.currentIndex > 1
-                obj.currentIndex=obj.currentIndex-1;
+            newIdx=obj.currentIndex+n;
+            if newIdx>=1&&newIdx<=numel(obj.tvdss.idx)
+                obj.currentIndex=newIdx;
                 obj.drawNow();
                 stdout=1;
             end
         end
+        
         function drawNow(obj)   
             % Draws the correct plane from the downscaled stack in to the
-            % axes
+            % axes, reusing the main Image Object if available
+            
+            clearZoomedViews(obj.axes)
+            
             if ~isempty(obj.hImg)
                 obj.hImg.CData=obj.currentPlaneData;
             else
@@ -68,11 +71,14 @@ classdef TVDownscaledStackDisplay<handle
             if obj.zoomLevel>obj.minZoomLevelForDetailedLoad
                 tic
                 [img, xPos, yPos]=getTiffRegionForDisplay(obj);
-                image( 'XData', xPos, 'YData', yPos,'CData', img, 'CDataMapping', 'Scaled', 'Parent', obj.axes);
+                image( 'XData', xPos, 'YData', yPos,...
+                    'CData', img, 'CDataMapping', 'Scaled', ...
+                    'Parent', obj.axes, ...
+                    'Tag', 'zoomedView');
                 toc
             end
         end
-       
+               
         function cpd=get.currentPlaneData(obj)
             cpd=obj.tvdss.I(:,:,obj.currentIndex);
         end
@@ -86,16 +92,23 @@ classdef TVDownscaledStackDisplay<handle
 end
 
 
+
+function clearZoomedViews(hAx)
+zv=findobj(hAx, 'Tag', 'zoomedView');
+delete(zv);
+end
+
 function [img, xl, yl] = getTiffRegionForDisplay(obj)
 %% Params
-resolution=1500;
+resolution=2000;
 %%
 xl=round(xlim(obj.axes));
 yl=round(ylim(obj.axes));
 
 stitchedFileName=obj.tvdss.originalStitchedFilePaths{obj.currentZPlaneOriginalCoords};
+stitchedFileFullPath=fullfile(obj.tvdss.baseDirectory, stitchedFileName);
 ds = ceil(range(xl)/resolution);
 
-img=openTiff(stitchedFileName, [xl(1) yl(1) range(xl) range(yl)], ds);
+img=openTiff(stitchedFileFullPath, [xl(1) yl(1) range(xl) range(yl)], ds);
 
 end

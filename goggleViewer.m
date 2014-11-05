@@ -3,8 +3,9 @@ function goggleViewer(t)
 panelBkgdColor=[0.5 0.5 0.5];
 mainFigurePosition=[2561 196 1680 1028];
 
-panIncrement=[10 120];
-zoomRate=2;
+panIncrement=[10 120]; % shift and non shift; fraction to move view by
+scrollIncrement=[10 1]; %shift and non shift; number of images to move view by
+zoomRate=1.5;
 %% Main object definitions
 hFig=figure(...
     'Name', sprintf('GoggleBox: %s', t.experimentName), ...
@@ -44,21 +45,18 @@ axis(hImgAx, 'equal')
         end
         %% Have we moved?
         movedFlag=0;
+        %% What shall we do?
         switch eventdata.Key
             case 'shift'
-            case 'leftarrow'
-                dsStack.previousImage();
-                movedFlag=1;
-            case 'rightarrow'
-                dsStack.advanceImage();
-                movedFlag=1;
+         
             case 'uparrow'
-                disp('up')
                 zoom(zoomRate)
                 movedFlag=1;
             case 'downarrow'
                 zoom(1/zoomRate)
                 movedFlag=1;
+            case {'leftarrow', 'rightarrow'}
+                movedFlag=keyScroll(eventdata);
             case {'w' 'a' 's' 'd'}
                 keyPan(eventdata)
                 movedFlag=1;
@@ -87,23 +85,40 @@ axis(hImgAx, 'equal')
     function keyPan(eventdata)
         mods=eventdata.Modifier;
         if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
-            p=panIncrement(1); 
+            p=panIncrement(1);
         else
-            p=panIncrement(2); 
+            p=panIncrement(2);
         end
         switch eventdata.Key
-             case 'w'
+            case 'w'
                 ylim(hImgAx,ylim(hImgAx)+range(ylim(hImgAx))/p);
             case 's'
                 ylim(hImgAx,ylim(hImgAx)-range(ylim(hImgAx))/p);
             case 'a'
                 xlim(hImgAx,xlim(hImgAx)+range(xlim(hImgAx))/p);
             case 'd'
-                xlim(hImgAx,xlim(hImgAx)-range(xlim(hImgAx))/p);              
+                xlim(hImgAx,xlim(hImgAx)-range(xlim(hImgAx))/p);
         end
     end
-end
+    function stdout=keyScroll(eventdata)
+        mods=eventdata.Modifier;
+        if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
+            p=scrollIncrement(1);
+        else
+            p=scrollIncrement(2);
+        end
+        switch eventdata.Key
+            case 'leftarrow'
+                stdout=dsStack.seekZ(-p);
+            case 'rightarrow'
+                stdout=dsStack.seekZ(+p);
+        end
+    end
 
+
+
+   
+end
 
 
 function updateContrastHistogram(dsStack,hContrastHist_Axes)
