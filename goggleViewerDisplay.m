@@ -10,6 +10,7 @@ classdef goggleViewerDisplay<handle
     properties
         contrastLims
         minZoomLevelForDetailedLoad=1.5;
+        InfoPanel
     end
     
     properties(Dependent, Access=protected)

@@ -6,6 +6,7 @@ mainFigurePosition=[2561 196 1680 1028];
 panIncrement=[10 120]; % shift and non shift; fraction to move view by
 scrollIncrement=[10 1]; %shift and non shift; number of images to move view by
 zoomRate=1.5;
+mainFont='DejaVu Sans';
 %% Main object definitions
 hFig=figure(...
     'Name', sprintf('GoggleBox: %s', t.experimentName), ...
@@ -49,15 +50,20 @@ hAxContrastAuto=uicontrol(...
     'String', 'Auto', ...
     'Callback', @(~,~) msgbox('Not Implemented (yet)'));
 
+    
 %% Background variables
 
-%% Run
+%% Load up and display 
 dsStack=goggleViewerDisplay(t.downscaledStacks(2), hImgAx); %Default to the first available
 adjustContrast();
 dsStack.drawNow();
 axis(hImgAx, 'equal')
 
+%% Info box
+hInfoBox=goggleInfoPanel(hFig, [0.83 0.5 0.16 0.31], dsStack);
 
+%% Set fonts to something nice
+set(findall(gcf, '-property','FontName'), 'FontName', mainFont)
 %% Callbacks
     function hFigMain_KeyPress (~, eventdata, ~)
         %% Are we in pan mode?
@@ -102,10 +108,22 @@ axis(hImgAx, 'equal')
         end
         if movedFlag
             dsStack.createZoomedView
+            hInfoBox.updateDisplay
         end
     end
-    function adjustContrast(~,~)
-        dsStack.contrastLims=[str2double(hAxContrastMin.String) str2double(hAxContrastMax.String)];
+    function adjustContrast(obj,~)
+        if nargin<1
+            obj=[];
+        end
+        if ~isempty(obj)&&~all(isstrprop(obj.String, 'digit')) %it's invalid, use the previous value
+            if obj==hAxContrastMin
+                obj.String=dsStack.contrastLims(1);
+            elseif obj==hAxContrastMax
+                obj.String=dsStack.contrastLims(2);
+            end
+        else
+            dsStack.contrastLims=[str2double(hAxContrastMin.String) str2double(hAxContrastMax.String)];
+        end
     end
 %% Responses to keypresses
     function keyPan(eventdata)
