@@ -88,6 +88,11 @@ classdef goggleViewerDisplay<handle
         function zl=get.zoomLevel(obj)
             zl=range(obj.tvdss.xCoords)./range(xlim(obj.axes));
         end
+        %% Setters
+        function set.contrastLims(obj, val)
+            obj.contrastLims=val;
+            caxis(obj.axes, val); %#ok<MCSUP>
+        end
     end
 end
 
