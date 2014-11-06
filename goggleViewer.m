@@ -30,7 +30,7 @@ hAxContrastHist=axes(...
 %% Background variables
 
 %% Run
-dsStack=TVDownscaledStackDisplay(t.downscaledStacks(1), hImgAx); %Default to the first available
+dsStack=goggleViewerDisplay(t.downscaledStacks(1), hImgAx); %Default to the first available
 dsStack.contrastLims=[0 2000];
 dsStack.drawNow();
 axis(hImgAx, 'equal')

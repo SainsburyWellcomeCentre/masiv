@@ -1,4 +1,4 @@
-classdef TVDownscaledStackDisplay<handle
+classdef goggleViewerDisplay<handle
     % encapsulates a tv downscaled stack, with additional properties and
     % methods for display
     properties(SetAccess=protected)
