@@ -19,7 +19,7 @@ end
 gcp;
 
 %% Generate full file path
-pths=fullfile(mosaicInfo.baseDirectory, mosaicInfo.stitchedImagePaths.(channel));
+pths=fullfile(mosaicInfo.baseDirectory, mosaicInfo.stitchedImagePaths.(channel)(idx));
 %% Get file information to determine crop
 info=cell(numel(idx), 1);
 
