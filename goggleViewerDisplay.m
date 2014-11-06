@@ -22,7 +22,7 @@ classdef goggleViewerDisplay<handle
     
     methods
         %% Constructor
-        function obj=TVDownscaledStackDisplay(TVDSS, hAx)
+        function obj=goggleViewerDisplay(TVDSS, hAx)
            obj.tvdss=TVDSS;
            if ~obj.tvdss.imageInMemory
                obj.tvdss.loadStackFromDisk;
