@@ -82,6 +82,7 @@ axis(hImgAx, 'equal')
             dsStack.createZoomedView
         end
     end
+%% Responses to keypresses
     function keyPan(eventdata)
         mods=eventdata.Modifier;
         if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
