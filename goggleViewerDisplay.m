@@ -6,10 +6,11 @@ classdef goggleViewerDisplay<handle
         axes
         currentIndex
         hImg
+        nPixelsWidthForZoomedView=2000;
+        minZoomLevelForDetailedLoad=1.5;
     end
     properties
         contrastLims
-        minZoomLevelForDetailedLoad=1.5;
         InfoPanel
     end
     
@@ -17,8 +18,10 @@ classdef goggleViewerDisplay<handle
         currentPlaneData
     end
     properties(Dependent, SetAccess=protected)
-        currentZPlaneOriginalCoords
+        currentZPlaneOriginalFileNumber
+        currentZPlaneOriginalLayerID
         zoomLevel
+        downSamplingForCurrentZoomLevel
     end
     
     methods
@@ -83,11 +86,20 @@ classdef goggleViewerDisplay<handle
         function cpd=get.currentPlaneData(obj)
             cpd=obj.tvdss.I(:,:,obj.currentIndex);
         end
-        function czpoc=get.currentZPlaneOriginalCoords(obj)
+        function czpoc=get.currentZPlaneOriginalFileNumber(obj)
             czpoc=obj.tvdss.idx(obj.currentIndex);
+        end
+        function czpolid=get.currentZPlaneOriginalLayerID(obj)
+            czpolid=obj.currentZPlaneOriginalFileNumber-1;
         end
         function zl=get.zoomLevel(obj)
             zl=range(obj.tvdss.xCoords)./range(xlim(obj.axes));
+        end
+        function dsfczl=get.downSamplingForCurrentZoomLevel(obj)
+            %% Params
+            %%
+            xl=round(xlim(obj.axes));
+            dsfczl=ceil(range(xl)/obj.nPixelsWidthForZoomedView);
         end
         %% Setters
         function set.contrastLims(obj, val)
@@ -105,16 +117,13 @@ delete(zv);
 end
 
 function [img, xl, yl] = getTiffRegionForDisplay(obj)
-%% Params
-resolution=2000;
-%%
+
 xl=round(xlim(obj.axes));
 yl=round(ylim(obj.axes));
 
-stitchedFileName=obj.tvdss.originalStitchedFilePaths{obj.currentZPlaneOriginalCoords};
+stitchedFileName=obj.tvdss.originalStitchedFilePaths{obj.currentZPlaneOriginalFileNumber};
 stitchedFileFullPath=fullfile(obj.tvdss.baseDirectory, stitchedFileName);
-ds = ceil(range(xl)/resolution);
 
-img=openTiff(stitchedFileFullPath, [xl(1) yl(1) range(xl) range(yl)], ds);
+img=openTiff(stitchedFileFullPath, [xl(1) yl(1) range(xl) range(yl)], obj.downSamplingForCurrentZoomLevel);
 
 end

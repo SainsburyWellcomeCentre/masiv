@@ -146,7 +146,7 @@ classdef TVDownscaledStack<handle
             persistent zInt
             
             if isempty(zInt)
-                zInt=obj.idx*obj.mosaicInfo.metaData.zres*2;
+                zInt=(obj.idx-1)*obj.mosaicInfo.metaData.zres*2;
             end
             
             z=zInt;
