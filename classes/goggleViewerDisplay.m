@@ -1,8 +1,9 @@
 classdef goggleViewerDisplay<handle
-    % encapsulates a tv downscaled stack, with additional properties and
-    % methods for display
+    % Controls display of a goggleBox TissueVision dataset, managing the
+    % overview (pre-generated, downscaled stack) and detail (less- or not-
+    % downsampled images read from disk as needed) images
     properties(SetAccess=protected)
-        tvdss
+        overviewStack
         axes
         currentIndex
         hImg
@@ -13,7 +14,6 @@ classdef goggleViewerDisplay<handle
         contrastLims
         InfoPanel
     end
-    
     properties(Dependent, Access=protected)
         currentPlaneData
     end
@@ -26,10 +26,10 @@ classdef goggleViewerDisplay<handle
     
     methods
         %% Constructor
-        function obj=goggleViewerDisplay(TVDSS, hAx)
-           obj.tvdss=TVDSS;
-           if ~obj.tvdss.imageInMemory
-               obj.tvdss.loadStackFromDisk;
+        function obj=goggleViewerDisplay(overviewStack, hAx)
+           obj.overviewStack=overviewStack;
+           if ~obj.overviewStack.imageInMemory
+               obj.overviewStack.loadStackFromDisk;
            end
            obj.axes=hAx;
            obj.hImg=[];
@@ -47,7 +47,7 @@ classdef goggleViewerDisplay<handle
         function stdout=seekZ(obj, n)
             stdout=0;
             newIdx=obj.currentIndex+n;
-            if newIdx>=1&&newIdx<=numel(obj.tvdss.idx)
+            if newIdx>=1&&newIdx<=numel(obj.overviewStack.idx)
                 obj.currentIndex=newIdx;
                 obj.drawNow();
                 stdout=1;
@@ -63,7 +63,7 @@ classdef goggleViewerDisplay<handle
             if ~isempty(obj.hImg)
                 obj.hImg.CData=obj.currentPlaneData;
             else
-                obj.hImg=image('XData', obj.tvdss.xCoords, 'YData', obj.tvdss.yCoords, ...
+                obj.hImg=image('XData', obj.overviewStack.xCoords, 'YData', obj.overviewStack.yCoords, ...
                     'CData', obj.currentPlaneData, 'CDataMapping', 'scaled', ...
                     'Parent', obj.axes);  
             end
@@ -84,20 +84,18 @@ classdef goggleViewerDisplay<handle
         end
                
         function cpd=get.currentPlaneData(obj)
-            cpd=obj.tvdss.I(:,:,obj.currentIndex);
+            cpd=obj.overviewStack.I(:,:,obj.currentIndex);
         end
-        function czpoc=get.currentZPlaneOriginalFileNumber(obj)
-            czpoc=obj.tvdss.idx(obj.currentIndex);
+        function czpofn=get.currentZPlaneOriginalFileNumber(obj)
+            czpofn=obj.overviewStack.idx(obj.currentIndex);
         end
         function czpolid=get.currentZPlaneOriginalLayerID(obj)
             czpolid=obj.currentZPlaneOriginalFileNumber-1;
         end
         function zl=get.zoomLevel(obj)
-            zl=range(obj.tvdss.xCoords)./range(xlim(obj.axes));
+            zl=range(obj.overviewStack.xCoords)./range(xlim(obj.axes));
         end
         function dsfczl=get.downSamplingForCurrentZoomLevel(obj)
-            %% Params
-            %%
             xl=round(xlim(obj.axes));
             dsfczl=ceil(range(xl)/obj.nPixelsWidthForZoomedView);
         end
@@ -121,8 +119,8 @@ function [img, xl, yl] = getTiffRegionForDisplay(obj)
 xl=round(xlim(obj.axes));
 yl=round(ylim(obj.axes));
 
-stitchedFileName=obj.tvdss.originalStitchedFilePaths{obj.currentZPlaneOriginalFileNumber};
-stitchedFileFullPath=fullfile(obj.tvdss.baseDirectory, stitchedFileName);
+stitchedFileName=obj.overviewStack.originalStitchedFileNames{obj.currentZPlaneOriginalFileNumber};
+stitchedFileFullPath=fullfile(obj.overviewStack.baseDirectory, stitchedFileName);
 
 img=openTiff(stitchedFileFullPath, [xl(1) yl(1) range(xl) range(yl)], obj.downSamplingForCurrentZoomLevel);
 

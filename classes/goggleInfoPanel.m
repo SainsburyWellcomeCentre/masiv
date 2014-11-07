@@ -62,7 +62,7 @@ classdef goggleInfoPanel<handle
                 'Parent', obj.mainPanel, ...
                 'Units', 'normalized', ...
                 'Position', [0.02 0.35 0.47 0.1], ...
-                'String', 'View Mode', ...
+                'String', 'Image Source', ...
                 'FontSize', fontSz, ...
                 'FontWeight', 'bold');
              uicontrol(...
@@ -143,22 +143,22 @@ classdef goggleInfoPanel<handle
             zIdx=obj.goggleViewerDisplay.currentIndex;
             zIdxOrignalLayerID=obj.goggleViewerDisplay.currentZPlaneOriginalLayerID;
             
-            zActual=obj.goggleViewerDisplay.tvdss.zCoords(zIdx);
+            zActual=obj.goggleViewerDisplay.overviewStack.zCoords(zIdx);
             obj.zPosition.String=sprintf('Layer %04i (%ium)', zIdxOrignalLayerID, round(zActual));
             %% Zoom indicator
             zoomLevel=obj.goggleViewerDisplay.zoomLevel;
             dsFactor=obj.goggleViewerDisplay.downSamplingForCurrentZoomLevel;
-            stackDsFactor=obj.goggleViewerDisplay.tvdss.xyds;
+            stackDsFactor=obj.goggleViewerDisplay.overviewStack.xyds;
             
             if zoomLevel<=obj.goggleViewerDisplay.minZoomLevelForDetailedLoad
-                obj.viewMode.String='Overview';
+                obj.viewMode.String='In Memory';
                 obj.downSamplingFactor.String=sprintf('%ux',stackDsFactor);
             elseif dsFactor>1
-                obj.viewMode.String='Detail';
+                obj.viewMode.String='From Disk';
                 obj.downSamplingFactor.String=sprintf('%ux', dsFactor);
             elseif dsFactor==1
-                obj.viewMode.String='Detail';
-                obj.downSamplingFactor.String='None';
+                obj.viewMode.String='From Disk';
+                obj.downSamplingFactor.String='1x (None)';
             else
                 error('Unrecognised downSampling/zoomLevels')
             end
