@@ -1,4 +1,4 @@
-function goggleViewer(t)
+function goggleViewer(t, idx)
 %% Preferences
 panelBkgdColor=[0.5 0.5 0.5];
 mainFigurePosition=[2561 196 1680 1028];
@@ -7,6 +7,16 @@ panIncrement=[10 120]; % shift and non shift; fraction to move view by
 scrollIncrement=[10 1]; %shift and non shift; number of images to move view by
 zoomRate=1.5;
 mainFont='Titillium';%'DejaVu Sans';
+
+%% Get mosaic info if none provided
+if nargin<1 ||isempty(t)
+    fp=uigetdir('/alzymr/buffer', 'Please select base directory of the stitched mosaic');
+    if isempty(fp)
+        return
+    end
+    t=TVStitchedMosaicInfo(fp);
+end
+
 %% Main object definitions
 hFig=figure(...
     'Name', sprintf('GoggleBox: %s', t.experimentName), ...
@@ -16,7 +26,7 @@ hFig=figure(...
     'ColorMap', gray(256), ...
     'KeyPressFcn', @hFigMain_KeyPress, ...
     'WindowButtonMotionFcn', @mouseMove, ...
-    'BusyAction', 'cancel'); %#ok<NASGU>
+    'BusyAction', 'cancel');
 hImgAx=axes(...
     'Box', 'on', ...
     'YDir', 'reverse', ...
@@ -52,13 +62,22 @@ hAxContrastAuto=uicontrol(...
     'Position', [0.92 0.84 0.04 0.02], ...
     'String', 'Auto', ...
     'FontSize', 12, ...
-    'Callback', @(~,~) msgbox('Not Implemented (yet)'));
+    'Callback', @(~,~) msgbox('Not Implemented (yet)')); %#ok<NASGU>
 
     
 %% Background variables
 
-%% Load up and display 
-dsStack=goggleViewerDisplay(t.downscaledStacks(2), hImgAx); %Default to the first available
+%% Load up and display
+if nargin<2||isempty(idx)
+overviewDSS=selectDownscaledStack(t.downscaledStacks);
+if isempty(overviewDSS)
+    close(hFig)
+    return
+end
+else
+    overviewDSS=t.downscaledStacks(idx);
+end
+dsStack=goggleViewerDisplay(overviewDSS, hImgAx); %Default to the first available
 adjustContrast();
 dsStack.drawNow();
 axis(hImgAx, 'equal')
