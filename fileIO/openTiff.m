@@ -7,7 +7,7 @@ function I = openTiff( fileName, regionSpec , downSample, methodFlag)
 if ~ischar(fileName)
     error('fileName must be a single character array')
 elseif ~exist(fileName, 'file')
-    error('File specified does not exist')
+    error('File specified (%s) does not exist', fileName)
 end
 
 
