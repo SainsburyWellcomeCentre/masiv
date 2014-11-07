@@ -15,6 +15,7 @@ hFig=figure(...
     'Position', mainFigurePosition, ...
     'ColorMap', gray(256), ...
     'KeyPressFcn', @hFigMain_KeyPress, ...
+    'WindowButtonMotionFcn', @mouseMove, ...
     'BusyAction', 'cancel'); %#ok<NASGU>
 hImgAx=axes(...
     'Box', 'on', ...
@@ -64,7 +65,6 @@ axis(hImgAx, 'equal')
 
 %% Info box
 hInfoBox=goggleInfoPanel(hFig, [0.83 0.5 0.16 0.31], dsStack);
-
 %% Set fonts to something nice
 set(findall(gcf, '-property','FontName'), 'FontName', mainFont)
 %% Callbacks
@@ -162,7 +162,11 @@ set(findall(gcf, '-property','FontName'), 'FontName', mainFont)
         end
     end
 
-
+%% Response to mouse movement
+function mouseMove (~, ~)
+C = get (hImgAx, 'CurrentPoint');
+hInfoBox.currentCursorPosition=C;
+end
 
    
 end

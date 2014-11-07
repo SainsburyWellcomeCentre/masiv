@@ -185,10 +185,10 @@ classdef TVDownscaledStack<handle
             % Returns true if the tiff stack is on the hard drive 
         
         function x=get.xCoords(obj)
-            % returns the x coordinates of pixels of the in-memory tiff stack. Uses an internal cache for speed
+            % returns the x coordinates (in pixels) of the in-memory tiff stack. Uses an internal cache for speed
             % 	If not in memory, throws an error
         function y=get.yCoords(obj)
-            % returns the y size in um of the in-memory tiff stack. Uses an internal cache for speed
+            % returns the y coordinates (in pixels) of the in-memory tiff stack. Uses an internal cache for speed
             % 	If not in memory, throws an error
         function z=get.zCoords(obj)
             % returns the z co-ordinates (in um) of slices in the stack. Uses an internal cache for speed
@@ -209,6 +209,15 @@ function writeObjToMetadataFile(obj)
    % Adds this object to a variable called 'stacks' and saves to the metadata .mat file
    % 	The file will be created if it does not exist
    % 	The file contains all TVDownscaledStack objects for a given mosaic, but without their data.
+
+function I = createDownscaledStack( mosaicInfo, channel, idx, varargin )
+   % does all the actual work for generateStack
+   % checks inputs
+   % STARTS default parallel pool if not already
+   % Generates full file paths for all the files specified by idx
+
+   % GETS IMAGE INFO in a PARFOR loop for all images that will be needed, to determine minimum size
+   % READS in files to I (preallocated) in a PARFOR loop
 
 %%---------------------------------------------------------------------------------------------------------%%
 
@@ -232,6 +241,7 @@ classdef goggleInfoPanel<handle
             % Intialises Main Panel object
 	    % Sets font size to 12
  	    % Creates labels and displays (labels that change)
+	    % Calls updateDisplay() to set up the displays correctly
         function updateDisplay(obj)
             % Displays main axes xlim
 	    % Displays main axes ylim
@@ -241,3 +251,7 @@ classdef goggleInfoPanel<handle
 	    %	'In memory' - uses overview stack only
 	    %	'From Disk' - loading detail views as needed
 	    % Displays downscaling factor	
+ 	function set.currentCursorPosition(obj, C)
+            % gets X and Y cursor position from C
+	    % checks the cursor is within the axes. If so:
+	    %	set cursor position x and y label
