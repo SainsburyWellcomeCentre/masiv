@@ -26,6 +26,7 @@ hFig=figure(...
     'ColorMap', gray(256), ...
     'KeyPressFcn', @hFigMain_KeyPress, ...
     'WindowButtonMotionFcn', @mouseMove, ...
+    'CloseRequestFcn', 'delete(timerfind); delete(hFig)', ...
     'BusyAction', 'cancel');
 hImgAx=axes(...
     'Box', 'on', ...
@@ -33,6 +34,7 @@ hImgAx=axes(...
     'Color', [0 0 0], ...
     'XTick', [], 'YTick', [], ...
     'Position', [0.02 0.02 0.8 0.96]);
+
 %% Contrast adjustment object definitions
 hAxContrastHist=axes(...
     'Box', 'on', ...
@@ -81,12 +83,14 @@ axis(hImgAx, 'equal')
 
 %% Info box declaration
 hInfoBox=goggleInfoPanel(hFig, [0.83 0.5 0.16 0.31], mainDisplay);
+
 %% Set fonts to something nice
 set(findall(gcf, '-property','FontName'), 'FontName', mainFont)
 
 %% Start parallel pool
 drawnow();
 gcp();
+
 %% Callbacks
     function hFigMain_KeyPress (~, eventdata, ~)
         tic
@@ -131,10 +135,13 @@ gcp();
                 disp(eventdata.Key)
         end
         if movedFlag
-            drawnow();
-            goggleDebugTimingInfo(0, 'GV: Axes Change Complete',toc, 's')
+            goggleDebugTimingInfo(0, 'GV: Axis Change Complete',toc, 's')
+            goggleDebugTimingInfo(0, 'GV: Calling mainDisplay updateZoomedView...',toc, 's')
             mainDisplay.updateZoomedView
+            goggleDebugTimingInfo(0, 'GV: mainDisplay updateZoomedView complete',toc, 's')
             hInfoBox.updateDisplay
+        else
+            goggleDebugTimingInfo(0, 'GV: No Axis Change',toc, 's')
         end
     end
 %% Responses to keypresses
@@ -181,7 +188,8 @@ gcp();
     function mouseMove (~, ~)
 C = get (hImgAx, 'CurrentPoint');
 hInfoBox.currentCursorPosition=C;
-end
+    end
+
 %% Contrast
     function adjustContrast(obj,~)
         if nargin<1

@@ -15,15 +15,13 @@ classdef goggleZoomedViewManager<handle
         
         %% View updates
         function updateView(obj)
-            drawnow()
             v=findMatchingView(obj);
             if isempty(v)
-                goggleDebugTimingInfo(2, 'GZVM.updateView: Creating new view...\n', toc,'s')
+                goggleDebugTimingInfo(2, 'GZVM.updateView: Creating new view...', toc,'s')
                 obj.createNewView;
             else
-                
-                goggleDebugTimingInfo(2, sprintf('GZVM.updateView: Matching views found: %u, ', v),toc,'s')
-                goggleDebugTimingInfo(2, sprintf('GZVM.updateView: Using #%u\n', v(1)),toc,'s')
+                goggleDebugTimingInfo(2, ['GZVM.updateView: Matching views found: ' sprintf('%u, ', v)],toc,'s')
+                goggleDebugTimingInfo(2, sprintf('GZVM.updateView: View #%u will be used. Updating image...', v(1)),toc,'s')
                 updateImage(obj, v(1))
             end
         end
@@ -68,8 +66,10 @@ classdef goggleZoomedViewManager<handle
         end
         
         function clearInvalidPlanes(obj)
+            goggleDebugTimingInfo(2, 'GZVM.clearInvalidPlanes: Checking for invalid planes...', toc,'s')
             invalidIdx=[obj.zoomedViewArray.z]<0;
             obj.zoomedViewArray=obj.zoomedViewArray(~invalidIdx);
+            goggleDebugTimingInfo(2, sprintf('GZVM.clearInvalidPlanes: %u invalid planes found and cleared.',sum(invalidIdx)), toc,'s')
         end
         
         function moveZVToTopOfCacheStack(obj, idx)
@@ -79,34 +79,36 @@ classdef goggleZoomedViewManager<handle
 end
 
 function v=findMatchingView(obj)
-   obj.clearInvalidPlanes
-   parent=obj.parentViewerDisplay;
-   
-   viewX=xlim(parent.axes);
-   viewY=ylim(parent.axes);
-   viewZ=parent.currentZPlaneOriginalFileNumber;
-   viewDS=parent.downSamplingForCurrentZoomLevel;
-   
-   planesInMemX={obj.zoomedViewArray.x};
-   planesInMemY={obj.zoomedViewArray.y};
-   planesInMemZ=[obj.zoomedViewArray.z];
-   planesInMemDS=[obj.zoomedViewArray.downSampling];
-   
-   %% Allow a slightly smaller image (5xdownsampling) to be considered a match
-   %    (Takes care of rounding errors)
-   allowablePixelsSmallerThanView=5*viewDS;
-   viewX=viewX+[1 -1]*allowablePixelsSmallerThanView;
-   viewY=viewY+[1 -1]*allowablePixelsSmallerThanView;
+    goggleDebugTimingInfo(2, 'GZVM.findMatchingView: Checking for matching planes...', toc,'s')
+    obj.clearInvalidPlanes
+    parent=obj.parentViewerDisplay;
+    
+    viewX=xlim(parent.axes);
+    viewY=ylim(parent.axes);
+    viewZ=parent.currentZPlaneOriginalFileNumber;
+    viewDS=parent.downSamplingForCurrentZoomLevel;
+    
+    planesInMemX={obj.zoomedViewArray.x};
+    planesInMemY={obj.zoomedViewArray.y};
+    planesInMemZ=[obj.zoomedViewArray.z];
+    planesInMemDS=[obj.zoomedViewArray.downSampling];
+    
+    %% Allow a slightly smaller image (5xdownsampling) to be considered a match
+    %    (Takes care of rounding errors)
+    allowablePixelsSmallerThanView=5*viewDS;
+    viewX=viewX+[1 -1]*allowablePixelsSmallerThanView;
+    viewY=viewY+[1 -1]*allowablePixelsSmallerThanView;
+    
+    %%
+    xMatch=(cellfun(@min, planesInMemX)<=viewX(1))&(cellfun(@max, planesInMemX)>=viewX(2));
+    yMatch=(cellfun(@min, planesInMemY)<=viewY(1))&(cellfun(@max, planesInMemY)>=viewY(2));
+    v=find( xMatch & ...
+        yMatch & ...
+        viewZ==planesInMemZ & ...
+        viewDS==planesInMemDS);
+    
+    goggleDebugTimingInfo(2, 'GZVM.findMatchingView: Comparison complete.', toc,'s')
 
-   %%
-   xMatch=(cellfun(@min, planesInMemX)<=viewX(1))&(cellfun(@max, planesInMemX)>=viewX(2));
-   yMatch=(cellfun(@min, planesInMemY)<=viewY(1))&(cellfun(@max, planesInMemY)>=viewY(2));
-   
-   v=find( xMatch & ...
-       yMatch & ...
-       viewZ==planesInMemZ & ...
-       viewDS==planesInMemDS);
-   
 end
 
 function updateImage(obj, idx)
@@ -124,7 +126,6 @@ function updateImage(obj, idx)
    obj.hImg.YData=zv.y;
    obj.hImg.CData=zv.imageData;
    obj.hImg.Visible='on';
-   drawnow()
    
    obj.moveZVToTopOfCacheStack(idx);
 end

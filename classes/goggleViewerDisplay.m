@@ -63,14 +63,17 @@ classdef goggleViewerDisplay<handle
             % axes, reusing the main Image Object if available
             goggleDebugTimingInfo(1, 'GVD: drawNewZ starting',toc, 's')
             obj.hImg.CData=obj.currentPlaneData;
+            goggleDebugTimingInfo(1, 'GVD: drawNewZ DS CData changed',toc, 's')
             obj.zoomedViewManager.hide;
-            goggleDebugTimingInfo(1, 'GVD: drawNewZ drawnow finished',toc, 's')
         end
                
         function updateZoomedView(obj)
             if obj.zoomLevel>obj.minZoomLevelForDetailedLoad
+                goggleDebugTimingInfo(1, 'GVD.updateZoomedView: Zoomed image needed. Updating view...', toc, 's')
                 obj.zoomedViewManager.updateView()
                 goggleDebugTimingInfo(1, 'GVD.updateZoomedView: View updated', toc, 's')
+            else
+                goggleDebugTimingInfo(1, 'GVD.updateZoomedView: No zoomed image needed', toc, 's')
             end
         end
         %% Getters       
