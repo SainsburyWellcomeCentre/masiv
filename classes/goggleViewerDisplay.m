@@ -64,7 +64,6 @@ classdef goggleViewerDisplay<handle
             goggleDebugTimingInfo(1, 'GVD: drawNewZ starting',toc, 's')
             obj.hImg.CData=obj.currentPlaneData;
             goggleDebugTimingInfo(1, 'GVD: drawNewZ DS CData changed',toc, 's')
-            obj.zoomedViewManager.hide;
         end
                
         function updateZoomedView(obj)
