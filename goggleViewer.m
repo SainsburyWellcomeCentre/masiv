@@ -17,7 +17,7 @@ if nargin<1 ||isempty(t)
     t=TVStitchedMosaicInfo(fp);
 end
 
-%% Main object definitions
+%% Main UI object definitions
 hFig=figure(...
     'Name', sprintf('GoggleBox: %s', t.experimentName), ...
     'NumberTItle', 'off', ...
@@ -64,9 +64,6 @@ hAxContrastAuto=uicontrol(...
     'FontSize', 12, ...
     'Callback', @(~,~) msgbox('Not Implemented (yet)')); %#ok<NASGU>
 
-    
-%% Background variables
-
 %% Load up and display
 if nargin<2||isempty(idx)
 overviewDSS=selectDownscaledStack(t.downscaledStacks);
@@ -77,28 +74,34 @@ end
 else
     overviewDSS=t.downscaledStacks(idx);
 end
-dsStack=goggleViewerDisplay(overviewDSS, hImgAx); %Default to the first available
+mainDisplay=goggleViewerDisplay(overviewDSS, hImgAx); %Default to the first available
+mainDisplay.drawNewZ();
 adjustContrast();
-dsStack.drawNow();
 axis(hImgAx, 'equal')
 
-%% Info box
-hInfoBox=goggleInfoPanel(hFig, [0.83 0.5 0.16 0.31], dsStack);
+%% Info box declaration
+hInfoBox=goggleInfoPanel(hFig, [0.83 0.5 0.16 0.31], mainDisplay);
 %% Set fonts to something nice
 set(findall(gcf, '-property','FontName'), 'FontName', mainFont)
+
+%% Start parallel pool
+drawnow();
+gcp();
 %% Callbacks
     function hFigMain_KeyPress (~, eventdata, ~)
+        tic
+        clc
         %% Are we in pan mode?
         persistent panMode
         if isempty(panMode)
             panMode=0;
         end
-        %% Have we moved?
+        %%
         movedFlag=0;
         %% What shall we do?
         switch eventdata.Key
             case 'shift'
-         
+                % Do nothing
             case 'uparrow'
                 zoom(zoomRate)
                 movedFlag=1;
@@ -108,8 +111,7 @@ set(findall(gcf, '-property','FontName'), 'FontName', mainFont)
             case {'leftarrow', 'rightarrow'}
                 movedFlag=keyScroll(eventdata);
             case {'w' 'a' 's' 'd'}
-                keyPan(eventdata)
-                movedFlag=1;
+                movedFlag=keyPan(eventdata);                
             case 'p'
                 %% Not currently allowed
 %                 if panMode
@@ -124,31 +126,20 @@ set(findall(gcf, '-property','FontName'), 'FontName', mainFont)
 %                 end
            
             case 'c'
-                updateContrastHistogram(dsStack, hAxContrastHist)
+                updateContrastHistogram(mainDisplay, hAxContrastHist)
             otherwise
                 disp(eventdata.Key)
         end
         if movedFlag
-            dsStack.createZoomedView
+            drawnow();
+            fprintf('GV: Axes Zoom Complete:\t\t\t\t\t\t%1.4fs\n', toc)
+            mainDisplay.updateZoomedView
             hInfoBox.updateDisplay
         end
     end
-    function adjustContrast(obj,~)
-        if nargin<1
-            obj=[];
-        end
-        if ~isempty(obj)&&~all(isstrprop(obj.String, 'digit')) %it's invalid, use the previous value
-            if obj==hAxContrastMin
-                obj.String=dsStack.contrastLims(1);
-            elseif obj==hAxContrastMax
-                obj.String=dsStack.contrastLims(2);
-            end
-        else
-            dsStack.contrastLims=[str2double(hAxContrastMin.String) str2double(hAxContrastMax.String)];
-        end
-    end
 %% Responses to keypresses
-    function keyPan(eventdata)
+    function stdout= keyPan(eventdata)
+        stdout=0;
         mods=eventdata.Modifier;
         if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
             p=panIncrement(1);
@@ -158,15 +149,20 @@ set(findall(gcf, '-property','FontName'), 'FontName', mainFont)
         switch eventdata.Key
             case 'w'
                 ylim(hImgAx,ylim(hImgAx)+range(ylim(hImgAx))/p);
+                stdout=1;
             case 's'
                 ylim(hImgAx,ylim(hImgAx)-range(ylim(hImgAx))/p);
+                stdout=1;
             case 'a'
                 xlim(hImgAx,xlim(hImgAx)+range(xlim(hImgAx))/p);
+                stdout=1;
             case 'd'
                 xlim(hImgAx,xlim(hImgAx)-range(xlim(hImgAx))/p);
+                stdout=1;
         end
     end
     function stdout=keyScroll(eventdata)
+        tic
         mods=eventdata.Modifier;
         if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
             p=scrollIncrement(1);
@@ -175,19 +171,33 @@ set(findall(gcf, '-property','FontName'), 'FontName', mainFont)
         end
         switch eventdata.Key
             case 'leftarrow'
-                stdout=dsStack.seekZ(-p);
+                stdout=mainDisplay.seekZ(-p);
             case 'rightarrow'
-                stdout=dsStack.seekZ(+p);
+                stdout=mainDisplay.seekZ(+p);
         end
     end
 
 %% Response to mouse movement
-function mouseMove (~, ~)
+    function mouseMove (~, ~)
 C = get (hImgAx, 'CurrentPoint');
 hInfoBox.currentCursorPosition=C;
 end
+%% Contrast
+    function adjustContrast(obj,~)
+        if nargin<1
+            obj=[];
+        end
+        if ~isempty(obj)&&~all(isstrprop(obj.String, 'digit')) %it's invalid, use the previous value
+            if obj==hAxContrastMin
+                obj.String=mainDisplay.contrastLims(1);
+            elseif obj==hAxContrastMax
+                obj.String=mainDisplay.contrastLims(2);
+            end
+        else
+            mainDisplay.contrastLims=[str2double(hAxContrastMin.String) str2double(hAxContrastMax.String)];
+        end
+    end
 
-   
 end
 
 
