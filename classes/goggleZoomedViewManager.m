@@ -18,12 +18,12 @@ classdef goggleZoomedViewManager<handle
             drawnow()
             v=findMatchingView(obj);
             if isempty(v)
-                fprintf('      GZVM.updateView: Creating new view...\n')
+                goggleDebugTimingInfo(2, 'GZVM.updateView: Creating new view...\n', toc,'s')
                 obj.createNewView;
             else
-                fprintf('      GZVM.updateView: Matching views found:')
-                fprintf('%u, ', v)
-                fprintf('\n Using #%u\n', v(1))
+                
+                goggleDebugTimingInfo(2, sprintf('GZVM.updateView: Matching views found: %u, ', v),toc,'s')
+                goggleDebugTimingInfo(2, sprintf('GZVM.updateView: Using #%u\n', v(1)),toc,'s')
                 updateImage(obj, v(1))
             end
         end
@@ -37,9 +37,9 @@ classdef goggleZoomedViewManager<handle
             ds=parent.downSamplingForCurrentZoomLevel;
             z=parent.currentZPlaneOriginalFileNumber;
             
-            fprintf('      GZVM.createNewView: Zoomed view creation: \t\t%1.4fs\n', toc)
+            goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view creation starting',toc,'s')
             obj.zoomedViewArray(end+1)=goggleZoomedView(stitchedFileFullPath, regionSpec, ds, z, obj);
-            fprintf('      GZVM.createNewView: Zoomed view created: \t\t\t%1.4fs\n', toc)
+            goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view created',toc,'s')
             
             obj.cleanUpCache();
         end
@@ -60,7 +60,7 @@ classdef goggleZoomedViewManager<handle
         
         function reduceToCacheLimit(obj)
             cumTotalSizeOfZoomedViewsMB=cumsum([obj.zoomedViewArray.sizeMB]);
-            fprintf('      GZVM.reduceToCacheLimit: Current Cache Size: \t\t\t%uMB\n', round(cumTotalSizeOfZoomedViewsMB(end)))
+            goggleDebugTimingInfo(2, 'GZVM.reduceToCacheLimit: Current Cache Size',round(cumTotalSizeOfZoomedViewsMB(end)), 'MB')
             if any(cumTotalSizeOfZoomedViewsMB>obj.cacheSizeLimitMB)
                 firstIndexToCut=find(cumTotalSizeOfZoomedViewsMB>obj.cacheSizeLimitMB, 1);
                 obj.zoomedViewArray=obj.zoomedViewArray(1:firstIndexToCut-1);
@@ -111,7 +111,7 @@ end
 
 function updateImage(obj, idx)
    zv=obj.zoomedViewArray(idx);
-   fprintf('      GZVM.updateImage: beginning update: A\t\t\t%1.4fs\n', toc)
+   goggleDebugTimingInfo(2, 'GZVM.updateImage: beginning update',toc,'s')
    %% Create image object if it doesn't exist
    if ~ishandle(obj.hImg)
        obj.hImg=image('Parent', obj.parentViewerDisplay.axes, ...

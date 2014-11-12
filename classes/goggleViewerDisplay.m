@@ -47,6 +47,7 @@ classdef goggleViewerDisplay<handle
         end
         %% Methods
         function stdout=seekZ(obj, n)
+            goggleDebugTimingInfo(1, 'GVD: seekZ starting',toc, 's')
             stdout=0;
             newIdx=obj.currentIndex+n;
             if newIdx>=1&&newIdx<=numel(obj.overviewStack.idx)
@@ -54,24 +55,22 @@ classdef goggleViewerDisplay<handle
                 obj.drawNewZ();
                 stdout=1;
             end
+            goggleDebugTimingInfo(1, 'GVD: seekZ finished',toc, 's')
         end
         
         function drawNewZ(obj)   
             % Draws the correct plane from the downscaled stack in to the
             % axes, reusing the main Image Object if available
-            
+            goggleDebugTimingInfo(1, 'GVD: drawNewZ starting',toc, 's')
             obj.hImg.CData=obj.currentPlaneData;
             obj.zoomedViewManager.hide;
-            drawnow()
-            %obj.updateZoomedView();
-            %caxis(obj.axes, obj.contrastLims);
-        end 
-        
-       
+            goggleDebugTimingInfo(1, 'GVD: drawNewZ drawnow finished',toc, 's')
+        end
+               
         function updateZoomedView(obj)
             if obj.zoomLevel>obj.minZoomLevelForDetailedLoad
                 obj.zoomedViewManager.updateView()
-                fprintf('   GVD.updateZoomedView: View updated: \t\t\t\t%1.4fs\n', toc)
+                goggleDebugTimingInfo(1, 'GVD.updateZoomedView: View updated', toc, 's')
             end
         end
         %% Getters       

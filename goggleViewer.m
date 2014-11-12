@@ -132,7 +132,7 @@ gcp();
         end
         if movedFlag
             drawnow();
-            fprintf('GV: Axes Zoom Complete:\t\t\t\t\t\t%1.4fs\n', toc)
+            goggleDebugTimingInfo(0, 'GV: Axes Change Complete',toc, 's')
             mainDisplay.updateZoomedView
             hInfoBox.updateDisplay
         end
@@ -162,7 +162,7 @@ gcp();
         end
     end
     function stdout=keyScroll(eventdata)
-        tic
+        goggleDebugTimingInfo(0, 'GV: KeyScroll event fired',toc, 's')
         mods=eventdata.Modifier;
         if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
             p=scrollIncrement(1);

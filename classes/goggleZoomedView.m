@@ -49,15 +49,15 @@ classdef goggleZoomedView<handle
 end
 
 function loadViewImageInBackground(obj)
-fprintf('         GZV.loadViewImageInBackground starting: \t\t%1.4fs\n', toc)
+goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground starting', toc,'s')
 p=gcp();
 
 f=parfeval(p, @openTiff, 1, obj.filePath, obj.regionSpec, obj.downSampling);
-fprintf('         GZV.loadViewImageInBackground: parfeval started: \t%1.4fs\n', toc)
+goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground: parfeval started', toc,'s')
 
 t=timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Period', 0.01, 'TimerFcn', {@checkForLoadedImage, obj, f});
 start(t)
-fprintf('         GZV.loadViewImageInBackground: Timer started: \t\t%1.4fs\n', toc)
+goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground: Timer started', toc,'s')
 
 
 
