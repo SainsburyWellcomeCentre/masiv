@@ -6,9 +6,17 @@ if nargin>2
     if nargin>3&&~isempty(unit)
         switch unit
             case 's'
-                valueStr=sprintf('%1.4fs', value);
+                if value>1
+                    valueStr=sprintf('%1.3fs', value);
+                else
+                    valueStr=sprintf('%ums', round(value*1000));
+                end
             case 'MB'
-                valueStr=sprintf('%uMB', round(value));
+                if value<1000
+                    valueStr=sprintf('[%uMB]', round(value));
+                else
+                    valueStr=sprintf('[%2.1fGB]', value/1000);
+                end
             otherwise
                 valueStr=sprintf('%3.4f%s', value, unit);
         end
