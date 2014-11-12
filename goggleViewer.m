@@ -26,6 +26,7 @@ hFig=figure(...
     'ColorMap', gray(256), ...
     'KeyPressFcn', @hFigMain_KeyPress, ...
     'WindowButtonMotionFcn', @mouseMove, ...
+    'WindowScrollWheelFcn', @hFigMain_ScrollWheel, ...
     'CloseRequestFcn', 'delete(timerfind); delete(gcf)', ...
     'BusyAction', 'cancel');
 hImgAx=axes(...
@@ -93,8 +94,7 @@ gcp();
 
 %% Callbacks
     function hFigMain_KeyPress (~, eventdata, ~)
-        tic
-        clc
+        startDebugOutput
         %% Are we in pan mode?
         persistent panMode
         if isempty(panMode)
@@ -135,13 +135,19 @@ gcp();
                 disp(eventdata.Key)
         end
         if movedFlag
-            goggleDebugTimingInfo(0, 'GV: Axis Change Complete',toc, 's')
-            goggleDebugTimingInfo(0, 'GV: Calling mainDisplay updateZoomedView...',toc, 's')
-            mainDisplay.updateZoomedView
-            goggleDebugTimingInfo(0, 'GV: mainDisplay updateZoomedView complete',toc, 's')
-            hInfoBox.updateDisplay
+            changeAxes
         else
             goggleDebugTimingInfo(0, 'GV: No Axis Change',toc, 's')
+        end
+    end
+    function stdout=hFigMain_ScrollWheel(~, eventdata)
+        startDebugOutput
+       
+        goggleDebugTimingInfo(0, 'GV: WheelScroll event fired',toc, 's')
+        p=scrollIncrement(2);
+        stdout=mainDisplay.seekZ(p*eventdata.VerticalScrollCount);
+        if stdout
+            changeAxes
         end
     end
 %% Responses to keypresses
@@ -184,7 +190,15 @@ gcp();
         end
     end
 
-%% Response to mouse movement
+%% Update axes
+    function changeAxes()
+        goggleDebugTimingInfo(0, 'GV: Axis Change Complete',toc, 's')
+        goggleDebugTimingInfo(0, 'GV: Calling mainDisplay updateZoomedView...',toc, 's')
+        mainDisplay.updateZoomedView
+        goggleDebugTimingInfo(0, 'GV: mainDisplay updateZoomedView complete',toc, 's')
+        hInfoBox.updateDisplay
+    end
+%% Response to mouse movement (update cursor position on display)
     function mouseMove (~, ~)
 C = get (hImgAx, 'CurrentPoint');
 hInfoBox.currentCursorPosition=C;
@@ -233,4 +247,9 @@ set(hContrastHist_Axes, 'YTick', [], 'YColor', get(0, 'defaultuicontrolbackgroun
 xlim(hContrastHist_Axes, [-0.05 1.1])
 ylim(hContrastHist_Axes, [-0.1 1.1])
 
+end
+
+function startDebugOutput
+tic
+clc
 end
