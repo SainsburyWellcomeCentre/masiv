@@ -160,6 +160,10 @@ classdef goggleInfoPanel<handle
                 'FontSize', fontSz, ...
                 'HorizontalAlignment', 'center');
             obj.updateDisplay();
+            %%
+            set(obj.mainPanel,'BackgroundColor', [0.1 0.1 0.1])
+            set(obj.mainPanel.Children,'BackgroundColor', [0.1 0.1 0.1])
+            set(obj.mainPanel.Children,'ForegroundColor', [0.8 0.8 0.8])
         end
         function updateDisplay(obj)
             xl=round(xlim(obj.goggleViewerDisplay.axes));
