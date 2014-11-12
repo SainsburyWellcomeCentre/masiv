@@ -69,6 +69,14 @@ function checkForLoadedImage(t, ~, obj, f)
  [idx, r]=fetchNext(f, 0.001);
     if ~isempty(idx)
         goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has been loaded', toc,'s')
+        if mod(obj.downSampling, 2)
+            r=deComb(r);
+            goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has been decombed', toc,'s')
+        else
+            goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has not been decombed', toc,'s')
+        end
+        r=imfilter(r, fspecial('gaussian', 5, 0.6));
+        goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has been filtered', toc,'s')
         obj.imageData=r;
         goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image data read', toc,'s')
         stop(t)
