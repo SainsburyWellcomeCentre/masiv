@@ -122,7 +122,7 @@ gcp();
                 zoom(1/zoomRate)
                 movedFlag=1;
             case {'leftarrow', 'rightarrow'}
-                movedFlag=keyScroll(eventdata);
+                formatKeyScrollAndAddToQueue(eventdata);
             case {'w' 'a' 's' 'd'}
                 movedFlag=keyPan(eventdata);                
             case 'c'
@@ -136,17 +136,56 @@ gcp();
             goggleDebugTimingInfo(0, 'GV: No Axis Change',toc, 's')
         end
     end
-    function stdout=hFigMain_ScrollWheel(~, eventdata)
+    function hFigMain_ScrollWheel(~, eventdata)
         startDebugOutput
        
         goggleDebugTimingInfo(0, 'GV: WheelScroll event fired',toc, 's')
         p=scrollIncrement(2);
-        stdout=mainDisplay.seekZ(p*eventdata.VerticalScrollCount);
+        
+        executeScroll(p*eventdata.VerticalScrollCount);
+        
+    end
+
+%% Responses to keypresses   
+    function formatKeyScrollAndAddToQueue(eventdata)
+        goggleDebugTimingInfo(0, 'GV: KeyScroll event fired',toc, 's')
+        mods=eventdata.Modifier;
+        if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
+            p=scrollIncrement(1);
+        else
+            p=scrollIncrement(2);
+        end
+        switch eventdata.Key
+            case 'leftarrow'
+                keyScrollQueue(-p)
+            case 'rightarrow'
+                keyScrollQueue(+p);
+        end
+    end
+
+    function keyScrollQueue(dir)
+    persistent numPresses
+    if isempty(numPresses)
+        numPresses=0;
+    end
+    
+    numPresses=numPresses+dir;
+    
+    pause(0.02)
+    if numPresses~=0
+        p=numPresses;
+        numPresses=0;
+        executeScroll(p)
+    end
+    end
+
+    function executeScroll(p)
+        stdout=mainDisplay.seekZ(p);
         if stdout
             changeAxes
         end
     end
-%% Responses to keypresses
+
     function stdout= keyPan(eventdata)
         stdout=0;
         mods=eventdata.Modifier;
@@ -168,21 +207,6 @@ gcp();
             case 'd'
                 xlim(hImgAx,xlim(hImgAx)-range(xlim(hImgAx))/p);
                 stdout=1;
-        end
-    end
-    function stdout=keyScroll(eventdata)
-        goggleDebugTimingInfo(0, 'GV: KeyScroll event fired',toc, 's')
-        mods=eventdata.Modifier;
-        if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
-            p=scrollIncrement(1);
-        else
-            p=scrollIncrement(2);
-        end
-        switch eventdata.Key
-            case 'leftarrow'
-                stdout=mainDisplay.seekZ(-p);
-            case 'rightarrow'
-                stdout=mainDisplay.seekZ(+p);
         end
     end
 
@@ -249,3 +273,4 @@ function startDebugOutput
 tic
 clc
 end
+
