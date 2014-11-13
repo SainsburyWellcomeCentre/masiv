@@ -105,13 +105,9 @@ gcp();
 
 %% Callbacks
     function hFigMain_KeyPress (~, eventdata, ~)
+       
         startDebugOutput
-        %% Are we in pan mode?
-        persistent panMode
-        if isempty(panMode)
-            panMode=0;
-        end
-        %%
+       
         movedFlag=0;
         %% What shall we do?
         switch eventdata.Key
@@ -191,6 +187,8 @@ gcp();
         stdout=mainDisplay.seekZ(p);
         if stdout
             changeAxes
+        else
+            goggleDebugTimingInfo(0, 'GV: Scroll did not cause an axis change',toc, 's')
         end
     end
 
@@ -244,14 +242,22 @@ gcp();
         end
         
         [xMove, yMove]=checkPanWithinLimits(xMove, yMove);
+        movedFlag=0;
         
         if xMove~=0
             xlim(hImgAx,xlim(hImgAx)+xMove);
+            movedFlag=1;
         end
         if yMove~=0
             ylim(hImgAx,ylim(hImgAx)+yMove);
+            movedFlag=1;
         end
-        changeAxes
+        
+        if movedFlag
+            changeAxes
+        else
+            goggleDebugTimingInfo(0, 'GV: Pan did not cause an axis change',toc, 's')
+        end
     end
 
     function [xMove,yMove]=checkPanWithinLimits(xMove,yMove)
