@@ -6,7 +6,9 @@ mainFigurePosition=[2561 196 1680 1028];
 panIncrement=[10 120]; % shift and non shift; fraction to move view by
 scrollIncrement=[10 1]; %shift and non shift; number of images to move view by
 zoomRate=1.5;
-mainFont='Titillium';%'DejaVu Sans';
+mainFont='Titillium'; %'DejaVu Sans';
+keyboardUpdatePeriod=0.02; %20ms keyboard polling
+moveCamera=0;
 
 %% Get mosaic info if none provided
 if nargin<1 ||isempty(t)
@@ -124,7 +126,7 @@ gcp();
             case {'leftarrow', 'rightarrow'}
                 formatKeyScrollAndAddToQueue(eventdata);
             case {'w' 'a' 's' 'd'}
-                movedFlag=keyPan(eventdata);                
+                formatKeyPanAndAddToQueue(eventdata);                
             case 'c'
                 updateContrastHistogram(mainDisplay, hAxContrastHist)
             otherwise
@@ -136,6 +138,7 @@ gcp();
             goggleDebugTimingInfo(0, 'GV: No Axis Change',toc, 's')
         end
     end
+
     function hFigMain_ScrollWheel(~, eventdata)
         startDebugOutput
        
@@ -146,7 +149,12 @@ gcp();
         
     end
 
-%% Responses to keypresses   
+    function mouseMove (~, ~)
+        C = get (hImgAx, 'CurrentPoint');
+        hInfoBox.currentCursorPosition=C;
+    end
+
+%% ---Scrolling 
     function formatKeyScrollAndAddToQueue(eventdata)
         goggleDebugTimingInfo(0, 'GV: KeyScroll event fired',toc, 's')
         mods=eventdata.Modifier;
@@ -164,19 +172,19 @@ gcp();
     end
 
     function keyScrollQueue(dir)
-    persistent numPresses
-    if isempty(numPresses)
-        numPresses=0;
-    end
-    
-    numPresses=numPresses+dir;
-    
-    pause(0.02)
-    if numPresses~=0
-        p=numPresses;
-        numPresses=0;
-        executeScroll(p)
-    end
+        persistent numPresses
+        if isempty(numPresses)
+            numPresses=0;
+        end
+        
+        numPresses=numPresses+dir;
+        
+        pause(keyboardUpdatePeriod)
+        if numPresses~=0
+            p=numPresses;
+            numPresses=0;
+            executeScroll(p)
+        end
     end
 
     function executeScroll(p)
@@ -186,8 +194,9 @@ gcp();
         end
     end
 
-    function stdout= keyPan(eventdata)
-        stdout=0;
+%% ---Panning
+    function formatKeyPanAndAddToQueue(eventdata)
+        goggleDebugTimingInfo(0, 'GV: KeyPan event fired',toc, 's')
         mods=eventdata.Modifier;
         if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
             p=panIncrement(1);
@@ -196,21 +205,53 @@ gcp();
         end
         switch eventdata.Key
             case 'w'
-                ylim(hImgAx,ylim(hImgAx)+range(ylim(hImgAx))/p);
-                stdout=1;
-            case 's'
-                ylim(hImgAx,ylim(hImgAx)-range(ylim(hImgAx))/p);
-                stdout=1;
+                keyPanQueue(0, +range(ylim(hImgAx))/p)
             case 'a'
-                xlim(hImgAx,xlim(hImgAx)+range(xlim(hImgAx))/p);
-                stdout=1;
+                keyPanQueue(+range(xlim(hImgAx))/p, 0)
+            case 's'
+                keyPanQueue(0, -range(ylim(hImgAx))/p)
             case 'd'
-                xlim(hImgAx,xlim(hImgAx)-range(xlim(hImgAx))/p);
-                stdout=1;
+                keyPanQueue(-range(xlim(hImgAx))/p, 0)
         end
     end
 
-%% Update axes
+    function keyPanQueue(xChange, yChange)
+        persistent xInt yInt
+        if isempty(xInt)
+            xInt=0;
+        end
+        if isempty(yInt)
+            yInt=0;
+        end
+        
+        xInt=xInt+xChange;
+        yInt=yInt+yChange;
+        pause(keyboardUpdatePeriod)
+        
+        if xInt~=0 || yInt~=0
+            xOut=xInt;
+            yOut=yInt;
+            xInt=0;
+            yInt=0;
+            executePan(xOut,yOut)
+        end
+    end
+
+    function executePan(x,y)
+        if moveCamera
+            x=-x;
+            y=-y;
+        end
+        if x~=0
+            xlim(hImgAx,xlim(hImgAx)+x);
+        end
+        if y~=0
+            ylim(hImgAx,ylim(hImgAx)+y);
+        end
+        changeAxes
+    end
+    
+%% ---Update axes
     function changeAxes()
         goggleDebugTimingInfo(0, 'GV: Axis Change Complete',toc, 's')
         goggleDebugTimingInfo(0, 'GV: Calling mainDisplay updateZoomedView...',toc, 's')
@@ -218,13 +259,8 @@ gcp();
         goggleDebugTimingInfo(0, 'GV: mainDisplay updateZoomedView complete',toc, 's')
         hInfoBox.updateDisplay
     end
-%% Response to mouse movement (update cursor position on display)
-    function mouseMove (~, ~)
-C = get (hImgAx, 'CurrentPoint');
-hInfoBox.currentCursorPosition=C;
-    end
-
-%% Contrast
+    
+%% ---Contrast Adjustment
     function adjustContrast(obj,~)
         if nargin<1
             obj=[];
