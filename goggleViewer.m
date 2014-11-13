@@ -125,23 +125,10 @@ gcp();
                 movedFlag=keyScroll(eventdata);
             case {'w' 'a' 's' 'd'}
                 movedFlag=keyPan(eventdata);                
-            case 'p'
-                %% Not currently allowed
-%                 if panMode
-%                     pan off
-%                     panMode=panMode-1;
-%                 else
-%                     pan on
-%                     % Override the annoying lack of ability to control keypress
-%                     hManager = uigetmodemanager(gcf);
-%                     hManager.currentMode.WindowKeyPressFcn=@hFigMain_KeyPress;
-%                     panMode=2; % The keypress function will be called TWICE, the first from the uimodemanager. So we want to 'turn it off' twice
-%                 end
-           
             case 'c'
                 updateContrastHistogram(mainDisplay, hAxContrastHist)
             otherwise
-                disp(eventdata.Key)
+                goggleDebugTimingInfo(0, sprintf('GV.unknownKeypress: %s', eventdata.Key))
         end
         if movedFlag
             changeAxes
