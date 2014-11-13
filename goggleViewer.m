@@ -8,7 +8,7 @@ scrollIncrement=[10 1]; %shift and non shift; number of images to move view by
 zoomRate=1.5;
 mainFont='Titillium'; %'DejaVu Sans';
 keyboardUpdatePeriod=0.02; %20ms keyboard polling
-moveCamera=0;
+panModeInvert=0;
 
 %% Get mosaic info if none provided
 if nargin<1 ||isempty(t)
@@ -237,18 +237,39 @@ gcp();
         end
     end
 
-    function executePan(x,y)
-        if moveCamera
-            x=-x;
-            y=-y;
+    function executePan(xMove,yMove)
+        if panModeInvert
+            xMove=-xMove;
+            yMove=-yMove;
         end
-        if x~=0
-            xlim(hImgAx,xlim(hImgAx)+x);
+        
+        [xMove, yMove]=checkPanWithinLimits(xMove, yMove);
+        
+        if xMove~=0
+            xlim(hImgAx,xlim(hImgAx)+xMove);
         end
-        if y~=0
-            ylim(hImgAx,ylim(hImgAx)+y);
+        if yMove~=0
+            ylim(hImgAx,ylim(hImgAx)+yMove);
         end
         changeAxes
+    end
+
+    function [xMove,yMove]=checkPanWithinLimits(xMove,yMove)
+        xl=xlim(hImgAx);
+        yl=ylim(hImgAx);
+        
+        if xl(1) + xMove < 0
+            xMove = -xl(1);
+        end
+        if yl(1) + yMove < 0
+            yMove = -yl(1);
+        end
+        if xl(2) + xMove > mainDisplay.imageXLim(2)
+            xMove=mainDisplay.imageXLim(2) - xl(2);
+        end
+        if yl(2) + yMove > mainDisplay.imageYLim(2)
+            yMove=mainDisplay.imageYLim(2) - yl(2);
+        end
     end
     
 %% ---Update axes

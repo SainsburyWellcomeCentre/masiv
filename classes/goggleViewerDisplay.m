@@ -23,6 +23,8 @@ classdef goggleViewerDisplay<handle
         currentZPlaneOriginalLayerID
         zoomLevel
         downSamplingForCurrentZoomLevel
+        imageXLim
+        imageYLim
     end
     
     methods
@@ -93,6 +95,12 @@ classdef goggleViewerDisplay<handle
         function dsfczl=get.downSamplingForCurrentZoomLevel(obj)
             xl=round(xlim(obj.axes));
             dsfczl=ceil(range(xl)/obj.nPixelsWidthForZoomedView);
+        end
+        function x=get.imageXLim(obj)
+            x=obj.hImg.XData([1 end]);
+        end
+        function y=get.imageYLim(obj)
+            y=obj.hImg.YData([1 end]);
         end
         %% Setters
         function set.contrastLims(obj, val)
