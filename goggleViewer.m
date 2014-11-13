@@ -85,6 +85,7 @@ end
 else
     overviewDSS=t.downscaledStacks(idx);
 end
+startDebugOutput;
 mainDisplay=goggleViewerDisplay(overviewDSS, hImgAx); %Default to the first available
 mainDisplay.drawNewZ();
 adjustContrast();

@@ -73,6 +73,8 @@ classdef goggleViewerDisplay<handle
                 goggleDebugTimingInfo(1, 'GVD.updateZoomedView: View updated', toc, 's')
             else
                 goggleDebugTimingInfo(1, 'GVD.updateZoomedView: No zoomed image needed', toc, 's')
+                obj.zoomedViewManager.hide;
+                goggleDebugTimingInfo(1, 'GVD.updateZoomedView: Zoomed image hidden', toc, 's')
             end
         end
         %% Getters       
