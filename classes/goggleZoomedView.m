@@ -56,7 +56,7 @@ p=gcp();
 f=parfeval(p, @openTiff, 1, obj.filePath, obj.regionSpec, obj.downSampling);
 goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground: parfeval started', toc,'s')
 drawnow
-t=timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Period', 0.01, 'TimerFcn', {@checkForLoadedImage, obj, f});
+t=timer('BusyMode', 'queue', 'ExecutionMode', 'fixedSpacing', 'Period', 0.01, 'TimerFcn', {@checkForLoadedImage, obj, f});
 goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground: Timer created', toc,'s')
 start(t)
 goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground: Timer started', toc,'s')
@@ -66,7 +66,14 @@ goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground: Timer started', toc,'s'
 end
 
 function checkForLoadedImage(t, ~, obj, f)
- [idx, r]=fetchNext(f, 0.001);
+    try
+        [idx, r]=fetchNext(f, 0.01);
+    catch 
+        idx=[];
+        stop(t)
+        delete(t)
+        goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: TIMER ERROR', toc,'s')
+    end
     if ~isempty(idx)
         goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has been loaded', toc,'s')
         if mod(obj.downSampling, 2)
