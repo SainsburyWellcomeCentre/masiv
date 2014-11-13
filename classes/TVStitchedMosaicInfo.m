@@ -41,6 +41,9 @@ classdef TVStitchedMosaicInfo
             else
                 a=load(pathToDSObjsFile);
                 ds=a.stacks;
+                for ii=1:numel(ds)
+                    ds.updateFilePathMetaData(obj)
+                end
             end
         end
         function dsl=get.downscaledStackList(obj)

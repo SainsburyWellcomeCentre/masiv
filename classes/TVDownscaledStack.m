@@ -4,11 +4,13 @@ classdef TVDownscaledStack<handle
         name
     end
     
-    properties(SetAccess=protected)
+    properties
         baseDirectory
         experimentName
         sampleName
-        
+    end
+    
+    properties(SetAccess=protected)
         gbStackDirectory
         fileName
         
@@ -57,15 +59,8 @@ classdef TVDownscaledStack<handle
                         obj.xyds=1;
                     end
                     %% Copy some metadata stright from the mosaicInfo object; archive it just in case it's needed
-                    obj.experimentName=obj.mosaicInfo.experimentName;
-                    obj.sampleName=obj.mosaicInfo.sampleName;
-                    obj.baseDirectory=obj.mosaicInfo.baseDirectory;
+                   obj.updateFilePathMetaData(obj.mosaicInfo)
 
-                    %% Get base directory for stacks and fileName for this stack
-                    obj.gbStackDirectory=getGBStackPath(obj.mosaicInfo);
-                    obj.fileName=createGBStackFileNameForOutput(obj);
-                    
-                    
             end
         end
         %% Methods
@@ -99,6 +94,16 @@ classdef TVDownscaledStack<handle
                 l{ii}=obj(ii).name;
             end
         end
+        
+        function updateFilePathMetaData(obj, TVMosaicInfoObj)
+            obj.experimentName=TVMosaicInfoObj.experimentName;
+            obj.sampleName=TVMosaicInfoObj.sampleName;
+            obj.baseDirectory=TVMosaicInfoObj.baseDirectory;
+            %% Get base directory for stacks and fileName for this stack
+            obj.gbStackDirectory=getGBStackPath(TVMosaicInfoObj);
+            obj.fileName=createGBStackFileNameForOutput(obj);
+        end
+
         %% Getters 
         function g=get.downscaledStackObjectCollectionPath(obj)
              g=fullfile(obj.gbStackDirectory, [obj.sampleName '_GBStackInfo.mat']);
@@ -242,3 +247,4 @@ end
 
 fprintf('\tDone\n')
 end
+

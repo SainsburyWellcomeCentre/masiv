@@ -130,8 +130,6 @@ function updateImage(obj, idx)
    obj.moveZVToTopOfCacheStack(idx);
 end
 
-
-
 %% Boring utility functions
 
 function regionSpec=getRegionSpecFromParent(parentViewerDisplay)
@@ -147,6 +145,9 @@ function stitchedFileFullPath=filePathToLoadRegionFrom(parentViewerDisplay)
    
    stitchedFileName=stitchedFileNameList{indexInFileNameList};
    stitchedFileFullPath=fullfile(baseDir, stitchedFileName);
+   if ~exist(stitchedFileFullPath, 'file')
+       error('ZoomedViewManager: The specified slice file (%s) could not be found.', stitchedFileFullPath)
+   end
 end
 
 
