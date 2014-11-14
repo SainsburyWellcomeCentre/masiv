@@ -42,7 +42,7 @@ classdef TVStitchedMosaicInfo
                 a=load(pathToDSObjsFile);
                 ds=a.stacks;
                 for ii=1:numel(ds)
-                    ds.updateFilePathMetaData(obj)
+                    ds(ii).updateFilePathMetaData(obj)
                 end
             end
         end
