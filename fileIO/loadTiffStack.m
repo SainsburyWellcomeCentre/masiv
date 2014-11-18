@@ -13,10 +13,19 @@ if numel(info)>1 %IFD before each page
         end
     end
     I=zeros(info(1).Height, info(1).Width, numel(idx), selectMATLABDataType(info(1)));
+    fp=fopen(fileName, 'r');
+    
     for ii=1:numel(idx)
-        I(:,:,ii)=imread(fileName, idx(ii), 'Info', info);
+        fseek(fp, info(ii).StripOffsets, 'bof');
+        I(:,:,ii)=fread(fp,[info(ii).Width info(ii).Height], ['* ' selectMATLABDataType(info(ii))])';
         fprintf('Loading slice %u of %u...\n', ii,numel(idx))
-    end        
+    end
+    [~,differentlyEndian]=getEndianness(info(1));
+    if differentlyEndian
+        fprintf('Swapping endiannes...')
+        I=swapbytes(I);
+    end
+    fclose(fp);
 else %1 IFD at start
     numFramesStr = regexp(info.ImageDescription, 'images=(\d*)', 'tokens');
     if ~isempty(numFramesStr) %It's in imageJ large stack
@@ -32,10 +41,16 @@ else %1 IFD at start
             end
         end
         %%
-        I=zeros(zeros(info.Height, info.Width, numel(idx), selectMATLABDataType(info(1))));
+        I=zeros(info.Height, info.Width, numel(idx), selectMATLABDataType(info(1)));
+        
         for ii = 1:numel(idx)
-            I(:,:,ii) = fread(fp, [info.Width info.Height], selectMATLABDataType, 0, getEndianness(info))';
+            I(:,:,ii) = fread(fp, [info.Width info.Height], ['* ' selectMATLABDataType(info(1))])';
              fprintf('Loading slice %u of %u...\n', ii,numel(idx))
+        end
+        [~,differentlyEndian]=getEndianness(info(1));
+        if differentlyEndian
+            fprintf('Swapping endiannes...')
+            I=swapbytes(I);
         end
         fclose(fp);
 
@@ -59,12 +74,20 @@ switch info.BitDepth
 end
 end
 
-function e= getEndianness(info)
+function [e, differentFlag]= getEndianness(info)
+[~,~,systemEndianness]=computer;
+differentFlag=0;
 switch info.ByteOrder
     case 'little-endian'
         e='ieee-le';
+        if strcmp(systemEndianness, 'B')
+            differentFlag=1;
+        end
     case 'big-endian'
         e='ieee-be';
+        if strcmp(systemEndianness, 'L')
+            differentFlag=1;
+        end
     otherwise
         error('Unknown endianness')
 end
