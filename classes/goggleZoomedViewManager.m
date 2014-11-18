@@ -18,7 +18,16 @@ classdef goggleZoomedViewManager<handle
             v=findMatchingView(obj);
             if isempty(v)
                 goggleDebugTimingInfo(2, 'GZVM.updateView: Creating new view...', toc,'s')
-                obj.createNewView;
+                try
+                    obj.createNewView;
+                catch err
+                    if strcmp(err.identifier, 'ZVM:couldNotFindFile')
+                        goggleDebugTimingInfo(0, strrep(err.message,  'ZoomedViewManager: ', 'WARNING IN GZVM.updateView: '), toc,'s')
+                        obj.hImg.Visible='off';
+                    else
+                        rethrow(err)
+                    end
+                end
             else
                 goggleDebugTimingInfo(2, ['GZVM.updateView: Matching views found: ' sprintf('%u, ', v)],toc,'s')
                 goggleDebugTimingInfo(2, sprintf('GZVM.updateView: View #%u will be used. Updating image...', v(1)),toc,'s')
@@ -146,7 +155,7 @@ function stitchedFileFullPath=filePathToLoadRegionFrom(parentViewerDisplay)
    stitchedFileName=stitchedFileNameList{indexInFileNameList};
    stitchedFileFullPath=fullfile(baseDir, stitchedFileName);
    if ~exist(stitchedFileFullPath, 'file')
-       error('ZoomedViewManager: The specified slice file (%s) could not be found.', stitchedFileFullPath)
+       error('ZVM:couldNotFindFile', 'ZoomedViewManager: The specified slice file (%s) could not be found.', stitchedFileFullPath)
    end
 end
 
