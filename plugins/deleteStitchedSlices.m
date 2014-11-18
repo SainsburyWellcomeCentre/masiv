@@ -24,23 +24,11 @@ methods
             if isempty(channels)||isempty(slices)
                 return
             end
-            filesToDelete={};
-            for ii=1:numel(channels)
-                allFilesThisChannel=mosaicInfo.stitchedImagePaths.(channels{ii});
-                filesToDeleteThisChannel=allFilesThisChannel(slices);
-                filesToDelete=[filesToDelete filesToDeleteThisChannel]; %#ok<AGROW>
-            end
+            filesToDelete=getFilesToDelete(mosaicInfo, channels, slices);
             goAhead=showFileListToDelete(filesToDelete);
             if goAhead
-                goggleDebugTimingInfo(0, 'Deleting Files:')
-                swb=SuperWaitBar(numel(filesToDelete), 'Deleting Files');
-                for ii=1:numel(filesToDelete)
-                    fullFilePath=fullfile(mosaicInfo.baseDirectory, filesToDelete{ii});
-                    delete(fullFilePath)
-                    goggleDebugTimingInfo(1, fullFilePath)
-                    swb.progress;
-                end
-                delete(swb)
+                doDelete(mosaicInfo, filesToDelete)
+                
             else
                 goggleDebugTimingInfo(0, 'File Deletion Cancelled')
             end
@@ -282,4 +270,30 @@ function goAhead=showFileListToDelete(filesToDelete)
             uiresume(gcbf)
         end 
     end
+end
+function filesToDelete= getFilesToDelete(mosaicInfo, channels, slices)
+
+filesToDelete={};
+for ii=1:numel(channels)
+    allFilesThisChannel=mosaicInfo.stitchedImagePaths.(channels{ii});
+    filesToDeleteThisChannel=allFilesThisChannel(slices);
+    
+    doesTheFileActuallyExist=logical(cellfun(@(x) exist(x, 'file'), fullfile(mosaicInfo.baseDirectory, filesToDeleteThisChannel)));
+    
+    existingFilesToDeleteThisChannel=filesToDeleteThisChannel(doesTheFileActuallyExist);
+    filesToDelete=[filesToDelete; existingFilesToDeleteThisChannel]; %#ok<AGROW>
+end
+filesToDelete=sort(filesToDelete);
+end
+
+function doDelete(mosaicInfo, filesToDelete)
+goggleDebugTimingInfo(0, 'Deleting Files:')
+                swb=SuperWaitBar(numel(filesToDelete), 'Deleting Files');
+                for ii=1:numel(filesToDelete)
+                    fullFilePath=fullfile(mosaicInfo.baseDirectory, filesToDelete{ii});
+                    delete(fullFilePath)
+                    goggleDebugTimingInfo(1, fullFilePath)
+                    swb.progress;
+                end
+                delete(swb)
 end
