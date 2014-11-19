@@ -1,272 +1,271 @@
 classdef goggleViewer<handle
-properties
-
-%% Preferences
-panelBkgdColor=[0.5 0.5 0.5];
-mainFigurePosition=[2561 196 1680 1028];
-
-panIncrement=[10 120]; % shift and non shift; fraction to move view by
-scrollIncrement=[10 1]; %shift and non shift; number of images to move view by
-zoomRate=1.5;
-mainFont='Titillium'; %'DejaVu Sans';
-keyboardUpdatePeriod=0.02; %20ms keyboard polling
-panModeInvert=0;
-%% Handles to visible objects
-hFig
-hImgAx
-hAxContrastHist
-hAxContrastMin
-hAxContrastMax
-hAxContrastAuto
-hInfoBox
-
-%% Data
-mosaicInfo
-overviewDSS
-mainDisplay
-
-end
-methods
-    %% Constructor
-    function obj=goggleViewer(mosaicInfoIn, idx)
-        obj=obj@handle;
-        %% Get mosaic info if none provided
-        if nargin<1 ||isempty(mosaicInfoIn)
-            fp=uigetdir('/alzymr/buffer', 'Please select base directory of the stitched mosaic');
-            if isempty(fp)
-                return
+    properties(Access=protected)
+        
+        %% Preferences
+        panelBkgdColor=[0.5 0.5 0.5];
+        mainFigurePosition=[2561 196 1680 1028];
+        
+        panIncrement=[10 120]; % shift and non shift; fraction to move view by
+        scrollIncrement=[10 1]; %shift and non shift; number of images to move view by
+        zoomRate=1.5;
+        mainFont='Titillium'; %'DejaVu Sans';
+        keyboardUpdatePeriod=0.02; %20ms keyboard polling
+        panModeInvert=0;
+        
+        %% Internal tracking
+        numScrolls=0
+        panxInt=0
+        panyInt=0
+    end
+    properties
+        %% Handles to visible objects
+        hFig
+        hImgAx
+        hAxContrastHist
+        hAxContrastMin
+        hAxContrastMax
+        hAxContrastAuto
+        hInfoBox
+        
+        %% Data
+        mosaicInfo
+        overviewDSS
+        mainDisplay
+        
+    end
+    methods
+        %% Constructor
+        function obj=goggleViewer(mosaicInfoIn, idx)
+            obj=obj@handle;
+            %% Get mosaic info if none provided
+            if nargin<1 ||isempty(mosaicInfoIn)
+                fp=uigetdir('/alzymr/buffer', 'Please select base directory of the stitched mosaic');
+                if isempty(fp)
+                    return
+                end
+                obj.mosaicInfo=TVStitchedMosaicInfo(fp);
+            else
+                obj.mosaicInfo=mosaicInfoIn;
             end
-            obj.mosaicInfo=TVStitchedMosaicInfo(fp);
-        else
-            obj.mosaicInfo=mosaicInfoIn;
-        end
-        
-        %% Main UI object definitions
-        obj.hFig=figure(...
-            'Name', sprintf('GoggleBox: %s', obj.mosaicInfo.experimentName), ...
-            'NumberTItle', 'off', ...
-            'MenuBar', 'none', ...
-            'Position', obj.mainFigurePosition, ...
-            'Color', [0.2 0.2 0.2], ...
-            'ColorMap', gray(256), ...
-            'KeyPressFcn', {@hFigMain_KeyPress, obj}, ...
-            'WindowButtonMotionFcn', {@mouseMove, obj}, ...
-            'WindowScrollWheelFcn', {@hFigMain_ScrollWheel, obj}, ...
-            'CloseRequestFcn', {@closeRequest, obj}, ...
-            'BusyAction', 'cancel', 'Visible', 'off');
-        obj.hImgAx=axes(...
-            'Box', 'on', ...
-            'YDir', 'reverse', ...
-            'Color', [0 0 0], ...
-            'XTick', [], 'YTick', [], ...
-            'Position', [0.02 0.02 0.8 0.96]);
-        
-        %% Contrast adjustment object definitions
-        obj.hAxContrastHist=axes(...
-            'Box', 'on', ...
-            'Color', obj.panelBkgdColor, ...
-            'XTick', [], 'YTick', [], ...
-            'Position', [0.83 0.87 0.16 0.11], ...
-            'Color', [0.1 0.1 0.1]);
-        obj.hAxContrastMin=uicontrol(...
-            'Style', 'edit', ...
-            'Parent', obj.hFig, ...
-            'Units', 'normalized', ...
-            'Position', [0.83 0.84 0.04 0.02], ...
-            'BackgroundColor', [0.1 0.1 0.1], ...
-            'ForegroundColor', [0.8 0.8 0.8], ...
-            'String', '0', ...
-            'FontSize', 12, ...
-            'Callback', {@adjustContrast, obj});
-        obj.hAxContrastMax=uicontrol(...
-            'Style', 'edit', ...
-            'Parent', obj.hFig, ...
-            'Units', 'normalized', ...
-            'Position', [0.875 0.84 0.04 0.02], ...
-            'BackgroundColor', [0.1 0.1 0.1], ...
-            'ForegroundColor', [0.8 0.8 0.8], ...
-            'String', '5000', ...
-            'FontSize', 12,...
-            'Callback', {@adjustContrast, obj});
-        obj.hAxContrastAuto=uicontrol(...
-            'Style', 'pushbutton',...
-            'Parent', obj.hFig, ...
-            'Units', 'normalized', ...
-            'Position', [0.92 0.84 0.04 0.02], ...
-            'BackgroundColor', [0.1 0.1 0.1], ...
-            'ForegroundColor', [0.8 0.8 0.8], ...
-            'String', 'Auto', ...
-            'FontSize', 12, ...
-            'Callback', @(~,~) msgbox('Not Implemented (yet)')); 
-        
-        %% Load up and display
-        if nargin<2||isempty(idx)
-            obj.overviewDSS=selectDownscaledStack(obj.mosaicInfo.downscaledStacks);
-            if isempty(obj.overviewDSS)
-                close(obj.hFig)
-                return
+            
+            %% Main UI object definitions
+            obj.hFig=figure(...
+                'Name', sprintf('GoggleBox: %s', obj.mosaicInfo.experimentName), ...
+                'NumberTItle', 'off', ...
+                'MenuBar', 'none', ...
+                'Position', obj.mainFigurePosition, ...
+                'Color', [0.2 0.2 0.2], ...
+                'ColorMap', gray(256), ...
+                'KeyPressFcn', {@hFigMain_KeyPress, obj}, ...
+                'WindowButtonMotionFcn', {@mouseMove, obj}, ...
+                'WindowScrollWheelFcn', {@hFigMain_ScrollWheel, obj}, ...
+                'CloseRequestFcn', {@closeRequest, obj}, ...
+                'BusyAction', 'cancel', 'Visible', 'off');
+            obj.hImgAx=axes(...
+                'Box', 'on', ...
+                'YDir', 'reverse', ...
+                'Color', [0 0 0], ...
+                'XTick', [], 'YTick', [], ...
+                'Position', [0.02 0.02 0.8 0.96]);
+            
+            %% Contrast adjustment object definitions
+            obj.hAxContrastHist=axes(...
+                'Box', 'on', ...
+                'Color', obj.panelBkgdColor, ...
+                'XTick', [], 'YTick', [], ...
+                'Position', [0.83 0.87 0.16 0.11], ...
+                'Color', [0.1 0.1 0.1]);
+            obj.hAxContrastMin=uicontrol(...
+                'Style', 'edit', ...
+                'Parent', obj.hFig, ...
+                'Units', 'normalized', ...
+                'Position', [0.83 0.84 0.04 0.02], ...
+                'BackgroundColor', [0.1 0.1 0.1], ...
+                'ForegroundColor', [0.8 0.8 0.8], ...
+                'String', '0', ...
+                'FontSize', 12, ...
+                'Callback', {@adjustContrast, obj});
+            obj.hAxContrastMax=uicontrol(...
+                'Style', 'edit', ...
+                'Parent', obj.hFig, ...
+                'Units', 'normalized', ...
+                'Position', [0.875 0.84 0.04 0.02], ...
+                'BackgroundColor', [0.1 0.1 0.1], ...
+                'ForegroundColor', [0.8 0.8 0.8], ...
+                'String', '5000', ...
+                'FontSize', 12,...
+                'Callback', {@adjustContrast, obj});
+            obj.hAxContrastAuto=uicontrol(...
+                'Style', 'pushbutton',...
+                'Parent', obj.hFig, ...
+                'Units', 'normalized', ...
+                'Position', [0.92 0.84 0.04 0.02], ...
+                'BackgroundColor', [0.1 0.1 0.1], ...
+                'ForegroundColor', [0.8 0.8 0.8], ...
+                'String', 'Auto', ...
+                'FontSize', 12, ...
+                'Callback', @(~,~) msgbox('Not Implemented (yet)'));
+            
+            %% Load up and display
+            if nargin<2||isempty(idx)
+                obj.overviewDSS=selectDownscaledStack(obj.mosaicInfo.downscaledStacks);
+                if isempty(obj.overviewDSS)
+                    close(obj.hFig)
+                    return
+                end
+            else
+                obj.overviewDSS=obj.mosaicInfo.downscaledStacks(idx);
             end
-        else
-           obj.overviewDSS=obj.mosaicInfo.downscaledStacks(idx);
+            startDebugOutput;
+            obj.mainDisplay=goggleViewerDisplay(obj.overviewDSS, obj.hImgAx); %Default to the first available
+            obj.mainDisplay.drawNewZ();
+            adjustContrast([], [], obj);
+            axis(obj.hImgAx, 'equal')
+            
+            %% Info box declaration
+            obj.hInfoBox=goggleInfoPanel(obj.hFig, [0.83 0.5 0.16 0.31], obj.mainDisplay);
+            
+            %% Set fonts to something nice
+            set(findall(gcf, '-property','FontName'), 'FontName', obj.mainFont)
+            
+            %% Start parallel pool
+            gcp();
+            
+            %% Show the figure, we're done here!
+            obj.hFig.Visible='on';
         end
-        startDebugOutput;
-        obj.mainDisplay=goggleViewerDisplay(obj.overviewDSS, obj.hImgAx); %Default to the first available
-        obj.mainDisplay.drawNewZ();
-        adjustContrast([], [], obj);
-        axis(obj.hImgAx, 'equal')
         
-        %% Info box declaration
-        obj.hInfoBox=goggleInfoPanel(obj.hFig, [0.83 0.5 0.16 0.31], obj.mainDisplay);
-        
-        %% Set fonts to something nice
-        set(findall(gcf, '-property','FontName'), 'FontName', obj.mainFont)
-        
-        %% Start parallel pool
-        gcp();
-        
-        obj.hFig.Visible='on';
-    end
-   
-    
-  
-    %% ---Scrolling
-    function formatKeyScrollAndAddToQueue(obj, eventdata)
-        goggleDebugTimingInfo(0, 'GV: KeyScroll event fired',toc, 's')
-        mods=eventdata.Modifier;
-        if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
-            p=obj.scrollIncrement(1);
-        else
-            p=obj.scrollIncrement(2);
-        end
-        switch eventdata.Key
-            case 'leftarrow'
-                obj.keyScrollQueue(-p)
-            case 'rightarrow'
-                obj.keyScrollQueue(+p);
-        end
     end
     
-    function keyScrollQueue(obj, dir)
-        persistent numPresses
-        if isempty(numPresses)
-            numPresses=0;
+    methods(Access=protected)
+        
+        %% ---Scrolling
+        function formatKeyScrollAndAddToQueue(obj, eventdata)
+            goggleDebugTimingInfo(0, 'GV: KeyScroll event fired',toc, 's')
+            mods=eventdata.Modifier;
+            if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
+                p=obj.scrollIncrement(1);
+            else
+                p=obj.scrollIncrement(2);
+            end
+            switch eventdata.Key
+                case 'leftarrow'
+                    obj.keyScrollQueue(-p)
+                case 'rightarrow'
+                    obj.keyScrollQueue(+p);
+            end
         end
         
-        numPresses=numPresses+dir;
-        
-        pause(obj.keyboardUpdatePeriod)
-        if numPresses~=0
-            p=numPresses;
-            numPresses=0;
-            obj.executeScroll(p)
-        end
-    end
-    
-    function executeScroll(obj, p)
-        stdout=obj.mainDisplay.seekZ(p);
-        if stdout
-           obj.changeAxes;
-        else
-            goggleDebugTimingInfo(0, 'GV: Scroll did not cause an axis change',toc, 's')
-        end
-    end
-    
-    %% ---Panning
-    function formatKeyPanAndAddToQueue(obj, eventdata)
-        goggleDebugTimingInfo(0, 'GV: KeyPan event fired',toc, 's')
-        mods=eventdata.Modifier;
-        if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
-            p=obj.panIncrement(1);
-        else
-            p=obj.panIncrement(2);
-        end
-        switch eventdata.Key
-            case 'w'
-                obj.keyPanQueue(0, +range(ylim(obj.hImgAx))/p)
-            case 'a'
-                obj.keyPanQueue(+range(xlim(obj.hImgAx))/p, 0)
-            case 's'
-               obj.keyPanQueue(0, -range(ylim(obj.hImgAx))/p)
-            case 'd'
-                obj.keyPanQueue(-range(xlim(obj.hImgAx))/p, 0)
-        end
-    end
-    
-    function keyPanQueue(obj, xChange, yChange)
-        persistent xInt yInt
-        if isempty(xInt)
-            xInt=0;
-        end
-        if isempty(yInt)
-            yInt=0;
+        function keyScrollQueue(obj, dir)
+            
+            obj.numScrolls=obj.numScrolls+dir;
+            
+            pause(obj.keyboardUpdatePeriod)
+            if obj.numScrolls~=0
+                p=obj.numScrolls;
+                obj.numScrolls=0;
+                obj.executeScroll(p)
+            end
         end
         
-        xInt=xInt+xChange;
-        yInt=yInt+yChange;
-        pause(obj.keyboardUpdatePeriod)
-        
-        if xInt~=0 || yInt~=0
-            xOut=xInt;
-            yOut=yInt;
-            xInt=0;
-            yInt=0;
-            obj.executePan(xOut,yOut)
-        end
-    end
-    
-    function executePan(obj, xMove,yMove)
-        if obj.panModeInvert
-            xMove=-xMove;
-            yMove=-yMove;
+        function executeScroll(obj, p)
+            stdout=obj.mainDisplay.seekZ(p);
+            if stdout
+                obj.changeAxes;
+            else
+                goggleDebugTimingInfo(0, 'GV: Scroll did not cause an axis change',toc, 's')
+            end
         end
         
-        [xMove, yMove]=obj.checkPanWithinLimits(xMove, yMove);
-        movedFlag=0;
+        %% ---Panning
+        function formatKeyPanAndAddToQueue(obj, eventdata)
+            goggleDebugTimingInfo(0, 'GV: KeyPan event fired',toc, 's')
+            mods=eventdata.Modifier;
+            if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
+                p=obj.panIncrement(1);
+            else
+                p=obj.panIncrement(2);
+            end
+            switch eventdata.Key
+                case 'w'
+                    obj.keyPanQueue(0, +range(ylim(obj.hImgAx))/p)
+                case 'a'
+                    obj.keyPanQueue(+range(xlim(obj.hImgAx))/p, 0)
+                case 's'
+                    obj.keyPanQueue(0, -range(ylim(obj.hImgAx))/p)
+                case 'd'
+                    obj.keyPanQueue(-range(xlim(obj.hImgAx))/p, 0)
+            end
+        end
         
-        if xMove~=0
-            xlim(obj.hImgAx,xlim(obj.hImgAx)+xMove);
-            movedFlag=1;
-        end
-        if yMove~=0
-            ylim(obj.hImgAx,ylim(obj.hImgAx)+yMove);
-            movedFlag=1;
+        function keyPanQueue(obj, xChange, yChange)
+           
+            obj.panxInt=obj.panxInt+xChange;
+            obj.panyInt=obj.panyInt+yChange;
+            pause(obj.keyboardUpdatePeriod)
+            
+            if obj.panxInt~=0 || obj.panyInt~=0
+                xOut=obj.panxInt;
+                yOut=obj.panyInt;
+                obj.panxInt=0;
+                obj.panyInt=0;
+                obj.executePan(xOut,yOut)
+            end
         end
         
-        if movedFlag
-            obj.changeAxes;
-        else
-            goggleDebugTimingInfo(0, 'GV: Pan did not cause an axis change',toc, 's')
+        function executePan(obj, xMove,yMove)
+            if obj.panModeInvert
+                xMove=-xMove;
+                yMove=-yMove;
+            end
+            
+            [xMove, yMove]=obj.checkPanWithinLimits(xMove, yMove);
+            movedFlag=0;
+            
+            if xMove~=0
+                xlim(obj.hImgAx,xlim(obj.hImgAx)+xMove);
+                movedFlag=1;
+            end
+            if yMove~=0
+                ylim(obj.hImgAx,ylim(obj.hImgAx)+yMove);
+                movedFlag=1;
+            end
+            
+            if movedFlag
+                obj.changeAxes;
+            else
+                goggleDebugTimingInfo(0, 'GV: Pan did not cause an axis change',toc, 's')
+            end
         end
-    end
-    
-    function [xMove,yMove]=checkPanWithinLimits(obj, xMove,yMove)
-        xl=xlim(obj.hImgAx);
-        yl=ylim(obj.hImgAx);
         
-        if xl(1) + xMove < 0
-            xMove = -xl(1);
+        function [xMove,yMove]=checkPanWithinLimits(obj, xMove,yMove)
+            xl=xlim(obj.hImgAx);
+            yl=ylim(obj.hImgAx);
+            
+            if xl(1) + xMove < 0
+                xMove = -xl(1);
+            end
+            if yl(1) + yMove < 0
+                yMove = -yl(1);
+            end
+            if xl(2) + xMove > obj.mainDisplay.imageXLim(2)
+                xMove=obj.mainDisplay.imageXLim(2) - xl(2);
+            end
+            if yl(2) + yMove > obj.mainDisplay.imageYLim(2)
+                yMove=obj.mainDisplay.imageYLim(2) - yl(2);
+            end
         end
-        if yl(1) + yMove < 0
-            yMove = -yl(1);
+        
+        %% ---Update axes
+        function changeAxes(obj)
+            goggleDebugTimingInfo(0, 'GV: Axis Change Complete',toc, 's')
+            goggleDebugTimingInfo(0, 'GV: Calling mainDisplay updateZoomedView...',toc, 's')
+            obj.mainDisplay.updateZoomedView
+            goggleDebugTimingInfo(0, 'GV: mainDisplay updateZoomedView complete',toc, 's')
+            obj.hInfoBox.updateDisplay
         end
-        if xl(2) + xMove > obj.mainDisplay.imageXLim(2)
-            xMove=obj.mainDisplay.imageXLim(2) - xl(2);
-        end
-        if yl(2) + yMove > obj.mainDisplay.imageYLim(2)
-            yMove=obj.mainDisplay.imageYLim(2) - yl(2);
-        end
-    end
-    
-    %% ---Update axes
-    function changeAxes(obj)
-        goggleDebugTimingInfo(0, 'GV: Axis Change Complete',toc, 's')
-        goggleDebugTimingInfo(0, 'GV: Calling mainDisplay updateZoomedView...',toc, 's')
-        obj.mainDisplay.updateZoomedView
-        goggleDebugTimingInfo(0, 'GV: mainDisplay updateZoomedView complete',toc, 's')
-        obj.hInfoBox.updateDisplay
-    end
-    
-    
+        
+        
     end
 end
 
