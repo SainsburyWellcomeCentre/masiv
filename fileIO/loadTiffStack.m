@@ -2,6 +2,7 @@ function I=loadTiffStack(fileName, idx)
 % Loads a multipage tiff stack. Can load stacks with IFDs preceeding each
 % page, or one IFD at the start (imageJ convention for large files);
 % mode selection is automatic
+
 info=imfinfo(fileName);
 
 if numel(info)>1 %IFD before each page
@@ -12,20 +13,14 @@ if numel(info)>1 %IFD before each page
             error('Index specified out of range in the file')
         end
     end
-    I=zeros(info(1).Height, info(1).Width, numel(idx), selectMATLABDataType(info(1)));
-    fp=fopen(fileName, 'r');
     
+    I=zeros(info(1).Height, info(1).Width, numel(idx), selectMATLABDataType(info(1)));
+   
     for ii=1:numel(idx)
-        fseek(fp, info(ii).StripOffsets, 'bof');
-        I(:,:,ii)=fread(fp,[info(ii).Width info(ii).Height], ['* ' selectMATLABDataType(info(ii))])';
+        I(:,:,ii)=imread(fileName, 'Index', idx(ii), 'Info', info);
         fprintf('Loading slice %u of %u...\n', ii,numel(idx))
     end
-    [~,differentlyEndian]=getEndianness(info(1));
-    if differentlyEndian
-        fprintf('Swapping endiannes...')
-        I=swapbytes(I);
-    end
-    fclose(fp);
+   
 else %1 IFD at start
     numFramesStr = regexp(info.ImageDescription, 'images=(\d*)', 'tokens');
     if ~isempty(numFramesStr) %It's in imageJ large stack
