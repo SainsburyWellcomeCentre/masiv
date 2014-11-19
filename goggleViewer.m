@@ -114,9 +114,9 @@ classdef goggleViewer<handle
                 'FontSize', 12, ...
                 'Callback', @(~,~) msgbox('Not Implemented (yet)'));
             
-            %% Load up and display
+            %% Get DSS if not specified. Load up and display
             if nargin<2||isempty(idx)
-                obj.overviewDSS=selectDownscaledStack(obj.mosaicInfo.downscaledStacks);
+                obj.overviewDSS=selectDownscaledStack(obj.mosaicInfo);
                 if isempty(obj.overviewDSS)
                     close(obj.hFig)
                     return

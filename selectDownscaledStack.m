@@ -1,4 +1,4 @@
-function selectedDSS = selectDownscaledStack(dss)
+function selectedDSS = selectDownscaledStack(mosaicInfo)
 %SELECTDOWNSCALEDSTACK Displays information about downscaled stacks to the
 %user, in order to get them to choose one!
 
@@ -6,17 +6,27 @@ function selectedDSS = selectDownscaledStack(dss)
 
 fontSz=12;
 mainFont='Titillium';
+%%
 
-if ~isa(dss, 'TVDownscaledStack')
-    error('Input must be an array of TVDownscaledStack')
+if ~isa(mosaicInfo, 'TVStitchedMosaicInfo')
+    error('Input must a TVStitchedMosaicInfo object')
 end
+
+dss=mosaicInfo.downscaledStacks;
 
 if numel(dss)==1
     selectedDSS=dss;
 else
+    %% UI Declarations
     hFig=dialog(...
         'Name', sprintf('Select pregenerated overview stack for %s',dss(1).experimentName), ...
         'ButtonDownFcn', '');
+    % Ensure it's wide enough
+    pos=hFig.Position;
+    if pos(3)<800
+        pos(3)=800;
+        hFig.Position=pos;
+    end
     
     availableChannels=unique({dss.channel});
     hStackInfoBox=uicontrol(...
@@ -55,7 +65,24 @@ else
         'Style', 'pushbutton', ...
         'String', 'Cancel', ...
         'Callback', @cancelButtonClick); %#ok<NASGU>
-    
+    hNewButton=uicontrol(...
+        'Parent', hFig, ...
+        'Units', 'normalized', ...
+        'Position', [0.02 0.02 0.18 0.08], ...
+        'FontName', mainFont, ...
+        'FontSize', fontSz, ...
+        'Style', 'pushbutton', ...
+        'String', 'New', ...
+        'Callback', @newButtonClick);%#ok<NASGU>
+    hDeleteButton=uicontrol(...
+        'Parent', hFig, ...
+        'Units', 'normalized', ...
+        'Position', [0.22 0.02 0.18 0.08], ...
+        'FontName', mainFont, ...
+        'FontSize', fontSz, ...
+        'Style', 'pushbutton', ...
+        'String', 'Delete');%#ok<NASGU>
+    %% Main
     selectedChannelChanged();
     selectedIdx=[];
     selectedStackChanged();
@@ -74,16 +101,16 @@ end
         hStackInfoBox.Value=1;
         hStackInfoBox.String='';
         for ii=stacksWithMatchingChannelIdx
-            idx=dss(ii).idx-1;
+            idx=dss(ii).idx;
             step=unique(diff(idx));
             if numel(step)==1
                 if step==1
-                    thisStackDisplayString=sprintf('Slices %u-%u, every slice', idx(1), idx(end));
+                    thisStackDisplayString=sprintf('Slices %u-%u (Layers %u-%u), every slice', idx(1), idx(end), idx(1)-1, idx(end)-1);
                 else
-                    thisStackDisplayString=sprintf('Slices %u-%u, every %u slices', idx(1), idx(end), step);
+                    thisStackDisplayString=sprintf('Slices %u-%u (Layers %u-%u), every %u slices', idx(1), idx(end), idx(1)-1, idx(end)-1, step);
                 end
             else
-                thisStackDisplayString=sprintf('Unevenly sampled stack from slice %u to %u', idx(1), idx(end));
+                thisStackDisplayString=sprintf('Unevenly sampled stack from slice %u to %u (layers % to %u)', idx(1), idx(end), idx(1)-1, idx(end)-1);
             end
             if dss(ii).xyds==1
                 thisStackDisplayString=[thisStackDisplayString '. No downsampling'];
@@ -101,6 +128,15 @@ end
     function cancelButtonClick(~,~)
         selectedIdx=[];
         uiresume(gcbf)
+    end
+
+    function newButtonClick(~, ~)
+        a=TVDownscaledStack(mosaicInfo);
+        a.generateStack;
+        a.writeStackToDisk;
+        dss=mosaicInfo.downscaledStacks;
+        hChannels.Value=1;       
+        selectedChannelChanged();
     end
 
    
