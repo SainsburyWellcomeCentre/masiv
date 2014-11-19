@@ -296,4 +296,5 @@ goggleDebugTimingInfo(0, 'Deleting Files:')
                     swb.progress;
                 end
                 delete(swb)
+                clear swb
 end
