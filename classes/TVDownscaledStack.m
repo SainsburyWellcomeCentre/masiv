@@ -47,21 +47,29 @@ classdef TVDownscaledStack<handle
     
     methods
         %% Constructor
-        function obj=TVDownscaledStack(varargin)
+        function obj=TVDownscaledStack(mosaicInfo, channel, idx, xyds)
             % There is currently one way to create a downscaledStack object:
             % 1. pass a stitchedMosaicInfo object, a channel, index and downscaling factor
-            switch class(varargin{1})
-                case 'TVStitchedMosaicInfo'
-                    [obj.mosaicInfo, obj.channel, obj.idx]=varargin{1:3};
-                    if nargin>3
-                        obj.xyds=varargin{4};
-                    else
-                        obj.xyds=1;
-                    end
-                    %% Copy some metadata stright from the mosaicInfo object; archive it just in case it's needed
-                   obj.updateFilePathMetaData(obj.mosaicInfo)
-
+            % 2. pass just the stitchedMosaicInfo object to generate a
+            % pop-up dialog
+            obj.mosaicInfo = mosaicInfo;
+            if nargin>1
+                obj.channel = channel;
+                obj.idx = idx;
+                if nargin>3
+                    obj.xyds=xyds;
+                else
+                    obj.xyds=1;
+                end
+            else
+                [obj.channel, obj.idx, obj.xyds]=getDSStackSpec(mosaicInfo);
+                if isempty(obj.channel);
+                    return
+                end
             end
+            %% Copy some metadata stright from the mosaicInfo object; archive it just in case it's needed
+            obj.updateFilePathMetaData(obj.mosaicInfo)
+            
         end
         %% Methods
         function generateStack(obj)
@@ -216,12 +224,14 @@ pths=fullfile(mosaicInfo.baseDirectory, mosaicInfo.stitchedImagePaths.(channel)(
 %% Get file information to determine crop
 info=cell(numel(idx), 1);
 
-fprintf('Getting file information...')
+swb=SuperWaitBar(numel(idx), 'Getting image info...');
 parfor ii=1:numel(idx)
     info{ii}=imfinfo(pths{ii});
+    swb.progress(); %#ok<PFBNS>
 end
+delete(swb);
+clear swb
 
-fprintf('Done\n')
 %%
 minWidth=min(cellfun(@(x) x.Width, info));
 minHeight=min(cellfun(@(x) x.Height, info));
@@ -230,21 +240,76 @@ outputImageWidth=ceil(minWidth/q.downSample);
 outputImageHeight=ceil(minHeight/q.downSample);
 
 
-fprintf('Preinitialising...')
 I=zeros(outputImageHeight, outputImageWidth, numel(idx), 'uint16');
-fprintf('Done\n')
 
-
-fprintf('Loading stack...\n')
-
-
+swb=SuperWaitBar(numel(idx), 'Generating stack...');
 parfor ii=1:numel(idx)
-    fName=fullfile(mosaicInfo.baseDirectory, mosaicInfo.stitchedImagePaths.(channel){idx(ii)});
-    I(:,:,ii)=openTiff(fName, [1 1 minWidth minHeight], q.downSample);
-    fprintf('\tSlice %u loaded\n', idx(ii))
+    fName=fullfile(mosaicInfo.baseDirectory, mosaicInfo.stitchedImagePaths.(channel){idx(ii)}); %#ok<PFBNS>
+    I(:,:,ii)=openTiff(fName, [1 1 minWidth minHeight], q.downSample); %#ok<PFBNS>
+    swb.progress(); %#ok<PFBNS>
+end
+delete(swb);
+clear swb
+
+end
+
+function [channel, idx, xyds]=getDSStackSpec(mosaicInfo)
+
+    %% Channel
+    availableChannels=fieldnames(mosaicInfo.stitchedImagePaths);
+    resp=menu('Select channel to create stack from:', availableChannels{:}, 'Cancel');
+    if ~(resp>numel(availableChannels))
+        channel=availableChannels{resp};
+    else
+        channel=[];
+        idx=[];
+        xyds=[];
+        return
+    end
+    
+    %% Index
+    passFlag=0;
+    
+    while passFlag~=1
+        
+        idxStr=inputdlg({'Start', 'Increment', 'End'},'Use slices:', 1, ...
+            {'1', '10', num2str(numel(mosaicInfo.stitchedImagePaths.(channel)))});
+        
+        if isempty(idxStr)
+            channel=[];
+            idx=[];
+            xyds=[];
+            return
+        else
+            startIdx=str2num(idxStr{1}); %#ok<ST2NM>
+            increment=str2num(idxStr{2}); %#ok<ST2NM>
+            endIdx=str2num(idxStr{3}); %#ok<ST2NM>
+        end
+        
+        passFlag=isscalar(startIdx)&&isnumeric(startIdx)&&...
+            isscalar(increment)&&isnumeric(increment) &&...
+            isscalar(endIdx)&&isnumeric(endIdx) &&...
+            endIdx>startIdx;
+    end
+    
+    idx=startIdx:increment:endIdx;
+    
+    %% xyds
+    passFlag=0;
+    while passFlag~=1
+        xydsStr=inputdlg('Scale factor to reduce image size in X and Y:','XY Downsampling Factor', 1,{'10'});
+        if isempty(xydsStr)
+            channel=[];
+            idx=[];
+            xyds=[];
+            return
+        else
+            xyds=str2num(xydsStr{1}); %#ok<ST2NM>
+        end
+        
+        passFlag=isscalar(xyds)&&isnumeric(xyds)&&round(xyds)==xyds;
+    end
 end
 
 
-fprintf('\tDone\n')
-end
 
