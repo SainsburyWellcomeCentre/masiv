@@ -6,13 +6,20 @@ properties
     
 end
 methods
-    function obj=deleteStitchedSlices(mosaicInfo, channels, slices)
+    function obj=deleteStitchedSlices(caller, ~, channels, slices)
         %% Parse input
-      
-        if nargin<3
+        if isa(caller, 'TVStitchedMosaicInfo')
+            mosaicInfo=caller;
+        elseif isa(caller, 'matlab.ui.container.Menu')
+            gvObj=caller.UserData;
+            mosaicInfo=gvObj.mosaicInfo;
+        else
+            error('Unrecognised parameter. First argument should either be a TVStitchedMosaicInfo object, or a plugins menu objext')
+        end
+        if nargin<4
             slices=[];
         end
-        if nargin<2
+        if nargin<3
             channels={};
         end
         if ~isempty(channels)&&ischar(channels)

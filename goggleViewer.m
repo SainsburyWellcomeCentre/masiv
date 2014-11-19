@@ -3,7 +3,7 @@ classdef goggleViewer<handle
         
         %% Preferences
         panelBkgdColor=[0.5 0.5 0.5];
-        mainFigurePosition=[2561 196 1680 1028];
+        mainFigurePosition=[2561 196 1680 1003];
         
         panIncrement=[10 120]; % shift and non shift; fraction to move view by
         scrollIncrement=[10 1]; %shift and non shift; number of images to move view by
@@ -33,8 +33,9 @@ classdef goggleViewer<handle
         mainDisplay
         
     end
-    methods
-        %% Constructor
+    
+   
+    methods % Constructor
         function obj=goggleViewer(mosaicInfoIn, idx)
             obj=obj@handle;
             %% Get mosaic info if none provided
@@ -67,6 +68,13 @@ classdef goggleViewer<handle
                 'Color', [0 0 0], ...
                 'XTick', [], 'YTick', [], ...
                 'Position', [0.02 0.02 0.8 0.96]);
+            
+            %% Menu Object declarations
+            fileMain=uimenu(obj.hFig, 'Label', 'Main');
+                    uimenu(fileMain, 'Label', 'Quit', 'Callback', {@closeRequest, obj})
+                    
+            filePlugins=uimenu(obj.hFig, 'Label', 'Plugins');
+                    addPlugins(filePlugins, obj)
             
             %% Contrast adjustment object definitions
             obj.hAxContrastHist=axes(...
@@ -365,4 +373,61 @@ function startDebugOutput
 tic
 clc
 end    
+%% Plugins menu creation
+function addPlugins(hMenuBase, obj)
+    pluginsDir=fullfile(fileparts(which('goggleViewer')), 'plugins');
     
+    if ~exist(pluginsDir, 'dir')
+        error('plugins directory not found')
+    end
+    
+    pluginsFound=dir(fullfile(pluginsDir, '*.m'));
+    
+    for ii=1:numel(pluginsFound)
+        if ~isAbstractPlugin(pluginsDir, pluginsFound(ii).name)
+            
+            [pluginDisplayString, pluginStartCallback]=getPluginInfo(pluginsFound(ii));
+                       
+            uimenu(hMenuBase, 'Label', pluginDisplayString, 'Callback', pluginStartCallback, 'UserData', obj)
+            
+        end
+    end
+end
+
+
+function abstractPluginFlag=isAbstractPlugin(pluginsDir, pluginsFile)
+f=fopen(fullfile(pluginsDir, pluginsFile));
+codeStr=fread(f, Inf, '*char')';
+abstractPluginFlag=strfind(lower(codeStr), 'abstract');
+if isempty(abstractPluginFlag)
+    abstractPluginFlag=0;
+else
+    abstractPluginFlag=1;
+end
+fclose(f);
+end
+
+function [pluginDisplayString, pluginStartCallback]=getPluginInfo(pluginFile)
+pluginDisplayString=eval(strrep(pluginFile.name, '.m', '.displayString;'));
+pluginStartCallback={eval(['@', strrep(pluginFile.name, '.m', '')])};
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
