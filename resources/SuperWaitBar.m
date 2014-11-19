@@ -56,9 +56,9 @@ end
     f = fopen(obj.fname, 'r');
     progress = fscanf(f, '%d');
     fclose(f);
-    x=round((length(progress)-1)/progress(1)*100);
+    x=(length(progress)-1)/progress(1);
     obj.x=x;
-    waitbar(x/obj.N, obj.h)
+    waitbar(x, obj.h)
             
 end
 

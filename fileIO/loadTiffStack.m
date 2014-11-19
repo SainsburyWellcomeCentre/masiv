@@ -1,7 +1,16 @@
-function I=loadTiffStack(fileName, idx)
+function I=loadTiffStack(fileName, idx, outputMode)
 % Loads a multipage tiff stack. Can load stacks with IFDs preceeding each
 % page, or one IFD at the start (imageJ convention for large files);
 % mode selection is automatic
+
+if nargin<3||isempty(outputMode)
+    outputMode='n';
+end
+if ~ischar(outputMode)||~any(strcmp(outputMode, {'n', 'c', 'g'}))
+    error('Invalid output mode. Choose ''c'' for command-line output; ''g'' for graphical output or ''n'' for none')
+else
+    outputMode=lower(outputMode);
+end
 
 info=imfinfo(fileName);
 
@@ -16,11 +25,25 @@ if numel(info)>1 %IFD before each page
     
     I=zeros(info(1).Height, info(1).Width, numel(idx), selectMATLABDataType(info(1)));
    
-    for ii=1:numel(idx)
-        I(:,:,ii)=imread(fileName, 'Index', idx(ii), 'Info', info);
-        fprintf('Loading slice %u of %u...\n', ii,numel(idx))
+    switch outputMode
+        case 'n'
+            parfor ii=1:numel(idx)
+                I(:,:,ii)=imread(fileName, 'Index', idx(ii), 'Info', info);
+            end
+        case 'c'
+            parfor ii=1:numel(idx)
+                I(:,:,ii)=imread(fileName, 'Index', idx(ii), 'Info', info);
+                fprintf('Loading slice %u of %u...\n', ii, numel(idx)) %#ok<PFBNS>
+            end
+        case 'g'
+            swb=SuperWaitBar(numel(idx), strrep(sprintf('Loading from %s ', fileName), '_', '\_'));
+            parfor ii=1:numel(idx)
+                I(:,:,ii)=imread(fileName, 'Index', idx(ii), 'Info', info);
+                swb.progress; %#ok<PFBNS>
+            end
+            delete(swb)
+            clear swb
     end
-   
 else %1 IFD at start
     numFramesStr = regexp(info.ImageDescription, 'images=(\d*)', 'tokens');
     if ~isempty(numFramesStr) %It's in imageJ large stack
@@ -37,26 +60,43 @@ else %1 IFD at start
         end
         %%
         I=zeros(info.Height, info.Width, numel(idx), selectMATLABDataType(info(1)));
-        
-        for ii = 1:numel(idx)
-            I(:,:,ii) = fread(fp, [info.Width info.Height], ['* ' selectMATLABDataType(info(1))])';
-             fprintf('Loading slice %u of %u...\n', ii,numel(idx))
+        switch outputMode
+            case 'n'
+                for ii = 1:numel(idx)
+                    I(:,:,ii) = fread(fp, [info.Width info.Height], ['* ' selectMATLABDataType(info(1))])';
+                end
+            case 'c'
+                for ii = 1:numel(idx)
+                    I(:,:,ii) = fread(fp, [info.Width info.Height], ['* ' selectMATLABDataType(info(1))])';
+                    fprintf('Loading slice %u of %u...\n', ii,numel(idx))
+                end
+            case 'g'
+                swb=SuperWaitBar(numel(idx), strrep(sprintf('Loading from %s ', fileName), '_', '\_'));
+                for ii = 1:numel(idx)
+                    I(:,:,ii) = fread(fp, [info.Width info.Height], ['* ' selectMATLABDataType(info(1))])';
+                    swb.progress;
+                end
+                delete(swb)
+                clear swb
         end
         [~,differentlyEndian]=getEndianness(info(1));
         if differentlyEndian
-            fprintf('Swapping endiannes...')
+            if strcmp(outputMode, 'c');fprintf('Swapping endiannes...'),end
             I=swapbytes(I);
         end
         fclose(fp);
 
     else %assume single slice image
-        fprintf('Image seems to only have one slice. Loading...')
+        if strcmp(outputMode, 'c')
+            fprintf('Image seems to only have one slice. Loading...')
+        end
         I=imread(fileName);
     end
-    fprintf('Done.\n')
+    if strcmp(outputMode, 'c');fprintf('Done.\n'),end
 end
 
 end
+
 
 function dt=selectMATLABDataType(info)
 switch info.BitDepth

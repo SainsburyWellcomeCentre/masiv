@@ -31,7 +31,7 @@ hFig=figure(...
     'WindowButtonMotionFcn', @mouseMove, ...
     'WindowScrollWheelFcn', @hFigMain_ScrollWheel, ...
     'CloseRequestFcn', 'delete(timerfind); delete(gcf)', ...
-    'BusyAction', 'cancel');
+    'BusyAction', 'cancel', 'Visible', 'off');
 hImgAx=axes(...
     'Box', 'on', ...
     'YDir', 'reverse', ...
@@ -79,11 +79,11 @@ hAxContrastAuto=uicontrol(...
 
 %% Load up and display
 if nargin<2||isempty(idx)
-overviewDSS=selectDownscaledStack(t.downscaledStacks);
-if isempty(overviewDSS)
-    close(hFig)
-    return
-end
+    overviewDSS=selectDownscaledStack(t.downscaledStacks);
+    if isempty(overviewDSS)
+        close(hFig)
+        return
+    end
 else
     overviewDSS=t.downscaledStacks(idx);
 end
@@ -100,9 +100,9 @@ hInfoBox=goggleInfoPanel(hFig, [0.83 0.5 0.16 0.31], mainDisplay);
 set(findall(gcf, '-property','FontName'), 'FontName', mainFont)
 
 %% Start parallel pool
-drawnow();
 gcp();
 
+hFig.Visible='on';
 %% Callbacks
     function hFigMain_KeyPress (~, eventdata, ~)
        

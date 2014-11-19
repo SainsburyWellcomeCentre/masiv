@@ -74,7 +74,7 @@ classdef TVDownscaledStack<handle
              if obj.imageInMemory
                 error('Image already in memory')
              end
-            obj.I_internal=loadTiffStack(obj.fileName);
+            obj.I_internal=loadTiffStack(obj.fileName, [], 'g');
         end
         function writeStackToDisk(obj)
             if obj.fileOnDisk
