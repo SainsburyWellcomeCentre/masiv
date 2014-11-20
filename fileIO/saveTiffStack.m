@@ -1,25 +1,54 @@
-function saveTiffStack(I, fileName)
+function saveTiffStack(I, fileName, outputMode)
+    %% Output Mode
+    if nargin<3||isempty(outputMode)
+        outputMode='c';
+    end
+    if ~ischar(outputMode)||~any(strcmp(outputMode, {'n', 'c', 'g'}))
+        error('Invalid output mode. Choose ''c'' for command-line output; ''g'' for graphical output or ''n'' for none')
+    else
+        outputMode=lower(outputMode);
+    end
+    %% Check .tif extension
     if ~strfind(fileName, '.tif')
         fileName=[fileName, '.tif'];
     end
-    if needBigTiff(I)% small tiff, use imwrite
-        fprintf('File size: %uMB. Using standard imWrite...\n ', tiffStackSizeMB(I))
-        fprintf('Saving slice 1 of 1...\n')
+    %% do the write
+    if ~needBigTiff(I)% small tiff, use imwrite
+        switch outputMode
+            case 'c'
+                fprintf('File size: %uMB. Using standard imWrite...\n ', tiffStackSizeMB(I))
+                fprintf('Saving slice 1 of 1...\n')
+            case 'g'
+                swb=SuperWaitBar(size(I, 3), sprintf('File size:%uMB. Saving file to: %s with standard imwrite', tiffStackSizeMB(I),fileName));
+        end
         imwrite(I(:,:,1), fileName);
+        if strcmp(outputMode, 'g');swb.progress();end
         for ii=2:size(I, 3)
             imwrite(I(:,:,ii), fileName, 'writemode', 'append');
-            fprintf('Saving slice %u of %u...\n', ii, size(I,3))
+            switch outputMode
+                case 'c'
+                    fprintf('Saving slice %u of %u...\n', ii, size(I,3))
+                case 'g'
+                    swb.progress()
+            end
+            
         end
-        fprintf('Done. %u pages save to %s\n', size(I, 3), fileName)
+        switch outputMode
+            case 'c'
+                fprintf('Done. %u pages save to %s\n', size(I, 3), fileName)
+            case 'g'
+                delete(swb)
+                clear swb
+        end
     else
-        fprintf('File size: %uMB. Using Tiff class to create BigTiff file...\n ', tiffStackSizeMB(I))
-        writeBigTiff(I, fileName)
+        writeBigTiff(I, fileName, outputMode)
     end
 end
 
 
-function writeBigTiff(I, filename)
-   
+function writeBigTiff(I, filename, outputMode)
+    bt=Tiff(filename, 'w8');
+    %% Set tags
     tags.ImageLength            = size(I,1);
     tags.ImageWidth             = size(I,2);
     tags.RowsPerStrip           = size(I, 1);
@@ -32,15 +61,43 @@ function writeBigTiff(I, filename)
     tags.Software               =   'goggleBox';
     
     setTag(bt, tags);
-    fprintf('Saving slice %u of %u...\n', 1, size(I,3))
+    %% Prepare output
+    switch outputMode
+        case 'c'
+            fprintf('File size: %uMB. Using Tiff class to create BigTIFF file...\n ', tiffStackSizeMB(I))
+        case 'g'
+            swb=SuperWaitBar(size(I, 3), sprintf('File size:%uMB. Saving file to: %s using Tiff class to create BigTIFF file', tiffStackSizeMB(I),filename));
+    end
+    %% Write the first slice
     write(bt,  I(:,:,1));
+    %% Output first slice done
+    switch outputMode
+        case 'c'
+            fprintf('Saving slice %u of %u...\n', 1, size(I,3))
+        case 'g'
+            swb.progress();
+    end
+    %% Write the rest
     for ii=2:size(I, 3)
         bt.writeDirectory()
         bt.setTag(tags)
         bt.write(I(:,:,ii))
-        fprintf('Saving slice %u of %u...\n', ii, size(I,3))
+        %% Output
+        switch outputMode
+            case 'c'
+                fprintf('Saving slice %u of %u...\n', ii, size(I,3))
+            case 'g'
+                swb.progress();
+        end
     end
-    fprintf('Done. %u pages save to %s\n', size(I, 3), filename)
+    %% Finish up
+    switch outputMode
+        case 'c'
+            fprintf('Done. %u pages save to %s\n', size(I, 3), filename)
+        case 'g'
+            delete(swb)
+            clear swb
+    end
     close(bt);
 
 end
@@ -52,7 +109,7 @@ end
 
 function n=needBigTiff(I)
 sz=tiffStackSizeB(I);
-n=sz>=1024^3;
+n=sz>=(4*1024^3);
 end
 
 function sz=tiffStackSizeB(I)
