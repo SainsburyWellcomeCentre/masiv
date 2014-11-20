@@ -56,6 +56,7 @@ else %1 IFD at start
         %% Check idx
         if nargin<2||isempty(idx)
             idx=1:numFrames;
+            d=1;
         else
             if any(idx)>numel(info)
                 error('Index specified out of range in the file')
