@@ -48,7 +48,7 @@ classdef TVDownscaledStack<handle
     methods
         %% Constructor
         function obj=TVDownscaledStack(mosaicInfo, channel, idx, xyds)
-            % There is currently one way to create a downscaledStack object:
+            % There are two ways to create a downscaledStack object:
             % 1. pass a stitchedMosaicInfo object, a channel, index and downscaling factor
             % 2. pass just the stitchedMosaicInfo object to generate a
             % pop-up dialog
@@ -63,7 +63,7 @@ classdef TVDownscaledStack<handle
                 end
             else
                 [obj.channel, obj.idx, obj.xyds]=getDSStackSpec(mosaicInfo);
-                if isempty(obj.channel);
+                if isempty(obj.channel)||isempty(obj.idx)||isempty(obj.xyds);
                     return
                 end
             end
@@ -89,12 +89,22 @@ classdef TVDownscaledStack<handle
                 error('File already exists on disk')
             end
             %% Write file locally first to prevent network transport errors
-            fprintf('Writing file locally...\n')
-            saveTiffStack(obj.I, 'tmp.tif');
-            fprintf('Moving file in to place (%s)...', obj.gbStackDirectory)
+            saveTiffStack(obj.I, 'tmp.tif', 'g');
+            swb=SuperWaitBar(1, strrep(sprintf('Moving file in to place (%s)', obj.fileName), '_', '\_'));
             movefile('tmp.tif', obj.fileName)
-            fprintf('Done. File saved to %s\n', obj.fileName)
+            swb.progress();delete(swb);clear swb
             writeObjToMetadataFile(obj)
+        end
+        function stdout=deleteStackFromDisk(obj)
+            button=questdlg(sprintf('Are you sure you want to delete stack %s?\nThis CANNOT be undone!', obj.name), ...
+                'Confirm Stack Deletion', 'OK', 'Cancel', 'Cancel');
+            if strcmp(button, 'OK')
+                delete(obj.fileName)
+                deleteObjFromMetadataFile(obj)
+                stdout=1;
+            else
+                stdout=0;
+            end
         end
         function l=list(obj)
             l=cell(size(obj));
@@ -111,7 +121,7 @@ classdef TVDownscaledStack<handle
             obj.gbStackDirectory=getGBStackPath(TVMosaicInfoObj);
             obj.fileName=createGBStackFileNameForOutput(obj);
         end
-
+       
         %% Getters 
         function g=get.downscaledStackObjectCollectionPath(obj)
              g=fullfile(obj.gbStackDirectory, [obj.sampleName '_GBStackInfo.mat']);
@@ -196,7 +206,22 @@ else
     stacks(end+1)=obj; %#ok<NASGU>
     save(obj.downscaledStackObjectCollectionPath, 'stacks');
 end
-fprintf('Done\n')
+end
+
+function deleteObjFromMetadataFile(obj)
+    a=load(obj.downscaledStackObjectCollectionPath);
+    stacks=a.stacks;
+    thisObjIdx=find(strcmp(obj.name, {stacks.name}));
+    
+    if isempty(thisObjIdx)
+        error('Stack not found in database')
+    elseif numel(thisObjIdx)>1
+        error('More than one matching stack found')
+    end
+    
+    stacks(thisObjIdx)=[]; %#ok<NASGU>
+    save(obj.downscaledStackObjectCollectionPath, 'stacks');
+    
 end
 
 function I = createDownscaledStack( mosaicInfo, channel, idx, varargin )
@@ -289,6 +314,7 @@ function [channel, idx, xyds]=getDSStackSpec(mosaicInfo)
         passFlag=isscalar(startIdx)&&isnumeric(startIdx)&&...
             isscalar(increment)&&isnumeric(increment) &&...
             isscalar(endIdx)&&isnumeric(endIdx) &&...
+            startIdx>=1 && endIdx<=numel(mosaicInfo.stitchedImagePaths.(channel)) && ...
             endIdx>startIdx;
     end
     
