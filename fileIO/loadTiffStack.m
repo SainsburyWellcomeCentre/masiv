@@ -21,6 +21,10 @@ if numel(info)>1 %IFD before each page
         if any(idx)>numel(info)
             error('Index specified out of range in the file')
         end
+        d=unique(diff(idx));
+        if numel(d)>1||any(d)<0
+            error('Index specification must be monotonically increasing and evenly spaced')
+        end
     end
     
     I=zeros(info(1).Height, info(1).Width, numel(idx), selectMATLABDataType(info(1)));
@@ -48,8 +52,7 @@ else %1 IFD at start
     numFramesStr = regexp(info.ImageDescription, 'images=(\d*)', 'tokens');
     if ~isempty(numFramesStr) %It's in imageJ large stack
         numFrames = str2double(numFramesStr{1}{1});
-        fp = fopen(fileName , 'rb');
-        fseek(fp, info.StripOffsets, 'bof');
+        
         %% Check idx
         if nargin<2||isempty(idx)
             idx=1:numFrames;
@@ -57,23 +60,36 @@ else %1 IFD at start
             if any(idx)>numel(info)
                 error('Index specified out of range in the file')
             end
+            d=unique(diff(idx));
+            if numel(d)>1||any(d)<0
+                error('Index specification must be monotonically increasing and evenly spaced')
+            end
+        end
+        %% Open and seek to start
+        fp = fopen(fileName , 'rb');
+        fseek(fp, info.StripOffsets, 'bof');
+        if idx(1)>1
+            fseek(fp, info.Width*info.Height*info.BitDepth/8*(idx(1)-1), 'cof');
         end
         %%
         I=zeros(info.Height, info.Width, numel(idx), selectMATLABDataType(info(1)));
         switch outputMode
             case 'n'
                 for ii = 1:numel(idx)
-                    I(:,:,ii) = fread(fp, [info.Width info.Height], ['* ' selectMATLABDataType(info(1))])';
+                    I(:,:,ii)=getSliceUsingFread(fp, info);
+                    seekIfNeeded(fp, d, info);
                 end
             case 'c'
                 for ii = 1:numel(idx)
-                    I(:,:,ii) = fread(fp, [info.Width info.Height], ['* ' selectMATLABDataType(info(1))])';
+                    I(:,:,ii)=getSliceUsingFread(fp, info);
+                    seekIfNeeded(fp, d, info);
                     fprintf('Loading slice %u of %u...\n', ii,numel(idx))
                 end
             case 'g'
                 swb=SuperWaitBar(numel(idx), strrep(sprintf('Loading from %s ', fileName), '_', '\_'));
                 for ii = 1:numel(idx)
-                    I(:,:,ii) = fread(fp, [info.Width info.Height], ['* ' selectMATLABDataType(info(1))])';
+                    I(:,:,ii)=getSliceUsingFread(fp, info);
+                    seekIfNeeded(fp, d, info);
                     swb.progress;
                 end
                 delete(swb)
@@ -125,5 +141,15 @@ switch info.ByteOrder
         end
     otherwise
         error('Unknown endianness')
+end
+end
+
+function I=getSliceUsingFread(fp, info)
+I=fread(fp, [info.Width info.Height], ['* ' selectMATLABDataType(info(1))])';
+end
+
+function seekIfNeeded(fp, d, info)
+if d>1
+    fseek(fp,info.Width*info.Height*info.BitDepth/8*d-1, 'cof');
 end
 end
