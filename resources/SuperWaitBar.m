@@ -4,14 +4,17 @@ classdef SuperWaitBar<handle
         x
         fname
         N
-        t
+        timerObject
+        msg
+        textHandle
     end
     methods
         function obj=SuperWaitBar(N, msg)
             obj.N=N;
             obj.h=waitbar(0, msg);
             obj.x=0;
-            
+            obj.msg=msg;
+            obj.textHandle=findall(obj.h, 'Type', 'Text');
             %% Assign a unique file name
             obj.fname=fullfile(tempdir, ['progressbar_' num2str(randi(10000)) '.txt']);
             while exist(obj.fname,'file')
@@ -24,11 +27,11 @@ classdef SuperWaitBar<handle
                 error('Do you have write permissions for %s?', pwd);
             end
             %%
-            fprintf(f, '%d\n', N); % Save N at the top of progress.txt
+            fprintf(f, '%s\n', datestr(now)); % Save time started at the top of progress.txt
             fclose(f);
             
-            obj.t=timer('BusyMode', 'drop', 'ExecutionMode', 'fixedSpacing', 'Period', 0.05, 'TimerFcn', {@timerTick, obj});
-            start(obj.t);
+            obj.timerObject=timer('BusyMode', 'drop', 'ExecutionMode', 'fixedSpacing', 'Period', 0.05, 'TimerFcn', {@timerTick, obj});
+            start(obj.timerObject);
         end
         function progress(obj)
             if ~exist(obj.fname, 'file')
@@ -43,22 +46,59 @@ classdef SuperWaitBar<handle
         end
 
         function delete(obj)
-            stop(obj.t)
-            delete(obj.t)
+            stop(obj.timerObject)
+            delete(obj.timerObject)
             delete(obj.fname)
             delete(obj.h)
             delete(obj)
         end
     end
 end
-    function timerTick(~,~, obj)
-    
+
+function timerTick(~,~, obj)
+    %% Get info from file
     f = fopen(obj.fname, 'r');
-    progress = fscanf(f, '%d');
+        timeStarted=fgetl(f);
+        n = numel(fscanf(f, '%d'));
     fclose(f);
-    x=(length(progress)-1)/progress(1);
+    %%
+    fracComplete=n/obj.N;
+    timeElapsed=now-datenum(timeStarted);
+    
+    rate=timeElapsed/fracComplete;
+    timeLeftNum=(1-fracComplete)*rate;
+    if isinf(timeLeftNum)
+        timeLeftStr='Unknown';
+    else
+        timeLeftStr=datestr(timeLeftNum, 'HH:MM:SS');
+    end
+    
+    x=fracComplete;
     obj.x=x;
     waitbar(x, obj.h)
+
+    obj.textHandle.String=sprintf('%s \n(%u of %u, %s remaining)', obj.msg, n, obj.N, timeLeftStr);
             
-end
+    end
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
