@@ -1,11 +1,17 @@
 classdef goggleZoomedViewManager<handle
     properties(SetAccess=protected)
         cacheSizeLimitMB=1*1024; %16GB by default
+        currentImageFilePath
     end
     properties(Access=protected)
         parentViewerDisplay
         zoomedViewArray=goggleZoomedView
         hImg
+    end
+    properties(SetAccess=protected, Dependent)
+        currentSliceFileName
+        currentSliceFileFullPath
+        currentSliceFileExistsOnDisk
     end
     methods
         %% Constructor
@@ -36,23 +42,41 @@ classdef goggleZoomedViewManager<handle
         end
         
         function createNewView(obj)
-            parent=obj.parentViewerDisplay;
-         
-            stitchedFileFullPath=filePathToLoadRegionFrom(parent);
-            regionSpec=getRegionSpecFromParent(parent);
-            
-            ds=parent.downSamplingForCurrentZoomLevel;
-            z=parent.currentZPlaneOriginalFileNumber;
-            
-            goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view creation starting',toc,'s')
-            obj.zoomedViewArray(end+1)=goggleZoomedView(stitchedFileFullPath, regionSpec, ds, z, obj);
-            goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view created',toc,'s')
-            
-            obj.cleanUpCache();
+            if obj.currentSliceFileExistsOnDisk
+                
+                parent=obj.parentViewerDisplay;
+                
+                fp=obj.currentSliceFileFullPath;
+                regionSpec=getRegionSpecFromParent(parent);
+                ds=parent.downSamplingForCurrentZoomLevel;
+                z=parent.currentZPlaneOriginalFileNumber;
+                
+                goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view creation starting',toc,'s')
+                obj.zoomedViewArray(end+1)=goggleZoomedView(fp, regionSpec, ds, z, obj);
+                goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view created',toc,'s')
+                
+                obj.cleanUpCache();
+            end
         end
         
         function hide(obj)
             obj.hImg.Visible='off';
+        end
+        
+        %% Getters
+        function csfn=get.currentSliceFileName(obj)
+            stitchedFileNameList=obj.parentViewerDisplay.overviewStack.originalStitchedFileNames;
+            indexInFileNameList=obj.parentViewerDisplay.currentZPlaneOriginalFileNumber;
+            csfn=stitchedFileNameList{indexInFileNameList};
+        end
+        function csfp=get.currentSliceFileFullPath(obj)
+            baseDir=obj.parentViewerDisplay.overviewStack.baseDirectory;
+            csfn=obj.currentSliceFileName;
+            
+            csfp=fullfile(baseDir, csfn);
+        end
+        function fileOnDisk=get.currentSliceFileExistsOnDisk(obj)
+            fileOnDisk=exist(obj.currentSliceFileFullPath, 'file');
         end
     end
     
@@ -147,17 +171,6 @@ function regionSpec=getRegionSpecFromParent(parentViewerDisplay)
    regionSpec=[xl(1) yl(1) range(xl) range(yl)];
 end
 
-function stitchedFileFullPath=filePathToLoadRegionFrom(parentViewerDisplay)
-   stitchedFileNameList=parentViewerDisplay.overviewStack.originalStitchedFileNames;
-   indexInFileNameList=parentViewerDisplay.currentZPlaneOriginalFileNumber;
-   baseDir=parentViewerDisplay.overviewStack.baseDirectory;
-   
-   stitchedFileName=stitchedFileNameList{indexInFileNameList};
-   stitchedFileFullPath=fullfile(baseDir, stitchedFileName);
-   if ~exist(stitchedFileFullPath, 'file')
-       error('ZVM:couldNotFindFile', 'ZoomedViewManager: The specified slice file (%s) could not be found.', stitchedFileFullPath)
-   end
-end
 
 
 
