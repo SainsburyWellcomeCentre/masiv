@@ -32,17 +32,17 @@ if numel(info)>1 %IFD before each page
     switch outputMode
         case 'n'
             parfor ii=1:numel(idx)
-                I(:,:,ii)=imread(fileName, 'Index', idx(ii), 'Info', info);
+                I(:,:,ii)=imread(fileName, 'Index', idx(ii));%, 'Info', info);
             end
         case 'c'
             parfor ii=1:numel(idx)
-                I(:,:,ii)=imread(fileName, 'Index', idx(ii), 'Info', info);
+                I(:,:,ii)=imread(fileName, 'Index', idx(ii));%, 'Info', info);
                 fprintf('Loading slice %u of %u...\n', ii, numel(idx)) %#ok<PFBNS>
             end
         case 'g'
             swb=SuperWaitBar(numel(idx), strrep(sprintf('Loading from %s ', fileName), '_', '\_'));
             parfor ii=1:numel(idx)
-                I(:,:,ii)=imread(fileName, 'Index', idx(ii), 'Info', info);
+                I(:,:,ii)=imread(fileName, 'Index', idx(ii));%, 'Info', info);
                 swb.progress; %#ok<PFBNS>
             end
             delete(swb)
