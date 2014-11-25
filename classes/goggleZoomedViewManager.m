@@ -26,7 +26,10 @@ classdef goggleZoomedViewManager<handle
             if isempty(v)
                 goggleDebugTimingInfo(2, 'GZVM.updateView: Creating new view...', toc,'s')
                 try
-                    obj.createNewView;
+                    stdout=obj.createNewView;
+                    if stdout==0
+                        obj.hide
+                    end
                 catch err
                     if strcmp(err.identifier, 'ZVM:couldNotFindFile')
                         goggleDebugTimingInfo(0, strrep(err.message,  'ZoomedViewManager: ', 'WARNING IN GZVM.updateView: '), toc,'s')
@@ -42,7 +45,7 @@ classdef goggleZoomedViewManager<handle
             end
         end
         
-        function createNewView(obj)
+        function stdout=createNewView(obj)
             if obj.currentSliceFileExistsOnDisk
                 
                 parent=obj.parentViewerDisplay;
@@ -57,6 +60,9 @@ classdef goggleZoomedViewManager<handle
                 goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view created',toc,'s')
                 
                 obj.cleanUpCache();
+                stdout=1;
+            else
+                stdout=0;
             end
         end
         
