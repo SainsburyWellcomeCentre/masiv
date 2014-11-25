@@ -29,7 +29,7 @@ function allscalar=checkScalar(s)
         allscalar=zeros(numel(f), 1);
         
         for ii=1:numel(f)
-            if isnumeric(s.(f{ii}))&& isscalar(s.(f{ii}))
+            if isnumeric(s.(f{ii}))
                 allscalar(ii)=1;
             elseif ischar(s.(f{ii}))
                 allscalar(ii)=1;

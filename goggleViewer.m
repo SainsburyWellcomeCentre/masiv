@@ -1,17 +1,5 @@
 classdef goggleViewer<handle
-    properties(Access=protected)
-        
-        %% Preferences
-        panelBkgdColor=[0.5 0.5 0.5];
-        mainFigurePosition=[2561 196 1680 1003];
-        
-        panIncrement=[10 120]; % shift and non shift; fraction to move view by
-        scrollIncrement=[10 1]; %shift and non shift; number of images to move view by
-        zoomRate=1.5;
-        mainFont='Titillium'; %'DejaVu Sans';
-        keyboardUpdatePeriod=0.02; %20ms keyboard polling
-        panModeInvert=0;
-        
+    properties(Access=protected)        
         %% Internal tracking
         numScrolls=0
         panxInt=0
@@ -40,7 +28,8 @@ classdef goggleViewer<handle
             obj=obj@handle;
             %% Get mosaic info if none provided
             if nargin<1 ||isempty(mosaicInfoIn)
-                fp=uigetdir('/alzymr/buffer', 'Please select base directory of the stitched mosaic');
+                fp=uigetdir(gbSetting('defaultDirectory'), 'Please select base directory of the stitched mosaic');
+                gbSetting('defaultDirectory', fileparts(fp))
                 if isempty(fp)
                     return
                 end
@@ -54,7 +43,7 @@ classdef goggleViewer<handle
                 'Name', sprintf('GoggleBox: %s', obj.mosaicInfo.experimentName), ...
                 'NumberTItle', 'off', ...
                 'MenuBar', 'none', ...
-                'Position', obj.mainFigurePosition, ...
+                'Position', gbSetting('viewer.mainFigurePosition'), ...
                 'Color', [0.2 0.2 0.2], ...
                 'ColorMap', gray(256), ...
                 'KeyPressFcn', {@hFigMain_KeyPress, obj}, ...
@@ -83,7 +72,7 @@ classdef goggleViewer<handle
             %% Contrast adjustment object definitions
             obj.hAxContrastHist=axes(...
                 'Box', 'on', ...
-                'Color', obj.panelBkgdColor, ...
+                'Color', gbSetting('viewer.panelBkgdColor'), ...
                 'XTick', [], 'YTick', [], ...
                 'Position', [0.83 0.87 0.16 0.11], ...
                 'Color', [0.1 0.1 0.1]);
@@ -135,10 +124,10 @@ classdef goggleViewer<handle
             axis(obj.hImgAx, 'equal')
             
             %% Info box declaration
-            obj.hInfoBox=goggleInfoPanel(obj.hFig, [0.83 0.5 0.16 0.31], obj.mainDisplay);
+            obj.hInfoBox=goggleViewInfoPanel(obj.hFig, [0.83 0.5 0.16 0.31], obj.mainDisplay);
             
             %% Set fonts to something nice
-            set(findall(gcf, '-property','FontName'), 'FontName', obj.mainFont)
+            set(findall(gcf, '-property','FontName'), 'FontName', gbSetting('font.name'))
             
             %% Start parallel pool
             gcp();
@@ -156,9 +145,9 @@ classdef goggleViewer<handle
             goggleDebugTimingInfo(0, 'GV: KeyScroll event fired',toc, 's')
             mods=eventdata.Modifier;
             if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
-                p=obj.scrollIncrement(1);
+                p=gbSetting('navigation.scrollIncrement');p=p(1);
             else
-                p=obj.scrollIncrement(2);
+                p=gbSetting('navigation.scrollIncrement');p=p(2);
             end
             switch eventdata.Key
                 case 'leftarrow'
@@ -172,7 +161,7 @@ classdef goggleViewer<handle
             
             obj.numScrolls=obj.numScrolls+dir;
             
-            pause(obj.keyboardUpdatePeriod)
+            pause(gbSetting('navigation.keyboardUpdatePeriod'))
             if obj.numScrolls~=0
                 p=obj.numScrolls;
                 obj.numScrolls=0;
@@ -194,9 +183,9 @@ classdef goggleViewer<handle
             goggleDebugTimingInfo(0, 'GV: KeyPan event fired',toc, 's')
             mods=eventdata.Modifier;
             if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
-                p=obj.panIncrement(1);
+                p=gbSetting('navigation.panIncrement'); p=p(1);
             else
-                p=obj.panIncrement(2);
+                p=gbSetting('navigation.panIncrement');p=p(2);
             end
             switch eventdata.Key
                 case 'w'
@@ -214,7 +203,7 @@ classdef goggleViewer<handle
            
             obj.panxInt=obj.panxInt+xChange;
             obj.panyInt=obj.panyInt+yChange;
-            pause(obj.keyboardUpdatePeriod)
+            pause(gbSetting('navigation.keyboardUpdatePeriod'))
             
             if obj.panxInt~=0 || obj.panyInt~=0
                 xOut=obj.panxInt;
@@ -226,7 +215,7 @@ classdef goggleViewer<handle
         end
         
         function executePan(obj, xMove,yMove)
-            if obj.panModeInvert
+            if gbSetting('navigation.panModeInvert')
                 xMove=-xMove;
                 yMove=-yMove;
             end
@@ -297,10 +286,10 @@ function hFigMain_KeyPress (~, eventdata, obj)
         case 'shift'
             % Do nothing
         case 'uparrow'
-            zoom(obj.zoomRate)
+            zoom(gbSetting('navigation.zoomRate'))
             movedFlag=1;
         case 'downarrow'
-            zoom(1/obj.zoomRate)
+            zoom(1/gbSetting('navigation.zoomRate'))
             movedFlag=1;
         case {'leftarrow', 'rightarrow'}
             obj.formatKeyScrollAndAddToQueue(eventdata);
@@ -325,7 +314,7 @@ function hFigMain_ScrollWheel(~, eventdata, obj)
     startDebugOutput
 
     goggleDebugTimingInfo(0, 'GV: WheelScroll event fired',toc, 's')
-    p=obj.scrollIncrement(2);
+    p=gbSetting('navigation.scrollIncrement');p=p(2);
 
     obj.executeScroll(p*eventdata.VerticalScrollCount);
 
@@ -345,6 +334,7 @@ function adjustContrast(hContrastLim, ~, obj)
     end
 end
 function closeRequest(~,~,obj)
+gbSetting('viewer.mainFigurePosition', obj.hFig.Position)
 delete(timerfind); 
 delete(obj.hFig); 
 delete(obj)

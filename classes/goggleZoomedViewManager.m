@@ -1,6 +1,5 @@
 classdef goggleZoomedViewManager<handle
     properties(SetAccess=protected)
-        cacheSizeLimitMB=1*1024; %16GB by default
         currentImageFilePath
     end
     properties(Access=protected)
@@ -100,8 +99,8 @@ classdef goggleZoomedViewManager<handle
         function reduceToCacheLimit(obj)
             cumTotalSizeOfZoomedViewsMB=cumsum([obj.zoomedViewArray.sizeMB]);
             goggleDebugTimingInfo(2, 'GZVM.reduceToCacheLimit: Current Cache Size',round(cumTotalSizeOfZoomedViewsMB(end)), 'MB')
-            if any(cumTotalSizeOfZoomedViewsMB>obj.cacheSizeLimitMB)
-                firstIndexToCut=find(cumTotalSizeOfZoomedViewsMB>obj.cacheSizeLimitMB, 1);
+            if any(cumTotalSizeOfZoomedViewsMB>gbSetting('cache.sizeLimitMB'))
+                firstIndexToCut=find(cumTotalSizeOfZoomedViewsMB>gbSetting('cache.sizeLimitMB'), 1);
                 obj.zoomedViewArray=obj.zoomedViewArray(1:firstIndexToCut-1);
             end
         end

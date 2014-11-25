@@ -1,4 +1,4 @@
-classdef goggleInfoPanel<handle
+classdef goggleViewInfoPanel<handle
     properties(SetAccess=protected)
         mainPanel
         goggleViewerDisplay
@@ -26,7 +26,7 @@ classdef goggleInfoPanel<handle
 
     methods
         %% Constructor
-        function obj=goggleInfoPanel(parent, position, gvd)
+        function obj=goggleViewInfoPanel(parent, position, gvd)
            
             obj.goggleViewerDisplay=gvd; %associated display object
             obj.goggleViewerDisplay.InfoPanel=obj;
@@ -34,7 +34,7 @@ classdef goggleInfoPanel<handle
                 'Parent', parent, ...
                 'Units', 'normalized', ...
                 'Position', position);
-            fontSz=12;
+            fontSz=gbSetting('font.size');
             %% Labels
             
             uicontrol(...
@@ -198,9 +198,9 @@ classdef goggleInfoPanel<handle
             
             obj.updateDisplay();
             %%
-            set(obj.mainPanel,'BackgroundColor', [0.1 0.1 0.1])
-            set(obj.mainPanel.Children,'BackgroundColor', [0.1 0.1 0.1])
-            set(obj.mainPanel.Children,'ForegroundColor', [0.8 0.8 0.8])
+            obj.mainPanel.BackgroundColor=gbSetting('viewer.panelBkgdColor');
+            set(obj.mainPanel.Children,'BackgroundColor', gbSetting('viewer.panelBkgdColor'))
+            set(obj.mainPanel.Children,'ForegroundColor', gbSetting('viewer.textMainColor'))
         end
         %% Update Display
         function updateDisplay(obj)
@@ -228,7 +228,7 @@ classdef goggleInfoPanel<handle
             dsFactor=gvd.downSamplingForCurrentZoomLevel;
             stackDsFactor=gvd.overviewStack.xyds;
             
-            if zoomLevel<=obj.goggleViewerDisplay.minZoomLevelForDetailedLoad
+            if zoomLevel<=gbSetting('viewerDisplay.minZoomLevelForDetailedLoad')
                 obj.viewMode.String='In Memory';
                 obj.downSamplingFactor.String=sprintf('%ux',stackDsFactor);
                 obj.fileName.String='';
@@ -248,7 +248,7 @@ classdef goggleInfoPanel<handle
                     else
                         error('Unrecognised downSampling/zoomLevels')
                     end
-                    obj.fileName.ForegroundColor = hsv2rgb([0.4 1 0.8]);
+                    obj.fileName.ForegroundColor = gbSetting('viewInfoPanel.fileOnDiskTextColor');
                 end
                 obj.fileName.String=['(' obj.fileNameTruncatedForDisplay, ')'];
 
@@ -276,7 +276,7 @@ classdef goggleInfoPanel<handle
             
             zoomLevel=gvd.zoomLevel;
             
-            if zoomLevel<=obj.goggleViewerDisplay.minZoomLevelForDetailedLoad
+            if zoomLevel<=gbSetting('viewerDisplay.minZoomLevelForDetailedLoad')
                 obj.onDiskIndicator.Visible='off';
                 obj.onDiskIndicatorLabel.Visible='off';
             else
@@ -285,10 +285,10 @@ classdef goggleInfoPanel<handle
                 
                 if ~zvm.currentSliceFileExistsOnDisk
                     obj.onDiskIndicator.String='NOT FOUND';
-                    obj.onDiskIndicator.ForegroundColor = hsv2rgb([0.05 1 0.8]);
+                    obj.onDiskIndicator.ForegroundColor =gbSetting('viewInfoPanel.fileNotOnDiskTextColor');
                 else
                     obj.onDiskIndicator.String='On Disk';
-                    obj.onDiskIndicator.ForegroundColor = hsv2rgb([0.4 1 0.8]);
+                    obj.onDiskIndicator.ForegroundColor = gbSetting('viewInfoPanel.fileOnDiskTextColor');
                 end
             end
         end

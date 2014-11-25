@@ -7,8 +7,6 @@ classdef goggleViewerDisplay<handle
         axes
         currentIndex
         hImg
-        nPixelsWidthForZoomedView=2000;
-        minZoomLevelForDetailedLoad=1.5;
         zoomedViewManager
     end
     properties
@@ -78,7 +76,7 @@ classdef goggleViewerDisplay<handle
         end
                
         function updateZoomedView(obj)
-            if obj.zoomLevel>obj.minZoomLevelForDetailedLoad
+            if obj.zoomLevel>gbSetting('viewerDisplay.minZoomLevelForDetailedLoad')
                 goggleDebugTimingInfo(1, 'GVD.updateZoomedView: Zoomed image needed. Updating view...', toc, 's')
                 obj.zoomedViewManager.updateView()
                 goggleDebugTimingInfo(1, 'GVD.updateZoomedView: View updated', toc, 's')
@@ -109,7 +107,7 @@ classdef goggleViewerDisplay<handle
         end
         function dsfczl=get.downSamplingForCurrentZoomLevel(obj)
             xl=round(xlim(obj.axes));
-            dsfczl=ceil(range(xl)/obj.nPixelsWidthForZoomedView);
+            dsfczl=ceil(range(xl)/gbSetting('viewerDisplay.nPixelsWidthForZoomedView'));
         end
         % Image and view in pixels and original
             function x=get.imageXLimOriginalCoords(obj)
