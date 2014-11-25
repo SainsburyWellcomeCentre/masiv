@@ -37,6 +37,7 @@ function createDefaultPrefsFile()
     s.font.size=12;
     %% Main Viewer
     s.viewer.panelBkgdColor=[0.1 0.1 0.1];
+    s.viewer.mainBkgdColor=[0.2 0.2 0.2];
     s.viewer.textMainColor=[0.8 0.8 0.8];
     s.viewer.mainFigurePosition=[0 0 1600 900];
         

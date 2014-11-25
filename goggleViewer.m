@@ -13,8 +13,8 @@ classdef goggleViewer<handle
         hAxContrastMin
         hAxContrastMax
         hAxContrastAuto
-        hInfoBox
-        
+        hViewInfoBox
+        hCacheInfoBox
         %% Data
         mosaicInfo
         overviewDSS
@@ -44,7 +44,7 @@ classdef goggleViewer<handle
                 'NumberTItle', 'off', ...
                 'MenuBar', 'none', ...
                 'Position', gbSetting('viewer.mainFigurePosition'), ...
-                'Color', [0.2 0.2 0.2], ...
+                'Color', gbSetting('viewer.mainBkgdColor'), ...
                 'ColorMap', gray(256), ...
                 'KeyPressFcn', {@hFigMain_KeyPress, obj}, ...
                 'WindowButtonMotionFcn', {@mouseMove, obj}, ...
@@ -123,9 +123,10 @@ classdef goggleViewer<handle
             adjustContrast([], [], obj);
             axis(obj.hImgAx, 'equal')
             
-            %% Info box declaration
-            obj.hInfoBox=goggleViewInfoPanel(obj.hFig, [0.83 0.5 0.16 0.31], obj.mainDisplay);
-            
+            %% Info boxes
+            obj.hViewInfoBox=goggleViewInfoPanel(obj.hFig, [0.83 0.5 0.16 0.31], obj.mainDisplay);
+            obj.hCacheInfoBox=goggleCacheInfoPanel(obj.hFig, [0.83 0.4 0.16 0.09], obj.mainDisplay.zoomedViewManager);
+            obj.mainDisplay.zoomedViewManager.cacheInfoPanel=obj.hCacheInfoBox; %tell the zoomedViewManager about the info box
             %% Set fonts to something nice
             set(findall(gcf, '-property','FontName'), 'FontName', gbSetting('font.name'))
             
@@ -263,7 +264,7 @@ classdef goggleViewer<handle
             goggleDebugTimingInfo(0, 'GV: Calling mainDisplay updateZoomedView...',toc, 's')
             obj.mainDisplay.updateZoomedView
             goggleDebugTimingInfo(0, 'GV: mainDisplay updateZoomedView complete',toc, 's')
-            obj.hInfoBox.updateDisplay
+            obj.hViewInfoBox.updateDisplay
         end
         
         
@@ -308,7 +309,7 @@ function hFigMain_KeyPress (~, eventdata, obj)
 end
 function mouseMove (~, ~, obj)
     C = get (obj.hImgAx, 'CurrentPoint');
-    obj.hInfoBox.currentCursorPosition=C;
+    obj.hViewInfoBox.currentCursorPosition=C;
 end
 function hFigMain_ScrollWheel(~, eventdata, obj)
     startDebugOutput

@@ -8,11 +8,15 @@ classdef goggleZoomedViewManager<handle
         hImg
     end
     properties(SetAccess=protected, Dependent)
+        cacheMemoryUsed
         currentSliceFileName
         currentSliceFileFullPath
         currentSliceFileExistsOnDisk
         imageVisible
         currentImageViewData
+    end
+    properties
+        cacheInfoPanel
     end
     methods
         %% Constructor
@@ -43,6 +47,8 @@ classdef goggleZoomedViewManager<handle
                 goggleDebugTimingInfo(2, sprintf('GZVM.updateView: View #%u will be used. Updating image...', v(1)),toc,'s')
                 updateImage(obj, v(1))
             end
+            obj.updateCacheInfoPanel();
+
         end
         
         function stdout=createNewView(obj)
@@ -70,6 +76,11 @@ classdef goggleZoomedViewManager<handle
             obj.hImg.Visible='off';
         end
         
+        function cleanUpCache(obj)
+            obj.clearInvalidPlanes();
+            obj.reduceToCacheLimit();
+            obj.updateCacheInfoPanel();
+        end
         %% Getters
         function csfn=get.currentSliceFileName(obj)
             stitchedFileNameList=obj.parentViewerDisplay.overviewStack.originalStitchedFileNames;
@@ -91,16 +102,16 @@ classdef goggleZoomedViewManager<handle
         function cData=get.currentImageViewData(obj)
             cData=obj.hImg.CData;
         end
+        function cmem=get.cacheMemoryUsed(obj)
+            cmem=sum([obj.zoomedViewArray.sizeMB]);
+        end
     end
     
     methods(Access=protected)
         
         
         %% Memory management
-        function cleanUpCache(obj)
-            obj.clearInvalidPlanes();
-            obj.reduceToCacheLimit();
-        end
+        
         
         function reduceToCacheLimit(obj)
             cumTotalSizeOfZoomedViewsMB=cumsum([obj.zoomedViewArray.sizeMB]);
@@ -120,6 +131,12 @@ classdef goggleZoomedViewManager<handle
         
         function moveZVToTopOfCacheStack(obj, idx)
             obj.zoomedViewArray=obj.zoomedViewArray([idx 1:idx-1 idx+1:end]);
+        end
+        
+        function updateCacheInfoPanel(obj)
+            for ii=1:numel(obj.cacheInfoPanel)
+                obj.cacheInfoPanel(ii).updateCacheStatusDisplay;
+            end
         end
     end
 end
