@@ -12,6 +12,8 @@ classdef goggleZoomedViewManager<handle
         currentSliceFileName
         currentSliceFileFullPath
         currentSliceFileExistsOnDisk
+        imageVisible
+        currentImageViewData
     end
     methods
         %% Constructor
@@ -77,6 +79,12 @@ classdef goggleZoomedViewManager<handle
         end
         function fileOnDisk=get.currentSliceFileExistsOnDisk(obj)
             fileOnDisk=exist(obj.currentSliceFileFullPath, 'file');
+        end
+        function imgVis=get.imageVisible(obj)
+            imgVis=~isempty(obj.hImg)&&strcmp(obj.hImg.Visible, 'on');
+        end
+        function cData=get.currentImageViewData(obj)
+            cData=obj.hImg.CData;
         end
     end
     

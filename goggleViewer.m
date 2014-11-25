@@ -70,11 +70,15 @@ classdef goggleViewer<handle
                 'Position', [0.02 0.02 0.8 0.96]);
             
             %% Menu Object declarations
-            fileMain=uimenu(obj.hFig, 'Label', 'Main');
-                    uimenu(fileMain, 'Label', 'Quit', 'Callback', {@closeRequest, obj})
+            mnuMain=uimenu(obj.hFig, 'Label', 'Main');
+                    uimenu(mnuMain, 'Label', 'Quit', 'Callback', {@closeRequest, obj})
                     
-            filePlugins=uimenu(obj.hFig, 'Label', 'Plugins');
-                    addPlugins(filePlugins, obj)
+            mnuImage=uimenu(obj.hFig, 'Label', 'Image');
+                    uimenu(mnuImage, 'Label', 'Export Current View to Workspace', ...
+                                     'Callback', {@exportViewToWorkspace, obj})
+            
+            mnuPlugins=uimenu(obj.hFig, 'Label', 'Plugins');
+                    addPlugins(mnuPlugins, obj)
             
             %% Contrast adjustment object definitions
             obj.hAxContrastHist=axes(...
@@ -256,11 +260,11 @@ classdef goggleViewer<handle
             if yl(1) + yMove < 0
                 yMove = -yl(1);
             end
-            if xl(2) + xMove > obj.mainDisplay.imageXLim(2)
-                xMove=obj.mainDisplay.imageXLim(2) - xl(2);
+            if xl(2) + xMove > obj.mainDisplay.imageXLimOriginalCoords(2)
+                xMove=obj.mainDisplay.imageXLimOriginalCoords(2) - xl(2);
             end
-            if yl(2) + yMove > obj.mainDisplay.imageYLim(2)
-                yMove=obj.mainDisplay.imageYLim(2) - yl(2);
+            if yl(2) + yMove > obj.mainDisplay.imageYLimOriginalCoords(2)
+                yMove=obj.mainDisplay.imageYLimOriginalCoords(2) - yl(2);
             end
         end
         
@@ -277,6 +281,10 @@ classdef goggleViewer<handle
     end
 end
 
+function startDebugOutput
+tic
+clc
+end    
 
 %% Callbacks
 function hFigMain_KeyPress (~, eventdata, obj)
@@ -369,10 +377,23 @@ xlim(hContrastHist_Axes, [-0.05 1.1])
 ylim(hContrastHist_Axes, [-0.1 1.1])
 end
 
-function startDebugOutput
-tic
-clc
-end    
+function exportViewToWorkspace(~,~,obj)
+    if obj.mainDisplay.zoomedViewManager.imageVisible;
+        I=obj.mainDisplay.zoomedViewManager.currentImageViewData;
+    else
+        I=obj.mainDisplay.currentImageViewData;
+    end
+    xView=round(obj.hImgAx.XLim);xView(xView<1)=1;
+    yView=round(obj.hImgAx.YLim);yView(yView<1)=1;
+    proposedImageName=sprintf('%s_%s_x%u_%u_y%u_%u_layer%04u',...
+        obj.overviewDSS.experimentName, ...
+        obj.overviewDSS.channel, ...
+        xView(1), xView(2), ...
+        yView(1), yView(2), ...
+        obj.mainDisplay.currentZPlaneOriginalLayerID);
+    assignin('base', proposedImageName, I);
+end
+
 %% Plugins menu creation
 function addPlugins(hMenuBase, obj)
     pluginsDir=fullfile(fileparts(which('goggleViewer')), 'plugins');

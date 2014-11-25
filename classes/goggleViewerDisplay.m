@@ -23,8 +23,17 @@ classdef goggleViewerDisplay<handle
         currentZPlaneOriginalLayerID
         zoomLevel
         downSamplingForCurrentZoomLevel
-        imageXLim
-        imageYLim
+        
+        imageXLimOriginalCoords
+        imageYLimOriginalCoords
+        imageXLimPixels
+        imageYLimPixels
+        
+        viewXLimOriginalCoords
+        viewYLimOriginalCoords
+        viewXLimPixels
+        viewYLimPixels
+        currentImageViewData
     end
     
     methods
@@ -83,6 +92,12 @@ classdef goggleViewerDisplay<handle
         function cpd=get.currentPlaneData(obj)
             cpd=obj.overviewStack.I(:,:,obj.currentIndex);
         end
+        function civ=get.currentImageViewData(obj)
+           x=obj.viewXLimPixels;
+           y=obj.viewYLimPixels;
+           cpd=obj.currentPlaneData;
+           civ=cpd(y(1):y(2), x(1):x(2));
+        end
         function czpofn=get.currentZPlaneOriginalFileNumber(obj)
             czpofn=obj.overviewStack.idx(obj.currentIndex);
         end
@@ -96,12 +111,37 @@ classdef goggleViewerDisplay<handle
             xl=round(xlim(obj.axes));
             dsfczl=ceil(range(xl)/obj.nPixelsWidthForZoomedView);
         end
-        function x=get.imageXLim(obj)
-            x=obj.hImg.XData([1 end]);
-        end
-        function y=get.imageYLim(obj)
-            y=obj.hImg.YData([1 end]);
-        end
+        % Image and view in pixels and original
+            function x=get.imageXLimOriginalCoords(obj)
+                x=obj.hImg.XData([1 end]);
+            end
+            function y=get.imageYLimOriginalCoords(obj)
+                y=obj.hImg.YData([1 end]);
+            end
+            function x=get.imageXLimPixels(obj)
+                x=obj.imageXLimOriginalCoords/obj.overviewStack.xyds;
+                if x(1)<1;x(1)=1;end
+            end
+            function y=get.imageYLimPixels(obj)
+                y=obj.imageYLimOriginalCoords/obj.overviewStack.xyds;
+                if y(1)<1;y(1)=1;end
+            end
+            function x=get.viewXLimOriginalCoords(obj)
+                x=obj.axes.XLim;
+            end
+            function y=get.viewYLimOriginalCoords(obj)
+                y=obj.axes.YLim;
+            end
+            function x=get.viewXLimPixels(obj)
+                x=round(obj.viewXLimOriginalCoords/obj.overviewStack.xyds);
+                x(1)=max(x(1),1);
+                x(2)=min(x(2), size(obj.overviewStack.I, 2));
+            end
+            function y=get.viewYLimPixels(obj)
+                y=round(obj.viewYLimOriginalCoords/obj.overviewStack.xyds);
+                y(1)=max(y(1),1);
+                y(2)=min(y(2), size(obj.overviewStack.I, 1));
+            end
         %% Setters
         function set.contrastLims(obj, val)
             obj.contrastLims=val;
