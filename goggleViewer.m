@@ -317,8 +317,15 @@ function hFigMain_ScrollWheel(~, eventdata, obj)
     startDebugOutput
 
     goggleDebugTimingInfo(0, 'GV: WheelScroll event fired',toc, 's')
-    p=gbSetting('navigation.scrollIncrement');p=p(2);
-
+    
+    modifiers = get(obj.hFig,'currentModifier');      
+    
+    p=gbSetting('navigation.scrollIncrement');
+    if ismember('shift',modifiers);
+        p=p(1);
+    else
+        p=p(2);
+    end
     obj.executeScroll(p*eventdata.VerticalScrollCount);
 
 end
