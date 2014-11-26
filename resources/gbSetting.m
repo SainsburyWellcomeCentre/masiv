@@ -59,6 +59,10 @@ function createDefaultPrefsFile()
     
     %% ReadQueueInfoPanel Settings
     s.readQueueInfoPanel.max=50;
+    
+    %% Debug output
+    s.debug.logging=1;
+    s.debug.outputSpacing=12;
 %%
     baseDir=fileparts(which('goggleViewer'));
     

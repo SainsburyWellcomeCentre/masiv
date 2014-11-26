@@ -22,7 +22,6 @@ classdef goggleViewer<handle
         mainDisplay
         
     end
-    
    
     methods % Constructor
         function obj=goggleViewer(mosaicInfoIn, idx)
