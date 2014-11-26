@@ -3,6 +3,10 @@ function I=loadTiffStack(fileName, idx, outputMode)
 % page, or one IFD at the start (imageJ convention for large files);
 % mode selection is automatic
 
+if ~exist(fileName, 'file')
+    error('File %s does not exist or could not be opened', fileName)
+end
+
 if nargin<3||isempty(outputMode)
     outputMode='n';
 end
@@ -27,27 +31,18 @@ if numel(info)>1 %IFD before each page
         end
     end
     
-    I=zeros(info(1).Height, info(1).Width, numel(idx), selectMATLABDataType(info(1)));
-   
-    switch outputMode
-        case 'n'
-            parfor ii=1:numel(idx)
-                I(:,:,ii)=imread(fileName, 'Index', idx(ii));%, 'Info', info);
-            end
-        case 'c'
-            parfor ii=1:numel(idx)
-                I(:,:,ii)=imread(fileName, 'Index', idx(ii));%, 'Info', info);
-                fprintf('Loading slice %u of %u...\n', ii, numel(idx)) %#ok<PFBNS>
-            end
-        case 'g'
-            swb=SuperWaitBar(numel(idx), strrep(sprintf('Loading from %s ', fileName), '_', '\_'));
-            parfor ii=1:numel(idx)
-                I(:,:,ii)=imread(fileName, 'Index', idx(ii));%, 'Info', info);
-                swb.progress; %#ok<PFBNS>
-            end
-            delete(swb)
-            clear swb
+    if info(1).FileSize<4*1024^3
+        I=readMultiIFDSmallTiff(fileName, info, idx, outputMode);
+    else
+        if all([info.RowsPerStrip]==[info.Height]) % 1 strip per image
+            I=readMultiIFDBigTiffUsingTiffClass(fileName, info, idx, outputMode);            
+        else
+            I=readMultiIFDBigTiffUsingIMRead(fileName, info, idx, outputMode);   
+        end
     end
+        
+    
+    
 else %1 IFD at start
     numFramesStr = regexp(info.ImageDescription, 'images=(\d*)', 'tokens');
     if ~isempty(numFramesStr) %It's in imageJ large stack
@@ -114,6 +109,82 @@ end
 
 end
 
+function I=readMultiIFDSmallTiff(fileName, info, idx, outputMode)
+    I=zeros(info(1).Height, info(1).Width, numel(idx), selectMATLABDataType(info(1)));
+   
+    switch outputMode
+        case 'n'
+            for ii=1:numel(idx)
+                I(:,:,ii)=imread(fileName, 'Index', idx(ii), 'Info', info);
+            end
+        case 'c'
+            for ii=1:numel(idx)
+                I(:,:,ii)=imread(fileName, 'Index', idx(ii), 'Info', info);
+                fprintf('Loading slice %u of %u...\n', ii, numel(idx)) 
+            end
+        case 'g'
+            swb=SuperWaitBar(numel(idx), strrep(sprintf('Loading from %s ', fileName), '_', '\_'));
+            for ii=1:numel(idx)
+                I(:,:,ii)=imread(fileName, 'Index', idx(ii), 'Info', info);
+                swb.progress; 
+            end
+            delete(swb)
+            clear swb
+    end
+end
+
+function I=readMultiIFDBigTiffUsingIMRead(fileName, info, idx, outputMode)
+    I=zeros(info(1).Height, info(1).Width, numel(idx), selectMATLABDataType(info(1)));
+   
+    switch outputMode
+        case 'n'
+            for ii=1:numel(idx)
+                I(:,:,ii)=imread(fileName, 'Index', idx(ii));
+            end
+        case 'c'
+            for ii=1:numel(idx)
+                I(:,:,ii)=imread(fileName, 'Index', idx(ii));
+                fprintf('Loading slice %u of %u...\n', ii, numel(idx)) 
+            end
+        case 'g'
+            swb=SuperWaitBar(numel(idx), strrep(sprintf('Loading from %s ', fileName), '_', '\_'));
+            for ii=1:numel(idx)
+                I(:,:,ii)=imread(fileName, 'Index', idx(ii));
+                swb.progress; 
+            end
+            delete(swb)
+            clear swb
+    end
+end
+
+function I=readMultiIFDBigTiffUsingTiffClass(fileName, info, idx, outputMode)
+    I=zeros(info(1).Height, info(1).Width, numel(idx), selectMATLABDataType(info(1)));
+
+    t = Tiff(fileName,'r');
+    switch outputMode
+        case 'n'
+            for ii=1:numel(idx)
+                t.setDirectory(idx(ii));
+                I(:,:,ii)=t.readEncodedStrip(1);
+            end
+        case 'c'
+            for ii=1:numel(idx)
+                t.setDirectory(idx(ii));
+                I(:,:,ii)=t.readEncodedStrip(1);
+                fprintf('Loading slice %u of %u...\n', ii, numel(idx))
+            end
+        case 'g'
+            swb=SuperWaitBar(numel(idx), strrep(sprintf('Loading from %s ', fileName), '_', '\_'));
+            for ii=1:numel(idx)
+                t.setDirectory(idx(ii));
+                I(:,:,ii)=t.readEncodedStrip(1);
+                swb.progress;
+            end
+            delete(swb)
+            clear swb
+    end
+    close(t)
+end
 
 function dt=selectMATLABDataType(info)
 switch info.BitDepth
