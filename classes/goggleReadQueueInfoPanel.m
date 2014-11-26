@@ -64,7 +64,7 @@ classdef goggleReadQueueInfoPanel<handle
                 'BackgroundColor', gbSetting('viewer.panelBkgdColor'), ...
                 'ForegroundColor', gbSetting('viewer.textMainColor'), ...
                 'HitTest', 'off');
-           obj.tmr=timer('ExecutionMode', 'fixedSpacing', 'Period', 0.05, 'TimerFcn', {@updateNumberOfReadsInQueue, obj});
+           obj.tmr=timer('ExecutionMode', 'fixedSpacing', 'Period', 0.2, 'TimerFcn', {@updateNumberOfReadsInQueue, obj});
            start(obj.tmr)
            
         end
