@@ -16,6 +16,11 @@ else
     outputMode=lower(outputMode);
 end
 
+if strcmp(outputMode, 'g')&&usejava('jvm')&&~feature('ShowFigureWindows') %Switch to console display if no graphics available
+    outputMode='c';
+end
+
+
 info=imfinfo(fileName);
 
 if numel(info)>1 %IFD before each page

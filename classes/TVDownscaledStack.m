@@ -225,57 +225,61 @@ function deleteObjFromMetadataFile(obj)
 end
 
 function I = createDownscaledStack( mosaicInfo, channel, idx, varargin )
-%CREATEDOWNSCALEDSTACK 
-
-%% Input parsing
-p=inputParser;
-
-addRequired(p, 'mosaicInfo', @(x) isa(x, 'TVStitchedMosaicInfo'));
-addRequired(p, 'channel', @isstr);
-addRequired(p, 'idx', @isvector)
-addOptional(p, 'downSample', 1, @(x) isscalar(x));
-
-parse(p, mosaicInfo, channel, idx, varargin{:})
-q=p.Results;
-if ~isfield(q.mosaicInfo.stitchedImagePaths, channel)
-    error('Unknown channel identifier: %s', channel)
-end
-
-%% Start default parallel pool if not already
-gcp;
-
-%% Generate full file path
-pths=fullfile(mosaicInfo.baseDirectory, mosaicInfo.stitchedImagePaths.(channel)(idx));
-%% Get file information to determine crop
-info=cell(numel(idx), 1);
-
-swb=SuperWaitBar(numel(idx), 'Getting image info...');
-parfor ii=1:numel(idx)
-    info{ii}=imfinfo(pths{ii});
-    swb.progress(); %#ok<PFBNS>
-end
-delete(swb);
-clear swb
-
-%%
-minWidth=min(cellfun(@(x) x.Width, info));
-minHeight=min(cellfun(@(x) x.Height, info));
-
-outputImageWidth=ceil(minWidth/q.downSample);
-outputImageHeight=ceil(minHeight/q.downSample);
-
-
-I=zeros(outputImageHeight, outputImageWidth, numel(idx), 'uint16');
-
-swb=SuperWaitBar(numel(idx), 'Generating stack...');
-parfor ii=1:numel(idx)
-    fName=fullfile(mosaicInfo.baseDirectory, mosaicInfo.stitchedImagePaths.(channel){idx(ii)}); %#ok<PFBNS>
-    I(:,:,ii)=openTiff(fName, [1 1 minWidth minHeight], q.downSample); %#ok<PFBNS>
-    swb.progress(); %#ok<PFBNS>
-end
-delete(swb);
-clear swb
-
+    %% Input parsing
+    p=inputParser;
+    
+    addRequired(p, 'mosaicInfo', @(x) isa(x, 'TVStitchedMosaicInfo'));
+    addRequired(p, 'channel', @isstr);
+    addRequired(p, 'idx', @isvector)
+    addOptional(p, 'downSample', 1, @(x) isscalar(x));
+    
+    parse(p, mosaicInfo, channel, idx, varargin{:})
+    q=p.Results;
+    if ~isfield(q.mosaicInfo.stitchedImagePaths, channel)
+        error('Unknown channel identifier: %s', channel)
+    end
+    
+    %% Start default parallel pool if not already
+    gcp;
+    
+    %% Generate full file path
+    pths=fullfile(mosaicInfo.baseDirectory, mosaicInfo.stitchedImagePaths.(channel)(idx));
+    %% Get file information to determine crop
+    info=cell(numel(idx), 1);
+    
+    swb=SuperWaitBar(numel(idx), 'Getting image info...');
+    parfor ii=1:numel(idx)
+        info{ii}=imfinfo(pths{ii});
+        swb.progress(); %#ok<PFBNS>
+    end
+    delete(swb);
+    clear swb
+    
+    %%
+    minWidth=min(cellfun(@(x) x.Width, info));
+    minHeight=min(cellfun(@(x) x.Height, info));
+    
+    outputImageWidth=ceil(minWidth/q.downSample);
+    outputImageHeight=ceil(minHeight/q.downSample);
+    
+    
+    I=zeros(outputImageHeight, outputImageWidth, numel(idx), 'uint16');
+    if strcmp(outputMode, 'g')&&usejava('jvm')&&~feature('ShowFigureWindows') %Switch to console display if no graphics available
+        parfor ii=1:numel(idx)
+            fName=fullfile(mosaicInfo.baseDirectory, mosaicInfo.stitchedImagePaths.(channel){idx(ii)}); %#ok<PFBNS>
+            I(:,:,ii)=openTiff(fName, [1 1 minWidth minHeight], q.downSample); %#ok<PFBNS>
+            fprintf('Generating downscaledStack: processing image %u of %u', numel(idx), ii)%#ok<PFBNS>
+        end        
+    else
+        swb=SuperWaitBar(numel(idx), 'Generating stack...');
+        parfor ii=1:numel(idx)
+            fName=fullfile(mosaicInfo.baseDirectory, mosaicInfo.stitchedImagePaths.(channel){idx(ii)}); %#ok<PFBNS>
+            I(:,:,ii)=openTiff(fName, [1 1 minWidth minHeight], q.downSample); %#ok<PFBNS>
+            swb.progress(); %#ok<PFBNS>
+        end
+        delete(swb);
+        clear swb
+    end
 end
 
 function [channel, idx, xyds]=getDSStackSpec(mosaicInfo)

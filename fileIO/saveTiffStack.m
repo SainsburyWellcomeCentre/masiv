@@ -8,6 +8,9 @@ function saveTiffStack(I, fileName, outputMode)
     else
         outputMode=lower(outputMode);
     end
+    if strcmp(outputMode, 'g')&&usejava('jvm')&&~feature('ShowFigureWindows') %Switch to console display if no graphics available
+        outputMode='c';
+    end
     %% Check .tif extension
     if ~strfind(fileName, '.tif')
         fileName=[fileName, '.tif'];
