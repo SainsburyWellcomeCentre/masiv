@@ -78,7 +78,7 @@ end
 function updateNumberOfReadsInQueue(~,~, obj)
     n=getReadQueueSize;
     obj.readQueueSizeText.String=num2str(n);
-    frac=n/gbSetting('readQueueInfoPanel.max');
+    frac=n/gbSetting('readQueueInfoPanel.max'); if frac>1; frac=1;end
     obj.foregroundBlockingPatch.Position=[frac, 0, 1-frac, 1];
 end
 
@@ -103,7 +103,7 @@ function changeMax(~,~)
     else
         oldMax=gbSetting('readQueueInfoPanel.max');
         newMax=inputdlg('Enter new max for read meter', 'Change Display Limit', 1, {num2str(oldMax)});
-        if ~isempty(newLim)&&~isempty(str2double(newLim))
+        if ~isempty(newMax)&&~isempty(str2double(newMax))
             gbSetting('readQueueInfoPanel.max', str2double(newMax))
         end
     end
