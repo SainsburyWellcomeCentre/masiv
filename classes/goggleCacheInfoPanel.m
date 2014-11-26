@@ -68,10 +68,10 @@ classdef goggleCacheInfoPanel<handle
     end
     methods
         function updateCacheStatusDisplay(obj)
-            cacheLimit=gbSetting('cache.sizeLimitMB');
+            cacheLimit=gbSetting('cache.sizeLimitMiB');
             cacheUsed=obj.gzvm.cacheMemoryUsed;
             fracUsed=cacheUsed/cacheLimit;
-            obj.cacheStatusText.String=sprintf('%u/%uMB (%u%%) in use', round(cacheUsed), cacheLimit, round(fracUsed*100));
+            obj.cacheStatusText.String=sprintf('%u/%uMiB (%u%%) in use', round(cacheUsed), cacheLimit, round(fracUsed*100));
             obj.foregroundBlockingPatch.Position=[fracUsed, 0, 1-fracUsed, 1];
         end
     end
@@ -95,10 +95,10 @@ function changeCacheSize(~,~, obj)
         pause(0.2)
         waitFlag=[];
     else
-        oldLim=gbSetting('cache.sizeLimitMB');
-        newLim=inputdlg('New Cache Size', 'Change Cache Limit', 1, {num2str(oldLim)});
+        oldLim=gbSetting('cache.sizeLimitMiB');
+        newLim=inputdlg('New Cache Size (MiB)', 'Change Cache Limit', 1, {num2str(oldLim)});
         if ~isempty(newLim)&&~isempty(str2double(newLim))
-            gbSetting('cache.sizeLimitMB', str2double(newLim))
+            gbSetting('cache.sizeLimitMiB', str2double(newLim))
             if str2double(newLim)<oldLim
                 obj.gzvm.cleanUpCache;
             end

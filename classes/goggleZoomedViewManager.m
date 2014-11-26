@@ -103,7 +103,7 @@ classdef goggleZoomedViewManager<handle
             cData=obj.hImg.CData;
         end
         function cmem=get.cacheMemoryUsed(obj)
-            cmem=sum([obj.zoomedViewArray.sizeMB]);
+            cmem=sum([obj.zoomedViewArray.sizeMiB]);
         end
     end
     
@@ -114,10 +114,10 @@ classdef goggleZoomedViewManager<handle
         
         
         function reduceToCacheLimit(obj)
-            cumTotalSizeOfZoomedViewsMB=cumsum([obj.zoomedViewArray.sizeMB]);
+            cumTotalSizeOfZoomedViewsMB=cumsum([obj.zoomedViewArray.sizeMiB]);
             goggleDebugTimingInfo(2, 'GZVM.reduceToCacheLimit: Current Cache Size',round(cumTotalSizeOfZoomedViewsMB(end)), 'MB')
-            if any(cumTotalSizeOfZoomedViewsMB>gbSetting('cache.sizeLimitMB'))
-                firstIndexToCut=find(cumTotalSizeOfZoomedViewsMB>gbSetting('cache.sizeLimitMB'), 1);
+            if any(cumTotalSizeOfZoomedViewsMB>gbSetting('cache.sizeLimitMiB'))
+                firstIndexToCut=find(cumTotalSizeOfZoomedViewsMB>gbSetting('cache.sizeLimitMiB'), 1);
                 obj.zoomedViewArray=obj.zoomedViewArray(1:firstIndexToCut-1);
             end
         end

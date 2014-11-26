@@ -12,7 +12,7 @@ classdef goggleZoomedView<handle
         z
     end
     properties(SetAccess=protected, Dependent)
-        sizeMB
+        sizeMiB
         imageInMemory
     end
     
@@ -38,9 +38,9 @@ classdef goggleZoomedView<handle
             end
         end
         %% Getters
-        function szMB=get.sizeMB(obj)
+        function szMiB=get.sizeMiB(obj)
             szBytes=numel(obj.imageData)*2; % 16 bit images
-            szMB=szBytes/(1000*1000);
+            szMiB=szBytes/(1024*1024);
         end
         function inmem=get.imageInMemory(obj)
             inmem=~isempty(obj.imageData);

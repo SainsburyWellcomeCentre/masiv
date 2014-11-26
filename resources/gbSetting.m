@@ -51,7 +51,7 @@ function createDefaultPrefsFile()
     s.viewerDisplay.minZoomLevelForDetailedLoad=1.5;
 
     %% Cache Settings
-    s.cache.sizeLimitMB=1024; %1GB by default
+    s.cache.sizeLimitMiB=1024; %1GiB by default
     
     %% ViewInfoPanel Settings
     s.viewInfoPanel.fileNotOnDiskTextColor=[0.8 0.24 0];
