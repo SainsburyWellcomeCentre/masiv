@@ -15,6 +15,7 @@ classdef goggleViewer<handle
         hAxContrastAuto
         hViewInfoBox
         hCacheInfoBox
+        hReadQueueInfoBox
         %% Data
         mosaicInfo
         overviewDSS
@@ -127,6 +128,7 @@ classdef goggleViewer<handle
             obj.hViewInfoBox=goggleViewInfoPanel(obj.hFig, [0.83 0.5 0.16 0.31], obj.mainDisplay);
             obj.hCacheInfoBox=goggleCacheInfoPanel(obj.hFig, [0.83 0.4 0.16 0.09], obj.mainDisplay.zoomedViewManager);
             obj.mainDisplay.zoomedViewManager.cacheInfoPanel=obj.hCacheInfoBox; %tell the zoomedViewManager about the info box
+            obj.hReadQueueInfoBox=goggleReadQueueInfoPanel(obj.hFig, [0.83 0.3 0.16 0.09], obj.mainDisplay.zoomedViewManager);
             %% Set fonts to something nice
             set(findall(gcf, '-property','FontName'), 'FontName', gbSetting('font.name'))
             
@@ -336,6 +338,9 @@ function adjustContrast(hContrastLim, ~, obj)
 end
 function closeRequest(~,~,obj)
 gbSetting('viewer.mainFigurePosition', obj.hFig.Position)
+delete(obj.hViewInfoBox)
+delete(obj.hCacheInfoBox)
+delete(obj.hReadQueueInfoBox)
 delete(timerfind); 
 delete(obj.hFig); 
 delete(obj)

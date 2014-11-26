@@ -56,6 +56,9 @@ function createDefaultPrefsFile()
     %% ViewInfoPanel Settings
     s.viewInfoPanel.fileNotOnDiskTextColor=[0.8 0.24 0];
     s.viewInfoPanel.fileOnDiskTextColor=[0 0.8 0.32];
+    
+    %% ReadQueueInfoPanel Settings
+    s.readQueueInfoPanel.max=50;
 %%
     baseDir=fileparts(which('goggleViewer'));
     
