@@ -76,7 +76,10 @@ classdef goggleViewerDisplay<handle
         end
                
         function updateZoomedView(obj)
-            if obj.zoomLevel>gbSetting('viewerDisplay.minZoomLevelForDetailedLoad')
+            goggleDebugTimingInfo(1, 'GVD.updateZoomedView: Call started. Checking need...', toc, 's')
+            z=obj.zoomLevel;
+            goggleDebugTimingInfo(1, 'GVD.updateZoomedView: zoomLevel calculated...', toc, 's')
+            if z>gbSetting('viewerDisplay.minZoomLevelForDetailedLoad')
                 goggleDebugTimingInfo(1, 'GVD.updateZoomedView: Zoomed image needed. Updating view...', toc, 's')
                 obj.zoomedViewManager.updateView()
                 goggleDebugTimingInfo(1, 'GVD.updateZoomedView: View updated', toc, 's')
@@ -103,7 +106,14 @@ classdef goggleViewerDisplay<handle
             czpolid=obj.currentZPlaneOriginalFileNumber-1;
         end
         function zl=get.zoomLevel(obj)
-            zl=range(obj.overviewStack.xCoords)./range(xlim(obj.axes));
+            ovRange=(obj.overviewStack.xCoords(end)-obj.overviewStack.xCoords(1));
+            goggleDebugTimingInfo(2, 'GVD.zoomLevel: ovRange calculated', toc, 's')
+            goggleDebugTimingInfo(2, 'GVD.zoomLevel: starting XL Range', toc, 's')
+            xlRange=(obj.axes.XLim(2)-obj.axes.XLim(1));
+            goggleDebugTimingInfo(2, 'GVD.zoomLevel: xlRange calculated', toc, 's')
+
+            zl=ovRange/xlRange;
+                
         end
         function dsfczl=get.downSamplingForCurrentZoomLevel(obj)
             xl=round(xlim(obj.axes));

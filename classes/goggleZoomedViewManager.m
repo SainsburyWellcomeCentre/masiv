@@ -6,6 +6,7 @@ classdef goggleZoomedViewManager<handle
         parentViewerDisplay
         zoomedViewArray=goggleZoomedView
         hImg
+        currentSliceFileExistsOnDiskCache
     end
     properties(SetAccess=protected, Dependent)
         cacheMemoryUsed
@@ -26,6 +27,7 @@ classdef goggleZoomedViewManager<handle
         
         %% View updates
         function updateView(obj)
+            obj.currentSliceFileExistsOnDiskCache=[];
             v=findMatchingView(obj);
             if isempty(v)
                 goggleDebugTimingInfo(2, 'GZVM.updateView: Creating new view...', toc,'s')
@@ -94,7 +96,10 @@ classdef goggleZoomedViewManager<handle
             csfp=fullfile(baseDir, csfn);
         end
         function fileOnDisk=get.currentSliceFileExistsOnDisk(obj)
-            fileOnDisk=exist(obj.currentSliceFileFullPath, 'file');
+            if isempty(obj.currentSliceFileExistsOnDiskCache)
+                obj.currentSliceFileExistsOnDiskCache=exist(obj.currentSliceFileFullPath, 'file');
+            end
+            fileOnDisk=obj.currentSliceFileExistsOnDiskCache;
         end
         function imgVis=get.imageVisible(obj)
             imgVis=~isempty(obj.hImg)&&strcmp(obj.hImg.Visible, 'on');
@@ -114,11 +119,13 @@ classdef goggleZoomedViewManager<handle
         
         
         function reduceToCacheLimit(obj)
-            cumTotalSizeOfZoomedViewsMB=cumsum([obj.zoomedViewArray.sizeMiB]);
-            goggleDebugTimingInfo(2, 'GZVM.reduceToCacheLimit: Current Cache Size',round(cumTotalSizeOfZoomedViewsMB(end)), 'MB')
-            if any(cumTotalSizeOfZoomedViewsMB>gbSetting('cache.sizeLimitMiB'))
-                firstIndexToCut=find(cumTotalSizeOfZoomedViewsMB>gbSetting('cache.sizeLimitMiB'), 1);
-                obj.zoomedViewArray=obj.zoomedViewArray(1:firstIndexToCut-1);
+            if ~isempty(obj.zoomedViewArray)
+                cumTotalSizeOfZoomedViewsMB=cumsum([obj.zoomedViewArray.sizeMiB]);
+                goggleDebugTimingInfo(2, 'GZVM.reduceToCacheLimit: Current Cache Size',round(cumTotalSizeOfZoomedViewsMB(end)), 'MB')
+                if any(cumTotalSizeOfZoomedViewsMB>gbSetting('cache.sizeLimitMiB'))
+                    firstIndexToCut=find(cumTotalSizeOfZoomedViewsMB>gbSetting('cache.sizeLimitMiB'), 1);
+                    obj.zoomedViewArray=obj.zoomedViewArray(1:firstIndexToCut-1);
+                end
             end
         end
         

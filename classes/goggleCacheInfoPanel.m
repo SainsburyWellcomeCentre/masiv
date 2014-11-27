@@ -97,12 +97,48 @@ function changeCacheSize(~,~, obj)
     else
         oldLim=gbSetting('cache.sizeLimitMiB');
         newLim=inputdlg('New Cache Size (MiB)', 'Change Cache Limit', 1, {num2str(oldLim)});
-        if ~isempty(newLim)&&~isempty(str2double(newLim))
-            gbSetting('cache.sizeLimitMiB', str2double(newLim))
-            if str2double(newLim)<oldLim
-                obj.gzvm.cleanUpCache;
+        if ~isempty(newLim)&&~isempty(str2double(newLim))&&~isnan(str2double(newLim))
+            if checkCacheSizeOK(obj, str2double(newLim))
+                gbSetting('cache.sizeLimitMiB', str2double(newLim))
+                if str2double(newLim)<oldLim
+                    obj.gzvm.cleanUpCache;
+                end
             end
         end
         obj.updateCacheStatusDisplay();
     end
 end
+
+function flag=checkCacheSizeOK(obj, newLim)
+
+    [freeMemKiB, totalMemKiB]=systemMemStats;
+    freeMemMiB=freeMemKiB/1024;
+    totalMemMiB=totalMemKiB/1024;
+    usedMemMiB=totalMemMiB-freeMemMiB;
+
+    
+    totalNewMemoryUsageMiB=newLim+usedMemMiB-obj.gzvm.cacheMemoryUsed;
+    
+    if totalNewMemoryUsageMiB>totalMemMiB;
+        response=questdlg(sprintf('Specified cache size (%uMiB)\nwould exceed available memory.\nAre you sure you want to do this?', round(newLim)), ...
+            'Confirm memory change', 'Yes', 'No', 'No');
+        if ~isempty(response)&&strcmp(response, 'Yes')
+            flag=1;
+        else
+            flag=0;
+        end
+    else
+        flag=1;
+    end
+end
+
+
+
+
+
+
+
+
+
+
+

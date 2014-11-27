@@ -267,7 +267,9 @@ classdef goggleViewer<handle
             goggleDebugTimingInfo(0, 'GV: Calling mainDisplay updateZoomedView...',toc, 's')
             obj.mainDisplay.updateZoomedView
             goggleDebugTimingInfo(0, 'GV: mainDisplay updateZoomedView complete',toc, 's')
+            goggleDebugTimingInfo(0, 'GV: ViewInfoBox update starting',toc, 's')
             obj.hViewInfoBox.updateDisplay
+            goggleDebugTimingInfo(0, 'GV: ViewInfoBox update complete',toc, 's')
         end
         
         
