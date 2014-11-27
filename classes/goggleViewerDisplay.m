@@ -3,15 +3,16 @@ classdef goggleViewerDisplay<handle
     % overview (pre-generated, downscaled stack) and detail (less- or not-
     % downsampled images read from disk as needed) images
     properties(SetAccess=protected)
+        parentViewer
         overviewStack
         axes
         currentIndex
         hImg
         zoomedViewManager
+        
     end
     properties
         contrastLims
-        InfoPanel
     end
     properties(Dependent, Access=protected)
         currentPlaneData
@@ -36,23 +37,24 @@ classdef goggleViewerDisplay<handle
     
     methods
         %% Constructor
-        function obj=goggleViewerDisplay(overviewStack, hAx)
-           obj.overviewStack=overviewStack;
-           if ~obj.overviewStack.imageInMemory
-               obj.overviewStack.loadStackFromDisk;
-           end
-           obj.axes=hAx;
-           obj.currentIndex=1;
-           obj.hImg=image('Visible', 'on', ...
-               'XData', obj.overviewStack.xCoords, ...
-               'YData', obj.overviewStack.yCoords, ...
-               'CData', obj.currentPlaneData, ...
-               'CDataMapping', 'scaled', ...
-               'Parent', obj.axes);
-           obj.contrastLims=[0 65536];           
-           obj.zoomedViewManager=goggleZoomedViewManager(obj);
-           
-           obj.drawNewZ();
+        function obj=goggleViewerDisplay(parent)
+            obj.parentViewer=parent;
+            obj.overviewStack=parent.overviewDSS;
+            if ~obj.overviewStack.imageInMemory
+                obj.overviewStack.loadStackFromDisk;
+            end
+            obj.axes=parent.hImgAx;
+            obj.currentIndex=1;
+            obj.hImg=image('Visible', 'on', ...
+                'XData', obj.overviewStack.xCoords, ...
+                'YData', obj.overviewStack.yCoords, ...
+                'CData', obj.currentPlaneData, ...
+                'CDataMapping', 'scaled', ...
+                'Parent', obj.axes);
+            obj.contrastLims=[0 65536];
+            obj.zoomedViewManager=goggleZoomedViewManager(obj);
+            
+            obj.drawNewZ();
         end
         %% Methods
         function stdout=seekZ(obj, n)
@@ -107,11 +109,7 @@ classdef goggleViewerDisplay<handle
         end
         function zl=get.zoomLevel(obj)
             ovRange=(obj.overviewStack.xCoords(end)-obj.overviewStack.xCoords(1));
-            goggleDebugTimingInfo(2, 'GVD.zoomLevel: ovRange calculated', toc, 's')
-            goggleDebugTimingInfo(2, 'GVD.zoomLevel: starting XL Range', toc, 's')
             xlRange=(obj.axes.XLim(2)-obj.axes.XLim(1));
-            goggleDebugTimingInfo(2, 'GVD.zoomLevel: xlRange calculated', toc, 's')
-
             zl=ovRange/xlRange;
                 
         end

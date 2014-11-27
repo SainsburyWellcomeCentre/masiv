@@ -13,15 +13,19 @@ classdef goggleViewer<handle
         hAxContrastMin
         hAxContrastMax
         hAxContrastAuto
-        hViewInfoBox
-        hCacheInfoBox
-        hReadQueueInfoBox
-        hSystemMemoryUsageInfoBox
+        
+        infoPanels
         %% Data
         mosaicInfo
         overviewDSS
         mainDisplay
         
+    end
+    
+    events
+        CacheChanged
+        ViewChanged
+        CursorPositionChanged
     end
    
     methods % Constructor
@@ -119,17 +123,16 @@ classdef goggleViewer<handle
                 obj.overviewDSS=obj.mosaicInfo.downscaledStacks(idx);
             end
             startDebugOutput;
-            obj.mainDisplay=goggleViewerDisplay(obj.overviewDSS, obj.hImgAx); %Default to the first available
+            obj.mainDisplay=goggleViewerDisplay(obj);
             obj.mainDisplay.drawNewZ();
             adjustContrast([], [], obj);
             axis(obj.hImgAx, 'equal')
             
             %% Info boxes
-            obj.hViewInfoBox=goggleViewInfoPanel(obj.hFig, [0.83 0.5 0.16 0.31], obj.mainDisplay);
-            obj.hReadQueueInfoBox=goggleReadQueueInfoPanel(obj.hFig, [0.83 0.4 0.16 0.09], obj.mainDisplay.zoomedViewManager);
-            obj.hCacheInfoBox=goggleCacheInfoPanel(obj.hFig, [0.83 0.3 0.16 0.09], obj.mainDisplay.zoomedViewManager);
-            obj.mainDisplay.zoomedViewManager.cacheInfoPanel=obj.hCacheInfoBox; %tell the zoomedViewManager about the info box
-            obj.hSystemMemoryUsageInfoBox=goggleSystemMemoryUsageInfoPanel(obj.hFig, [0.83 0.11 0.16 0.18], obj.mainDisplay.zoomedViewManager);
+            obj.addInfoPanel(goggleViewInfoPanel(obj, obj.hFig, [0.83 0.5 0.16 0.31], obj.mainDisplay));
+            obj.addInfoPanel(goggleReadQueueInfoPanel(obj.hFig, [0.83 0.4 0.16 0.09], obj.mainDisplay.zoomedViewManager));
+            obj.addInfoPanel(goggleCacheInfoPanel(obj, [0.83 0.3 0.16 0.09]));
+           obj.addInfoPanel(goggleSystemMemoryUsageInfoPanel(obj.hFig, [0.83 0.11 0.16 0.18], obj.mainDisplay.zoomedViewManager));
             %% Set fonts to something nice
             set(findall(gcf, '-property','FontName'), 'FontName', gbSetting('font.name'))
             
@@ -261,18 +264,47 @@ classdef goggleViewer<handle
             end
         end
         
+        %% --- Zooming
+        function executeZoom(obj, zoomfactor)
+             zoom(obj.hImgAx,zoomfactor)
+             obj.changeAxes
+        end
+        
         %% ---Update axes
         function changeAxes(obj)
-            goggleDebugTimingInfo(0, 'GV: Axis Change Complete',toc, 's')
             goggleDebugTimingInfo(0, 'GV: Calling mainDisplay updateZoomedView...',toc, 's')
             obj.mainDisplay.updateZoomedView
             goggleDebugTimingInfo(0, 'GV: mainDisplay updateZoomedView complete',toc, 's')
-            goggleDebugTimingInfo(0, 'GV: ViewInfoBox update starting',toc, 's')
-            obj.hViewInfoBox.updateDisplay
-            goggleDebugTimingInfo(0, 'GV: ViewInfoBox update complete',toc, 's')
+            goggleDebugTimingInfo(0, 'GV: Firing ViewChanged Event',toc, 's')
+            notify(obj, 'ViewChanged')
         end
         
+        %% Info Panel Functions
+        function addInfoPanel(obj, hPanel)
+            if isempty(obj.infoPanels)
+                obj.infoPanels={hPanel};
+            else
+                obj.infoPanels{end+1}=hPanel;
+            end
+        end
         
+        function deleteInfoPanel(obj, hPanel)
+            if ischar(hPanel)&&strcmp(hPanel, 'all')
+                obj.deleteInfoPanel(1:numel(obj.infoPanels))
+            else
+                if isobject(hPanel)&&isscalar(hPanel)
+                    idx=ismember(obj.infoPanels, hPanel);
+                elseif isnumeric(hPanel)&&isvector(hPanel)
+                   idx= hPanel;
+                else
+                    error('Unrecognised deleted panel specification')
+                end
+                for ii=1:numel(idx)
+                    delete(obj.infoPanels{idx(ii)})
+                end
+                obj.infoPanels(idx)=[];
+            end
+        end
     end
 end
 
@@ -286,17 +318,14 @@ function hFigMain_KeyPress (~, eventdata, obj)
 
     startDebugOutput
 
-    movedFlag=0;
     %% What shall we do?
     switch eventdata.Key
         case 'shift'
             % Do nothing
         case 'uparrow'
-            zoom(gbSetting('navigation.zoomRate'))
-            movedFlag=1;
+            obj.executeZoom(gbSetting('navigation.zoomRate'))
         case 'downarrow'
-            zoom(1/gbSetting('navigation.zoomRate'))
-            movedFlag=1;
+            obj.executeZoom(1/gbSetting('navigation.zoomRate'))
         case {'leftarrow', 'rightarrow'}
             obj.formatKeyScrollAndAddToQueue(eventdata);
         case {'w' 'a' 's' 'd'}
@@ -306,15 +335,10 @@ function hFigMain_KeyPress (~, eventdata, obj)
         otherwise
             goggleDebugTimingInfo(0, sprintf('GV.unknownKeypress: %s', eventdata.Key))
     end
-    if movedFlag
-        obj.changeAxes
-    else
-        goggleDebugTimingInfo(0, 'GV: No Axis Change',toc, 's')
-    end
 end
 function mouseMove (~, ~, obj)
     C = get (obj.hImgAx, 'CurrentPoint');
-    obj.hViewInfoBox.currentCursorPosition=C;
+    notify(obj, 'CursorPositionChanged', CursorPositionData(C));
 end
 function hFigMain_ScrollWheel(~, eventdata, obj)
     startDebugOutput
@@ -348,10 +372,7 @@ function adjustContrast(hContrastLim, ~, obj)
 end
 function closeRequest(~,~,obj)
 gbSetting('viewer.mainFigurePosition', obj.hFig.Position)
-delete(obj.hViewInfoBox)
-delete(obj.hCacheInfoBox)
-delete(obj.hReadQueueInfoBox)
-delete(obj.hSystemMemoryUsageInfoBox)
+deleteInfoPanel(obj, 'all')
 delete(timerfind); 
 delete(obj.hFig); 
 delete(obj)

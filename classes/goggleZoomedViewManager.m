@@ -16,9 +16,6 @@ classdef goggleZoomedViewManager<handle
         imageVisible
         currentImageViewData
     end
-    properties
-        cacheInfoPanel
-    end
     methods
         %% Constructor
         function obj=goggleZoomedViewManager(parentViewerDisplay)
@@ -33,6 +30,7 @@ classdef goggleZoomedViewManager<handle
                 goggleDebugTimingInfo(2, 'GZVM.updateView: Creating new view...', toc,'s')
                 try
                     stdout=obj.createNewView;
+                    notify(obj.parentViewerDisplay.parentViewer, 'CacheChanged')
                     if stdout==0
                         obj.hide
                     end
@@ -49,8 +47,6 @@ classdef goggleZoomedViewManager<handle
                 goggleDebugTimingInfo(2, sprintf('GZVM.updateView: View #%u will be used. Updating image...', v(1)),toc,'s')
                 updateImage(obj, v(1))
             end
-            obj.updateCacheInfoPanel();
-
         end
         
         function stdout=createNewView(obj)
@@ -81,7 +77,6 @@ classdef goggleZoomedViewManager<handle
         function cleanUpCache(obj)
             obj.clearInvalidPlanes();
             obj.reduceToCacheLimit();
-            obj.updateCacheInfoPanel();
         end
         %% Getters
         function csfn=get.currentSliceFileName(obj)
@@ -139,12 +134,7 @@ classdef goggleZoomedViewManager<handle
         function moveZVToTopOfCacheStack(obj, idx)
             obj.zoomedViewArray=obj.zoomedViewArray([idx 1:idx-1 idx+1:end]);
         end
-        
-        function updateCacheInfoPanel(obj)
-            for ii=1:numel(obj.cacheInfoPanel)
-                obj.cacheInfoPanel(ii).updateCacheStatusDisplay;
-            end
-        end
+       
     end
 end
 
@@ -196,7 +186,6 @@ function updateImage(obj, idx)
    obj.hImg.YData=zv.y;
    obj.hImg.CData=zv.imageData;
    obj.hImg.Visible='on';
-   
    obj.moveZVToTopOfCacheStack(idx);
 end
 

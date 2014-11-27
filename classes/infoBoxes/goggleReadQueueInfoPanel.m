@@ -68,7 +68,9 @@ classdef goggleReadQueueInfoPanel<handle
            start(obj.tmr)
            
         end
+        %% Destructor
         function delete(obj)
+            delete(obj.mainPanel)
             stop(obj.tmr)
             deleteReadQueueFile
         end

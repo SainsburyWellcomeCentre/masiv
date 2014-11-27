@@ -1,6 +1,6 @@
 classdef goggleCacheInfoPanel<handle
     properties(SetAccess=protected)
-        parentFig
+        parent
         position
         gzvm    
         
@@ -8,15 +8,18 @@ classdef goggleCacheInfoPanel<handle
         axMeter
         foregroundBlockingPatch
         cacheStatusText
+        
+        updateListener
     end
     methods
-        function obj=goggleCacheInfoPanel(parentFig, position, gzvm)
-            obj.parentFig=parentFig;
+        %% Constructor
+        function obj=goggleCacheInfoPanel(parent, position)
+            obj.parent=parent;
             obj.position=position;
-            obj.gzvm=gzvm;
+            obj.gzvm=parent.mainDisplay.zoomedViewManager;
             
             obj.mainPanel=uipanel(...
-                'Parent', parentFig, ...
+                'Parent', parent.hFig, ...
                 'Units', 'normalized', ...
                 'Position', position, ...
                 'BackgroundColor', gbSetting('viewer.panelBkgdColor'), ...
@@ -64,15 +67,19 @@ classdef goggleCacheInfoPanel<handle
                 'ForegroundColor', gbSetting('viewer.textMainColor'), ...
                 'HitTest', 'off');
             obj.updateCacheStatusDisplay();
+            obj.updateListener=event.listener(parent, 'CacheChanged', @obj.updateCacheStatusDisplay);
         end
-    end
-    methods
-        function updateCacheStatusDisplay(obj)
+        %% Update
+        function updateCacheStatusDisplay(obj, ~, ~)
             cacheLimit=gbSetting('cache.sizeLimitMiB');
             cacheUsed=obj.gzvm.cacheMemoryUsed;
             fracUsed=cacheUsed/cacheLimit;
             obj.cacheStatusText.String=sprintf('%u/%uMiB (%u%%) in use', round(cacheUsed), cacheLimit, round(fracUsed*100));
             obj.foregroundBlockingPatch.Position=[fracUsed, 0, 1-fracUsed, 1];
+        end
+        %% Destructor
+        function delete(obj)
+            delete(obj.mainPanel)
         end
     end
 end

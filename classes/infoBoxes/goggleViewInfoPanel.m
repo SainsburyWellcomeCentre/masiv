@@ -16,22 +16,23 @@ classdef goggleViewInfoPanel<handle
         onDiskIndicator
         onDiskIndicatorLabel
         fileNameLabel
+        
+        parent
+        updateListener
+        cursorListener
     end
-    properties
-        currentCursorPosition
-    end
+
     properties(Dependent, SetAccess=protected)
         fileNameTruncatedForDisplay
     end
-
     methods
         %% Constructor
-        function obj=goggleViewInfoPanel(parent, position, gvd)
+        function obj=goggleViewInfoPanel(parent, hFig, position, gvd)
            
+            obj.parent=parent;
             obj.goggleViewerDisplay=gvd; %associated display object
-            obj.goggleViewerDisplay.InfoPanel=obj;
             obj.mainPanel=uipanel(...
-                'Parent', parent, ...
+                'Parent', hFig, ...
                 'Units', 'normalized', ...
                 'Position', position);
             fontSz=gbSetting('font.size');
@@ -197,24 +198,27 @@ classdef goggleViewInfoPanel<handle
      
             
             obj.updateDisplay();
-            %%
+            %% Set Colors
             obj.mainPanel.BackgroundColor=gbSetting('viewer.panelBkgdColor');
             set(obj.mainPanel.Children,'BackgroundColor', gbSetting('viewer.panelBkgdColor'))
             set(obj.mainPanel.Children,'ForegroundColor', gbSetting('viewer.textMainColor'))
+            
+           %% Add listeners
+           obj.updateListener=event.listener(parent, 'ViewChanged', @obj.updateDisplay);
+            obj.cursorListener=event.listener(parent, 'CursorPositionChanged', @obj.updateCurrentCursorPosition);
         end
         %% Update Display
-        function updateDisplay(obj)
-           doUpdate(obj);
+        function updateDisplay(obj, ~, ~)
+            doUpdate(obj)
         end
-        function set.currentCursorPosition(obj, C)
-            C=round(C);
+        function updateCurrentCursorPosition(obj, ~, evData)
+            C=round(evData.CursorPosition);
             x=C(1, 1);
             y=C(2, 2);
             if x>str2double(obj.xLimMin.String) && x<str2double(obj.xLimMax.String) &&...
-                    y>str2double(obj.yLimMin.String) && y<str2double(obj.yLimMax.String)%#ok<MCSUP>
-                obj.currentCursorPosition=[x y];
-                obj.cursorX.String=x; %#ok<MCSUP>
-                obj.cursorY.String=y; %#ok<MCSUP>
+                    y>str2double(obj.yLimMin.String) && y<str2double(obj.yLimMax.String)
+                obj.cursorX.String=x; 
+                obj.cursorY.String=y; 
             end
         end
         function showFileOnDiskStatus(obj)
@@ -255,67 +259,70 @@ classdef goggleViewInfoPanel<handle
             end
             fn=[nm ext];
         end
+        %% Destructor
+        function delete(obj)
+            delete(obj.mainPanel)
+        end
     end
 end
 
 function doUpdate(obj)
-   %% Update view limit coordinates
-            xl=round(xlim(obj.goggleViewerDisplay.axes));
-            obj.xLimMin.String=sprintf('%i', xl(1));
-            obj.xLimMax.String=sprintf('%i', xl(2));
+    goggleDebugTimingInfo(1, 'GVIP: Beginning asynchronous ViewInfo update',toc, 's')
 
-            
-            yl=round(ylim(obj.goggleViewerDisplay.axes));
-            obj.yLimMin.String=sprintf('%i',yl(1));
-            obj.yLimMax.String=sprintf('%i',yl(2));
-            
-            zIdx=obj.goggleViewerDisplay.currentIndex;
-            zIdxOrignalLayerID=obj.goggleViewerDisplay.currentZPlaneOriginalLayerID;
-            
-            zActual=obj.goggleViewerDisplay.overviewStack.zCoords(zIdx);
-            obj.zPosition.String=sprintf('Layer %04i (%ium)', zIdxOrignalLayerID, round(zActual));
-            
-            goggleDebugTimingInfo(1, 'GVIP: Positions Calculated',toc, 's')
-            %% Zoom info and file status. File name info.
-            
-            gvd=obj.goggleViewerDisplay;
-            zvm=gvd.zoomedViewManager;
-            
-            zoomLevel=gvd.zoomLevel;
-            dsFactor=gvd.downSamplingForCurrentZoomLevel;
-            stackDsFactor=gvd.overviewStack.xyds;
-            goggleDebugTimingInfo(1, 'GVIP: Downsampling Calculated',toc, 's')
-
-            if zoomLevel<=gbSetting('viewerDisplay.minZoomLevelForDetailedLoad')
-                obj.viewMode.String='In Memory';
-                obj.downSamplingFactor.String=sprintf('%ux',stackDsFactor);
-                obj.fileName.String='';
+    %% Update view limit coordinates
+    xl=round(xlim(obj.goggleViewerDisplay.axes));
+    obj.xLimMin.String=sprintf('%i', xl(1));
+    obj.xLimMax.String=sprintf('%i', xl(2));
+    
+    
+    yl=round(ylim(obj.goggleViewerDisplay.axes));
+    obj.yLimMin.String=sprintf('%i',yl(1));
+    obj.yLimMax.String=sprintf('%i',yl(2));
+    
+    zIdx=obj.goggleViewerDisplay.currentIndex;
+    zIdxOrignalLayerID=obj.goggleViewerDisplay.currentZPlaneOriginalLayerID;
+    
+    zActual=obj.goggleViewerDisplay.overviewStack.zCoords(zIdx);
+    obj.zPosition.String=sprintf('Layer %04i (%ium)', zIdxOrignalLayerID, round(zActual));
+    
+    %% Zoom info and file status. File name info.
+    
+    gvd=obj.goggleViewerDisplay;
+    zvm=gvd.zoomedViewManager;
+    
+    zoomLevel=gvd.zoomLevel;
+    dsFactor=gvd.downSamplingForCurrentZoomLevel;
+    stackDsFactor=gvd.overviewStack.xyds;
+    
+    if zoomLevel<=gbSetting('viewerDisplay.minZoomLevelForDetailedLoad')
+        obj.viewMode.String='In Memory';
+        obj.downSamplingFactor.String=sprintf('%ux',stackDsFactor);
+        obj.fileName.String='';
+    else
+        %% Update source and ds indicators
+        if ~zvm.currentSliceFileExistsOnDisk
+            obj.viewMode.String='In Memory';
+            obj.downSamplingFactor.String=sprintf('%ux',stackDsFactor);
+            obj.fileName.ForegroundColor=hsv2rgb([0.05 1 0.8]);
+        else
+            if dsFactor>1
+                obj.viewMode.String='From Disk';
+                obj.downSamplingFactor.String=sprintf('%ux', dsFactor);
+            elseif dsFactor==1
+                obj.viewMode.String='From Disk';
+                obj.downSamplingFactor.String='1x (None)';
             else
-                %% Update source and ds indicators
-                if ~zvm.currentSliceFileExistsOnDisk
-                    obj.viewMode.String='In Memory';
-                    obj.downSamplingFactor.String=sprintf('%ux',stackDsFactor);
-                    obj.fileName.ForegroundColor=hsv2rgb([0.05 1 0.8]);
-                else
-                    if dsFactor>1
-                        obj.viewMode.String='From Disk';
-                        obj.downSamplingFactor.String=sprintf('%ux', dsFactor);
-                    elseif dsFactor==1
-                        obj.viewMode.String='From Disk';
-                        obj.downSamplingFactor.String='1x (None)';
-                    else
-                        error('Unrecognised downSampling/zoomLevels')
-                    end
-                    obj.fileName.ForegroundColor = gbSetting('viewInfoPanel.fileOnDiskTextColor');
-                end
-                goggleDebugTimingInfo(1, 'GVIP: Source information updated',toc, 's')
-                obj.fileName.String=['(' obj.fileNameTruncatedForDisplay, ')'];
-                goggleDebugTimingInfo(1, 'GVIP: FileName updated',toc, 's')
-
+                error('Unrecognised downSampling/zoomLevels')
             end
-            
-            obj.showFileOnDiskStatus;
-                        goggleDebugTimingInfo(1, 'GVIP: File on disk status updated',toc, 's')
-                        
+            obj.fileName.ForegroundColor = gbSetting('viewInfoPanel.fileOnDiskTextColor');
+        end
+        obj.fileName.String=['(' obj.fileNameTruncatedForDisplay, ')'];
+        
+    end
+    
+    obj.showFileOnDiskStatus;
+    
+    goggleDebugTimingInfo(1, 'GVIP: ViewInfo update (asynchronous) complete',toc, 's')
+    
 end
 
