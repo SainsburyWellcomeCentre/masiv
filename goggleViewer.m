@@ -419,7 +419,26 @@ function exportViewToWorkspace(~,~,obj)
         xView(1), xView(2), ...
         yView(1), yView(2), ...
         obj.mainDisplay.currentZPlaneOriginalLayerID);
-    assignin('base', proposedImageName, I);
+    
+    retry=1;
+    while retry
+        imageName=inputdlg('Image variable name:', 'Export Image to Base Workspace', 1, {proposedImageName});
+       
+        if isempty(imageName)
+            return
+        else
+            imageName=imageName{1};
+        end
+            varExistsInBase=evalin('base', sprintf('exist(''%s'', ''var'');', imageName));
+            if varExistsInBase
+                if ~strcmp(questdlg(sprintf('A variable of name\n%s\n already exists. Overwrite?', imageName), ...
+                               'Export Image to Base Workspace', 'Yes', 'No', 'No'), 'Yes')
+                    continue
+                end
+            end
+            assignin('base',  matlab.lang.makeValidName(imageName), I);
+            retry=0;
+    end
 end
 
 %% Plugins menu creation
