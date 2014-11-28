@@ -34,10 +34,10 @@ classdef goggleViewer<handle
             %% Get mosaic info if none provided
             if nargin<1 ||isempty(mosaicInfoIn)
                 fp=uigetdir(gbSetting('defaultDirectory'), 'Please select base directory of the stitched mosaic');
-                gbSetting('defaultDirectory', fileparts(fp))
-                if isempty(fp)
+                if isempty(fp) || isnumeric(fp)
                     return
                 end
+                gbSetting('defaultDirectory', fileparts(fp))
                 obj.mosaicInfo=TVStitchedMosaicInfo(fp);
             else
                 obj.mosaicInfo=mosaicInfoIn;
@@ -132,7 +132,7 @@ classdef goggleViewer<handle
             obj.addInfoPanel(goggleViewInfoPanel(obj, obj.hFig, [0.83 0.5 0.16 0.31], obj.mainDisplay));
             obj.addInfoPanel(goggleReadQueueInfoPanel(obj.hFig, [0.83 0.4 0.16 0.09], obj.mainDisplay.zoomedViewManager));
             obj.addInfoPanel(goggleCacheInfoPanel(obj, [0.83 0.3 0.16 0.09]));
-           obj.addInfoPanel(goggleSystemMemoryUsageInfoPanel(obj.hFig, [0.83 0.11 0.16 0.18], obj.mainDisplay.zoomedViewManager));
+            obj.addInfoPanel(goggleSystemMemoryUsageInfoPanel(obj.hFig, [0.83 0.11 0.16 0.18], obj.mainDisplay.zoomedViewManager));
             %% Set fonts to something nice
             set(findall(gcf, '-property','FontName'), 'FontName', gbSetting('font.name'))
             
