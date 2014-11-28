@@ -67,7 +67,7 @@ end
 
 function checkForLoadedImage(t, ~, obj, f)
     try
-        [idx, r]=fetchNext(f, 0.01);
+        [idx, I]=fetchNext(f, 0.01);
     catch 
         idx=[];
         stop(t)
@@ -77,16 +77,10 @@ function checkForLoadedImage(t, ~, obj, f)
     end
     if ~isempty(idx)
         deleteLineFromQueueFile;
-        goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has been loaded', toc,'s')
-        if mod(obj.downSampling, 2)
-            r=deComb(r);
-            goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has been decombed', toc,'s')
-        else
-            goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has not been decombed', toc,'s')
-        end
-        r=imfilter(r, fspecial('gaussian', 5, 0.6));
+        goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has been loaded. Processing', toc,'s')
+        I=processImage(I, obj);
         goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has been filtered', toc,'s')
-        obj.imageData=r;
+        obj.imageData=I;
         goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image data read', toc,'s')
         stop(t)
         goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Timer stopped', toc,'s')
@@ -94,6 +88,13 @@ function checkForLoadedImage(t, ~, obj, f)
         goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Timer deleted', toc,'s')
         goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Calling ZVM updateView...', toc,'s')
         obj.parentZoomedViewManager.updateView();
+    end
+end
+
+function I=processImage(I, obj)
+    p=obj.parentZoomedViewManager;   
+    for ii=1:numel(p.imageProcessingPipeline)
+        I=p.imageProcessingPipeline{ii}.processImage(I, obj);
     end
 end
 

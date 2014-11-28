@@ -70,6 +70,8 @@ classdef goggleViewer<handle
             mnuImage=uimenu(obj.hFig, 'Label', 'Image');
                     uimenu(mnuImage, 'Label', 'Export Current View to Workspace', ...
                                      'Callback', {@exportViewToWorkspace, obj})
+                    uimenu(mnuImage, 'Label', 'Detailed image processing steps...', ...
+                                     'Callback', {@changeProcessingSteps, obj});
             
             mnuPlugins=uimenu(obj.hFig, 'Label', 'Plugins');
                     addPlugins(mnuPlugins, obj)
@@ -376,6 +378,12 @@ deleteInfoPanel(obj, 'all')
 delete(timerfind); 
 delete(obj.hFig); 
 delete(obj)
+end
+function changeProcessingSteps(~, ~, obj)
+    zvm=obj.mainDisplay.zoomedViewManager;
+    newPipeline=setImageProcessingPipeline(zvm.imageProcessingPipeline);
+    zvm.imageProcessingPipeline=newPipeline;
+    zvm.clearCache;
 end
 
 %% Utilities

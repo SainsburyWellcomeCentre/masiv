@@ -16,6 +16,9 @@ classdef goggleZoomedViewManager<handle
         imageVisible
         currentImageViewData
     end
+    properties 
+        imageProcessingPipeline
+    end
     methods
         %% Constructor
         function obj=goggleZoomedViewManager(parentViewerDisplay)
@@ -74,9 +77,15 @@ classdef goggleZoomedViewManager<handle
             obj.hImg.Visible='off';
         end
         
+        %% Cache functions
         function cleanUpCache(obj)
             obj.clearInvalidPlanes();
             obj.reduceToCacheLimit();
+        end
+        
+        function clearCache(obj)
+            obj.zoomedViewArray=goggleZoomedView;
+            obj.updateView();
         end
         %% Getters
         function csfn=get.currentSliceFileName(obj)

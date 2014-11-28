@@ -14,9 +14,6 @@ end
 
 dss=mosaicInfo.downscaledStacks;
 
-% if numel(dss)<1
-%     selectedDSS=dss;
-% else
     %% UI Declarations
     hFig=dialog(...
         'Name', sprintf('Select pregenerated overview stack for %s',mosaicInfo.experimentName), ...
