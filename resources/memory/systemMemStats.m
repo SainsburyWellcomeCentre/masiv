@@ -1,7 +1,7 @@
 function [freeMem, totalMem]=systemMemStats
 
 switch computer
-    case 'GLNX64'
+    case 'GLNXA64'
         s=strsplit(evalc('system(''free'');'), '\n');
         
         secondLine=strsplit(s{2});
