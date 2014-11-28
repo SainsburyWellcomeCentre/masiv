@@ -4,8 +4,8 @@ function selectedDSS = selectDownscaledStack(mosaicInfo)
 
 %#ok<*AGROW>
 
-fontSz=12;
-mainFont='Titillium';
+fontSz=gbSetting('font.size');
+mainFont=gbSetting('font.name');
 %%
 
 if ~isa(mosaicInfo, 'TVStitchedMosaicInfo')
