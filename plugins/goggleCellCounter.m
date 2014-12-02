@@ -33,8 +33,6 @@ classdef goggleCellCounter<goggleBoxPlugin
         scrolledListener
         zoomedListener
         
-        mnuChangeMarkerName
-        mnuChangeMarkerColor
         
     end
     
@@ -49,7 +47,7 @@ classdef goggleCellCounter<goggleBoxPlugin
         function obj=goggleCellCounter(caller, ~)
             obj=obj@goggleBoxPlugin;
             obj.goggleViewer=caller.UserData;
-           
+            
             %% Settings
             obj.fontName=gbSetting('font.name');
             obj.fontSize=gbSetting('font.size');
@@ -75,10 +73,6 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'Color', gbSetting('viewer.panelBkgdColor'), ...
                 'KeyPressFcn', {@keyPress, obj});
             %% Marker selection initialisation
-            obj.mnuChangeMarkerName=uicontextmenu;
-            obj.mnuChangeMarkerColor=uicontextmenu;
-            uimenu(obj.mnuChangeMarkerName, 'Label', 'Change name...')
-            uimenu(obj.mnuChangeMarkerColor, 'Label', 'Change color...')
             obj.hMarkerButtonGroup=uibuttongroup(...
                 'Parent', obj.hFig, ...
                 'Units', 'normalized', ...
@@ -124,10 +118,120 @@ classdef goggleCellCounter<goggleBoxPlugin
             %% Freeze menu
             obj.setParentMenuEnabled('off')
             
-
+            
         end
         
-        %% Listeners Callbacks
+        %% Set up markers
+        function updateMarkerTypeUISelections(obj)
+            %% Clear controls, if appropriate
+            if ~isempty(obj.hMarkerTypeSelection)
+                prevSelection=find(obj.hMarkerTypeSelection==obj.hMarkerButtonGroup.SelectedObject);
+                delete(obj.hMarkerTypeSelection)
+                delete(obj.hMarkerTypeChangeNameButtons)
+                delete(obj.hCountIndicatorAx)
+            else
+                prevSelection=1;
+            end
+            
+            %% Set up radio buttons
+            ii=1;
+            
+            obj.hMarkerTypeSelection=uicontrol(...
+                'Parent', obj.hMarkerButtonGroup, ...
+                'Style', 'radiobutton', ...
+                'Units', 'normalized', ...
+                'Position', [0.18 0.98-(0.08*ii) 0.45 0.08], ...
+                'String', obj.markerTypes(ii).name, ...
+                'UserData', ii, ...
+                'FontName', obj.fontName, ...
+                'FontSize', obj.fontSize, ...
+                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', gbSetting('viewer.textMainColor'));
+            setNameChangeContextMenu(obj.hMarkerTypeSelection, obj)
+            
+            for ii=2:numel(obj.markerTypes)
+                obj.hMarkerTypeSelection(ii)=uicontrol(...
+                    'Parent', obj.hMarkerButtonGroup, ...
+                    'Style', 'radiobutton', ...
+                    'Units', 'normalized', ...
+                    'Position', [0.18 0.98-(0.08*ii) 0.45 0.08], ...
+                    'String', obj.markerTypes(ii).name, ...
+                    'UserData', ii, ...
+                    'FontName', obj.fontName, ...
+                    'FontSize', obj.fontSize, ...
+                    'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
+                    'ForegroundColor', gbSetting('viewer.textMainColor'));
+                setNameChangeContextMenu(obj.hMarkerTypeSelection(ii), obj)
+                
+            end
+            obj.hMarkerTypeSelection(1).Value=1;
+            
+            %% Set up color indicator
+            ii=1;
+            obj.hColorIndicatorPanel=uipanel(...
+                'Parent', obj.hMarkerButtonGroup, ...
+                'Units', 'normalized', ...
+                'Position', [0.02 0.98-(0.08*ii)+0.01 0.12 0.06], ...
+                'UserData', ii, ...
+                'FontName', obj.fontName, ...
+                'FontSize', obj.fontSize-1, ...
+                'BackgroundColor', obj.markerTypes(ii).color);
+            setColorChangeContextMenu(obj.hColorIndicatorPanel, obj);
+            for ii=2:numel(obj.markerTypes)
+                obj.hColorIndicatorPanel(ii)=uipanel(...
+                    'Parent', obj.hMarkerButtonGroup, ...
+                    'Units', 'normalized', ...
+                    'Position', [0.02 0.98-(0.08*ii)+0.01 0.12 0.06], ...
+                    'UserData', ii, ...
+                    'FontName', obj.fontName, ...
+                    'FontSize', obj.fontSize-1, ...
+                    'BackgroundColor', obj.markerTypes(ii).color);
+                setColorChangeContextMenu(obj.hColorIndicatorPanel(ii), obj);
+            end
+            
+            %% Set up count indicator
+            ii=1;
+            obj.hCountIndicatorAx=axes(...
+                'Parent', obj.hMarkerButtonGroup, ...
+                'Units', 'normalized', ...
+                'Position', [0.65 0 0.3 1], ...
+                'Visible', 'off');
+            obj.hCountIndicatorText=text(...
+                'Parent', obj.hCountIndicatorAx, ...
+                'Units', 'normalized', ...
+                'Position', [0.5 0.98-(0.08*ii)+0.04], ...
+                'String', '0', ...
+                'UserData', ii, ...
+                'FontName', obj.fontName, ...
+                'FontSize', obj.fontSize+2, ...
+                'Color', gbSetting('viewer.textMainColor'), ...
+                'HorizontalAlignment', 'center');
+            
+            obj.hMarkerTypeSelection(ii).Value=1;
+            obj.updateMarkerCount(obj.currentType);
+            
+            for ii=2:numel(obj.markerTypes)
+                obj.hCountIndicatorText(ii)=text(...
+                    'Parent', obj.hCountIndicatorAx, ...
+                    'Units', 'normalized', ...
+                    'Position', [0.5 0.98-(0.08*ii)+0.04], ...
+                    'String', '0', ...
+                    'UserData', ii, ...
+                    'FontName', obj.fontName, ...
+                    'FontSize', obj.fontSize+2, ...
+                    'Color', gbSetting('viewer.textMainColor'), ...
+                    'HorizontalAlignment', 'center');
+                obj.hMarkerTypeSelection(ii).Value=1;
+                obj.updateMarkerCount(obj.currentType);
+                
+            end
+            
+            %% Reset Selection
+            obj.hMarkerTypeSelection(prevSelection).Value=1;
+            
+        end
+        
+        %% Listener Callbacks
         function updateCursorWithinAxes(obj, ~, evData)
             obj.cursorX=round(evData.CursorPosition(1,1));
             obj.cursorY=round(evData.CursorPosition(2,2));
@@ -144,12 +248,11 @@ classdef goggleCellCounter<goggleBoxPlugin
             else
                 error('Unknown mode selection')
             end
-                
+            
         end
         function parentKeyPress(obj, ~,ev)
             keyPress([], ev.KeyPressData, obj);
         end
-        %% Callbacks
         
         %% Functions
         function UIaddMarker(obj)
@@ -161,7 +264,7 @@ classdef goggleCellCounter<goggleBoxPlugin
             end
             drawMarkers(obj)
             %% Update count
-           obj.updateMarkerCount(obj.currentType);
+            obj.updateMarkerCount(obj.currentType);
         end
         
         function UIdeleteMarker(obj)
@@ -182,16 +285,16 @@ classdef goggleCellCounter<goggleBoxPlugin
                 end
             end
             %% Update count
-           obj.updateMarkerCount(obj.currentType);
+            obj.updateMarkerCount(obj.currentType);
         end
         
         function drawMarkers(obj, ~, ~)
             obj.clearMarkers;
             %% Calculate position and size
             zRadius=(gbSetting('cellCounter.markerDiameter.z')/2);
-                        
-            allMarkerZRelativeToCurrentPlaneVoxels=(abs([obj.markers.zVoxel]-obj.cursorZVoxels));   
-
+            
+            allMarkerZRelativeToCurrentPlaneVoxels=(abs([obj.markers.zVoxel]-obj.cursorZVoxels));
+            
             idx=allMarkerZRelativeToCurrentPlaneVoxels<zRadius;
             if ~any(idx)
                 return
@@ -222,7 +325,7 @@ classdef goggleCellCounter<goggleBoxPlugin
         end
         
         function drawMarkerHighlights(obj)
-           
+            
             allMarkerZRelativeToCurrentPlaneUnits=(abs([obj.markers.zVoxel]-obj.cursorZVoxels));
             %% Draw rings around markers in this plane
             markerInThisPlaneIdx=allMarkerZRelativeToCurrentPlaneUnits==0;
@@ -232,20 +335,20 @@ classdef goggleCellCounter<goggleBoxPlugin
             markerY=[markersInThisPlane.yVoxel];
             markerSz=(gbSetting('cellCounter.markerDiameter.xy')*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
             
-
+            
             obj.hDisplayedMarkerHighlights=scatter(obj.goggleViewer.hImgAx, markerX , markerY, markerSz/4, [1 1 1], 'filled', 'HitTest', 'off');
             
         end
-
+        
         function clearMarkers(obj)
-             if ~isempty(obj.hDisplayedMarkers)
+            if ~isempty(obj.hDisplayedMarkers)
                 delete(obj.hDisplayedMarkers)
-             end
-             if ~isempty(obj.hDisplayedMarkerHighlights)
+            end
+            if ~isempty(obj.hDisplayedMarkerHighlights)
                 delete(obj.hDisplayedMarkerHighlights)
             end
         end
-                
+        
         function updateMarkerCount(obj, markerTypeToUpdate)
             if isempty(obj.markers)
                 num=0;
@@ -260,9 +363,10 @@ classdef goggleCellCounter<goggleBoxPlugin
         function setParentMenuEnabled(obj, val)
             obj.goggleViewer.mnuPlugins.Enable=val;
         end
+        
         %% Getters
         function type=get.currentType(obj)
-            type=obj.hMarkerButtonGroup.SelectedObject.UserData;
+            type=obj.markerTypes(obj.hMarkerButtonGroup.SelectedObject.UserData);
         end
         function z=get.cursorZVoxels(obj)
             z=obj.goggleViewer.mainDisplay.currentZPlaneOriginalVoxels;
@@ -281,142 +385,98 @@ end
 
 %% Utilities
 function deleteFig(~, ~, obj)
-    obj.clearMarkers;
-    obj.goggleViewer.hFig.Pointer='arrow';
-    obj.setParentMenuEnabled('on')
-    delete(obj.hFig);
-    delete(obj);
+obj.clearMarkers;
+obj.goggleViewer.hFig.Pointer='arrow';
+obj.setParentMenuEnabled('on')
+delete(obj.hFig);
+delete(obj);
 end
 
 function ms=defaultMarkerTypes(nTypes)
-    ms(nTypes)=goggleMarkerType;
-    cols=lines(nTypes);
-    for ii=1:nTypes
-        ms(ii).name=sprintf('Type %u', ii);
-        ms(ii).color=cols(ii, :);        
-    end
+ms(nTypes)=goggleMarkerType;
+cols=lines(nTypes);
+for ii=1:nTypes
+    ms(ii).name=sprintf('Type %u', ii);
+    ms(ii).color=cols(ii, :);
 end
-
-function updateMarkerTypeUISelections(obj)
-    if ~isempty(obj.hMarkerTypeSelection)
-        delete(obj.hMarkerTypeSelection)
-        delete(obj.hMarkerTypeChangeNameButtons)
-    end
-    ii=1;
-    obj.hMarkerTypeSelection=uicontrol(...
-        'Parent', obj.hMarkerButtonGroup, ...
-        'Style', 'radiobutton', ...
-        'Units', 'normalized', ...
-        'Position', [0.18 0.98-(0.08*ii) 0.45 0.08], ...
-        'String', obj.markerTypes(ii).name, ...
-        'UserData', obj.markerTypes(ii), ...
-        'FontName', obj.fontName, ...
-        'FontSize', obj.fontSize, ...
-        'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-        'ForegroundColor', gbSetting('viewer.textMainColor'), ...
-        'UIContextMenu', obj.mnuChangeMarkerName);
-    for ii=2:numel(obj.markerTypes)
-        obj.hMarkerTypeSelection(ii)=uicontrol(...
-            'Parent', obj.hMarkerButtonGroup, ...
-            'Style', 'radiobutton', ...
-            'Units', 'normalized', ...
-            'Position', [0.18 0.98-(0.08*ii) 0.45 0.08], ...
-            'String', obj.markerTypes(ii).name, ...
-            'UserData', obj.markerTypes(ii), ...
-            'FontName', obj.fontName, ...
-            'FontSize', obj.fontSize, ...
-            'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-            'ForegroundColor', gbSetting('viewer.textMainColor'), ...
-            'UIContextMenu',obj.mnuChangeMarkerName);
-    end
-    obj.hMarkerTypeSelection(1).Value=1;
-   
-    %% Set up color indicator
-    ii=1;
-    obj.hColorIndicatorPanel=uipanel(...
-        'Parent', obj.hMarkerButtonGroup, ...
-        'Units', 'normalized', ...
-        'Position', [0.02 0.98-(0.08*ii)+0.01 0.12 0.06], ...
-        'UserData', ii, ...
-        'FontName', obj.fontName, ...
-        'FontSize', obj.fontSize-1, ...
-        'BackgroundColor', obj.markerTypes(ii).color, ...
-        'UIContextMenu', obj.mnuChangeMarkerColor);
-    for ii=2:numel(obj.markerTypes)
-        obj.hColorIndicatorPanel(ii)=uipanel(...
-            'Parent', obj.hMarkerButtonGroup, ...
-            'Units', 'normalized', ...
-            'Position', [0.02 0.98-(0.08*ii)+0.01 0.12 0.06], ...
-            'UserData', ii, ...
-            'FontName', obj.fontName, ...
-            'FontSize', obj.fontSize-1, ...
-            'BackgroundColor', obj.markerTypes(ii).color, ...
-            'UIContextMenu', obj.mnuChangeMarkerColor);
-    end
-    
-    %% Set up count indicator
-    ii=1;
-    obj.hCountIndicatorAx=axes(...
-        'Parent', obj.hMarkerButtonGroup, ...
-        'Units', 'normalized', ...
-        'Position', [0.65 0 0.3 1], ...
-        'Visible', 'off');
-    obj.hCountIndicatorText=text(...
-        'Parent', obj.hCountIndicatorAx, ...
-        'Units', 'normalized', ...
-        'Position', [0.5 0.98-(0.08*ii)+0.04], ...
-        'String', '0', ...
-        'UserData', ii, ...
-        'FontName', obj.fontName, ...
-        'FontSize', obj.fontSize+2, ...
-        'Color', gbSetting('viewer.textMainColor'), ...
-        'HorizontalAlignment', 'center');
-    
-    for ii=2:numel(obj.markerTypes)
-        obj.hCountIndicatorText(ii)=text(...
-        'Parent', obj.hCountIndicatorAx, ...
-        'Units', 'normalized', ...
-        'Position', [0.5 0.98-(0.08*ii)+0.04], ...
-        'String', '0', ...
-        'UserData', ii, ...
-        'FontName', obj.fontName, ...
-        'FontSize', obj.fontSize+2, ...
-        'Color', gbSetting('viewer.textMainColor'), ...
-        'HorizontalAlignment', 'center');
-    end
-    
-    
 end
 
 function [dist, idx]=minEucDist2DToMarker(markerCollection, obj)
-    mX=[markerCollection.xVoxel];
-    mY=[markerCollection.yVoxel];
-    
-    x=obj.cursorX;
-    y=obj.cursorY;
-    
-    euclideanDistance=sqrt((mX-x).^2+(mY-y).^2);
-    [dist, idx]=min(euclideanDistance);
+mX=[markerCollection.xVoxel];
+mY=[markerCollection.yVoxel];
+
+x=obj.cursorX;
+y=obj.cursorY;
+
+euclideanDistance=sqrt((mX-x).^2+(mY-y).^2);
+[dist, idx]=min(euclideanDistance);
 end
 
 function keyPress(~, eventdata, obj)
-    key=eventdata.Key;
-    key=strrep(key, 'numpad', '');
-    
-    ctrlMod=ismember('control', eventdata.Modifier);
-    
-    switch key
-        case {'1' '2' '3' '4' '5' '6' '7' '8' '9'}
-            obj.hMarkerTypeSelection(str2double(key)).Value=1;
-        case {'0'}
-            obj.hMarkerTypeSelection(10).Value=1;
-        case 'a'
-            if ctrlMod
-                obj.hModeAdd.Value=1;
-            end
-        case 'd'
-            if ctrlMod
-                obj.hModeDelete.Value=1;
-            end
+key=eventdata.Key;
+key=strrep(key, 'numpad', '');
+
+ctrlMod=ismember('control', eventdata.Modifier);
+
+switch key
+    case {'1' '2' '3' '4' '5' '6' '7' '8' '9'}
+        obj.hMarkerTypeSelection(str2double(key)).Value=1;
+    case {'0'}
+        obj.hMarkerTypeSelection(10).Value=1;
+    case 'a'
+        if ctrlMod
+            obj.hModeAdd.Value=1;
+        end
+    case 'd'
+        if ctrlMod
+            obj.hModeDelete.Value=1;
+        end
+end
+end
+
+%% Set up context menus to change markers
+function setNameChangeContextMenu(h, obj)
+mnuChangeMarkerName=uicontextmenu;
+uimenu(mnuChangeMarkerName, 'Label', 'Change name...', 'Callback', {@changeMarkerTypeName, h, obj})
+h.UIContextMenu=mnuChangeMarkerName;
+end
+
+function setColorChangeContextMenu(h, obj)
+mnuChangeMarkerColor=uicontextmenu;
+uimenu(mnuChangeMarkerColor, 'Label', 'Change color...','Callback', {@changeMarkerTypeColor, h, obj})
+h.UIContextMenu=mnuChangeMarkerColor;
+end
+
+%% Marker change callbacks
+function changeMarkerTypeName(~, ev, obj, parentObj)
+oldName=obj.String;
+proposedNewName=inputdlg('Change marker name to:', 'Cell Counter: Change Marker Name', 1, {oldName});
+
+if isempty(proposedNewName)
+    return
+else
+    proposedNewName=proposedNewName{1};
+end
+if ismember(proposedNewName, {parentObj.markerTypes.name})
+    msgbox(sprintf('Name %s is alread taken!', proposedNewName), 'Cell Counter')
+    return
+end
+%% Change type
+oldType=parentObj.markerTypes(obj.UserData);
+newType=oldType;newType.name=proposedNewName;
+parentObj.markerTypes(obj.UserData)=newType;
+
+%% Change matching markers
+if ~isempty(parentObj.markers)
+    markersWithOldTypeIdx=find([parentObj.markers.type]==oldType);
+    for ii=1:numel(markersWithOldTypeIdx)
+        parentObj.markers(markersWithOldTypeIdx(ii)).type=newType;
     end
+end
+%% Refresh panel
+parentObj.updateMarkerTypeUISelections;
+end
+
+function changeMarkerTypeColor(~, ev, obj, parentObj)
+
 end
