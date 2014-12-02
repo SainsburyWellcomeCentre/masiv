@@ -6,6 +6,7 @@ classdef goggleCellCounter<goggleBoxPlugin
         cursorListenerInsideAxes
         cursorListenerOutsideAxes
         cursorListenerClick
+        keyPressListener
         
         hMarkerButtonGroup
         hMarkerTypeSelection
@@ -42,6 +43,7 @@ classdef goggleCellCounter<goggleBoxPlugin
         cursorZVoxels
         cursorZUnits
     end
+    
     methods
         %% Constructor
         function obj=goggleCellCounter(caller, ~)
@@ -70,7 +72,8 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'MenuBar', 'none', ...
                 'NumberTitle', 'off', ...
                 'Name', ['Cell Counter: ' obj.goggleViewer.mosaicInfo.experimentName], ...
-                'Color', gbSetting('viewer.panelBkgdColor'));
+                'Color', gbSetting('viewer.panelBkgdColor'), ...
+                'KeyPressFcn', {@keyPress, obj});
             %% Marker selection initialisation
             obj.mnuChangeMarkerName=uicontextmenu;
             obj.mnuChangeMarkerColor=uicontextmenu;
@@ -117,9 +120,10 @@ classdef goggleCellCounter<goggleBoxPlugin
             obj.cursorListenerClick=event.listener(obj.goggleViewer, 'ViewClicked', @obj.mouseClickInMainWindowAxes);
             obj.scrolledListener=event.listener(obj.goggleViewer, 'Scrolled', @obj.drawMarkers);
             obj.zoomedListener=event.listener(obj.goggleViewer, 'Zoomed', @obj.drawMarkers);
-
+            obj.keyPressListener=event.listener(obj.goggleViewer, 'KeyPress', @obj.parentKeyPress);
             %% Freeze menu
             obj.setParentMenuEnabled('off')
+            
 
         end
         
@@ -142,6 +146,11 @@ classdef goggleCellCounter<goggleBoxPlugin
             end
                 
         end
+        function parentKeyPress(obj, ~,ev)
+            keyPress([], ev.KeyPressData, obj);
+        end
+        %% Callbacks
+        
         %% Functions
         function UIaddMarker(obj)
             newMarker=goggleMarker(obj.currentType, obj.cursorX, obj.cursorY, obj.cursorZVoxels);
@@ -238,7 +247,11 @@ classdef goggleCellCounter<goggleBoxPlugin
         end
                 
         function updateMarkerCount(obj, markerTypeToUpdate)
-            num=sum([obj.markers.type]==markerTypeToUpdate);
+            if isempty(obj.markers)
+                num=0;
+            else
+                num=sum([obj.markers.type]==markerTypeToUpdate);
+            end
             idx=obj.markerTypes==markerTypeToUpdate;
             
             obj.hCountIndicatorText(idx).String=sprintf('%u', num);
@@ -279,7 +292,7 @@ function ms=defaultMarkerTypes(nTypes)
     ms(nTypes)=goggleMarkerType;
     cols=lines(nTypes);
     for ii=1:nTypes
-        ms(ii).name=sprintf('Type %u', ii-1);
+        ms(ii).name=sprintf('Type %u', ii);
         ms(ii).color=cols(ii, :);        
     end
 end
@@ -386,3 +399,24 @@ function [dist, idx]=minEucDist2DToMarker(markerCollection, obj)
     [dist, idx]=min(euclideanDistance);
 end
 
+function keyPress(~, eventdata, obj)
+    key=eventdata.Key;
+    key=strrep(key, 'numpad', '');
+    
+    ctrlMod=ismember('control', eventdata.Modifier);
+    
+    switch key
+        case {'1' '2' '3' '4' '5' '6' '7' '8' '9'}
+            obj.hMarkerTypeSelection(str2double(key)).Value=1;
+        case {'0'}
+            obj.hMarkerTypeSelection(10).Value=1;
+        case 'a'
+            if ctrlMod
+                obj.hModeAdd.Value=1;
+            end
+        case 'd'
+            if ctrlMod
+                obj.hModeDelete.Value=1;
+            end
+    end
+end

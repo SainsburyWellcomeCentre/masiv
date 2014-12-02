@@ -349,21 +349,25 @@ function hFigMain_KeyPress (~, eventdata, obj)
     startDebugOutput
 
     %% What shall we do?
-    switch eventdata.Key
-        case 'shift'
-            % Do nothing
-        case 'uparrow'
-            obj.executeZoom(gbSetting('navigation.zoomRate'))
-        case 'downarrow'
-            obj.executeZoom(1/gbSetting('navigation.zoomRate'))
-        case {'leftarrow', 'rightarrow'}
-            obj.formatKeyScrollAndAddToQueue(eventdata);
-        case {'w' 'a' 's' 'd'}
-            obj.formatKeyPanAndAddToQueue(eventdata);
-        case 'c'
-            updateContrastHistogram(obj.mainDisplay, obj.hAxContrastHist)
-        otherwise
-            goggleDebugTimingInfo(0, sprintf('GV.unknownKeypress: %s', eventdata.Key))
+    ctrlMod=ismember('control', eventdata.Modifier);
+    
+    if ~ctrlMod
+        switch eventdata.Key
+            case 'uparrow'
+                obj.executeZoom(gbSetting('navigation.zoomRate'))
+            case 'downarrow'
+                obj.executeZoom(1/gbSetting('navigation.zoomRate'))
+            case {'leftarrow', 'rightarrow'}
+                obj.formatKeyScrollAndAddToQueue(eventdata);
+            case {'w' 'a' 's' 'd'}
+                obj.formatKeyPanAndAddToQueue(eventdata);
+            case 'c'
+                updateContrastHistogram(obj.mainDisplay, obj.hAxContrastHist)
+            otherwise
+                notify(obj, 'KeyPress', KeyPressEventData(eventdata))
+        end
+    else
+        notify(obj, 'KeyPress', KeyPressEventData(eventdata))
     end
 end
 function mouseMove (~, ~, obj)
