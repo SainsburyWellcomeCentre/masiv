@@ -8,6 +8,7 @@ classdef TVDownscaledStack<handle
         baseDirectory
         experimentName
         sampleName
+        voxelSizeInUnits=gbSetting('defaultVoxelSize');
     end
     
     properties(SetAccess=protected)
@@ -34,9 +35,13 @@ classdef TVDownscaledStack<handle
         imageInMemory
         fileOnDisk
         
-        xCoords
-        yCoords
-        zCoords
+        xCoordsVoxels
+        yCoordsVoxels
+        zCoordsVoxels
+        
+        xCoordsUnits
+        yCoordsUnits
+        zCoordsUnits
         
         originalStitchedFileNames
     end
@@ -149,36 +154,46 @@ classdef TVDownscaledStack<handle
             onDisk=exist(obj.fileName, 'file')~=0;
         end
         
-        function x=get.xCoords(obj)
+        function x=get.xCoordsVoxels(obj)
             if isempty(obj.xInternal)
                 if isempty(obj.I_internal)
                     error('Image not loaded in to memory. Can not return x dimension')
                 else
-                    obj.xInternal=1:size(obj.I_internal, 2)*obj.xyds;
+                    obj.xInternal=1:obj.xyds:size(obj.I_internal, 2)*obj.xyds;
                 end
             end
             x=obj.xInternal;
         end
-        function y=get.yCoords(obj)
+        function y=get.yCoordsVoxels(obj)
            if isempty(obj.yInternal)
                 if isempty(obj.I_internal)
                     error('Image not loaded in to memory. Can not return y dimension')
                 else
-                    obj.yInternal=1:size(obj.I_internal, 1)*obj.xyds;
+                    obj.yInternal=1:obj.xyds:size(obj.I_internal, 1)*obj.xyds;
                 end
             end
             y=obj.yInternal;
         end
-        function z=get.zCoords(obj)
+        function z=get.zCoordsVoxels(obj)
             if isempty(obj.zInternal)
-                obj.zInternal=(obj.idx-1)*obj.mosaicInfo.metaData.zres*2;
+                obj.zInternal=obj.idx;
             end
            z=obj.zInternal;
+        end
+         function x=get.xCoordsUnits(obj)
+            x=(obj.xCoordsVoxels-0.5)*obj.voxelSizeInUnits(1);
+         end 
+         function y=get.yCoordsUnits(obj)
+           y=(obj.yCoordsVoxels-0.5)*obj.voxelSizeInUnits(2);
+        end
+        function z=get.zCoordsUnits(obj)
+            z=(obj.zCoordsVoxels-0.5)*obj.voxelSizeInUnits(3);
         end
         
         function osfp=get.originalStitchedFileNames(obj)
            osfp= obj.mosaicInfo.stitchedImagePaths.(obj.channel);
         end
+       
     end
 end
 
@@ -264,7 +279,7 @@ function I = createDownscaledStack( mosaicInfo, channel, idx, varargin )
     
     
     I=zeros(outputImageHeight, outputImageWidth, numel(idx), 'uint16');
-    if strcmp(outputMode, 'g')&&usejava('jvm')&&~feature('ShowFigureWindows') %Switch to console display if no graphics available
+    if usejava('jvm')&&~feature('ShowFigureWindows') %Switch to console display if no graphics available
         parfor ii=1:numel(idx)
             fName=fullfile(mosaicInfo.baseDirectory, mosaicInfo.stitchedImagePaths.(channel){idx(ii)}); %#ok<PFBNS>
             I(:,:,ii)=openTiff(fName, [1 1 minWidth minHeight], q.downSample); %#ok<PFBNS>

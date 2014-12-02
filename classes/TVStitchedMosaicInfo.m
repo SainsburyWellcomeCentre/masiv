@@ -55,7 +55,6 @@ classdef TVStitchedMosaicInfo
             end
             dsl=dsl(:);
         end
-        
     end
     
 end

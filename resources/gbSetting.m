@@ -35,6 +35,9 @@ function createDefaultPrefsFile()
     
     s.font.name='Helvetica';
     s.font.size=12;
+    
+    %% Default voxel sizes
+    s.defaultVoxelSize=[1 1 5];
     %% Main Viewer
     s.viewer.panelBkgdColor=[0.1 0.1 0.1];
     s.viewer.mainBkgdColor=[0.2 0.2 0.2];

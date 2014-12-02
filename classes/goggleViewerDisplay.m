@@ -18,7 +18,8 @@ classdef goggleViewerDisplay<handle
         currentPlaneData
     end
     properties(Dependent, SetAccess=protected)
-        currentZPlaneOriginalFileNumber
+        currentZPlaneOriginalVoxels
+        currentZPlaneUnits
         currentZPlaneOriginalLayerID
         zoomLevel
         downSamplingForCurrentZoomLevel
@@ -32,6 +33,9 @@ classdef goggleViewerDisplay<handle
         viewYLimOriginalCoords
         viewXLimPixels
         viewYLimPixels
+        
+        viewPixelSizeOriginalVoxels
+        
         currentImageViewData
     end
     
@@ -46,11 +50,12 @@ classdef goggleViewerDisplay<handle
             obj.axes=parent.hImgAx;
             obj.currentIndex=1;
             obj.hImg=image('Visible', 'on', ...
-                'XData', obj.overviewStack.xCoords, ...
-                'YData', obj.overviewStack.yCoords, ...
+                'XData', obj.overviewStack.xCoordsUnits, ...
+                'YData', obj.overviewStack.yCoordsUnits, ...
                 'CData', obj.currentPlaneData, ...
                 'CDataMapping', 'scaled', ...
-                'Parent', obj.axes);
+                'Parent', obj.axes, ...
+                'HitTest', 'off');
             obj.contrastLims=[0 65536];
             obj.zoomedViewManager=goggleZoomedViewManager(obj);
             
@@ -101,14 +106,24 @@ classdef goggleViewerDisplay<handle
            cpd=obj.currentPlaneData;
            civ=cpd(y(1):y(2), x(1):x(2));
         end
-        function czpofn=get.currentZPlaneOriginalFileNumber(obj)
+        function czpofn=get.currentZPlaneOriginalVoxels(obj)
             czpofn=obj.overviewStack.idx(obj.currentIndex);
         end
         function czpolid=get.currentZPlaneOriginalLayerID(obj)
-            czpolid=obj.currentZPlaneOriginalFileNumber-1;
+            czpolid=obj.currentZPlaneOriginalVoxels-1;
+        end
+        function czpofn=get.currentZPlaneUnits(obj)
+            czpofn=obj.overviewStack.zCoordsUnits(obj.currentIndex);
+        end
+        function ps=get.viewPixelSizeOriginalVoxels(obj)
+            obj.parentViewer.hImgAx.Units='pixels';
+            nPixelsWidthInAxesWidth=obj.parentViewer.hImgAx.Position(3);
+            obj.parentViewer.hImgAx.Units='normalized';
+            
+            ps=nPixelsWidthInAxesWidth./range(obj.viewXLimOriginalCoords);
         end
         function zl=get.zoomLevel(obj)
-            ovRange=(obj.overviewStack.xCoords(end)-obj.overviewStack.xCoords(1));
+            ovRange=(obj.overviewStack.xCoordsVoxels(end)-obj.overviewStack.xCoordsVoxels(1));
             xlRange=(obj.axes.XLim(2)-obj.axes.XLim(1));
             zl=ovRange/xlRange;
                 

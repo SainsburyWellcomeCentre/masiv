@@ -1,10 +1,12 @@
 classdef goggleViewer<handle
+    
     properties(Access=protected)        
         %% Internal tracking
         numScrolls=0
         panxInt=0
         panyInt=0
     end
+    
     properties
         %% Handles to visible objects
         hFig
@@ -15,6 +17,11 @@ classdef goggleViewer<handle
         hAxContrastAuto
         
         infoPanels
+        
+        %% Menus
+        mnuMain
+        mnuImage
+        mnuPlugins
         %% Data
         mosaicInfo
         overviewDSS
@@ -25,7 +32,13 @@ classdef goggleViewer<handle
     events
         CacheChanged
         ViewChanged
-        CursorPositionChanged
+        Scrolled
+        Panned
+        Zoomed
+        CursorPositionChangedWithinImageAxes
+        CursorPositionChangedOutsideImageAxes
+        ViewClicked
+        KeyPress
     end
    
     methods % Constructor
@@ -61,20 +74,21 @@ classdef goggleViewer<handle
                 'YDir', 'reverse', ...
                 'Color', [0 0 0], ...
                 'XTick', [], 'YTick', [], ...
-                'Position', [0.02 0.02 0.8 0.96]);
+                'Position', [0.02 0.02 0.8 0.96], ...
+                'ButtonDownFcn', {@handleMouseClick, obj});
             
             %% Menu Object declarations
-            mnuMain=uimenu(obj.hFig, 'Label', 'Main');
-                    uimenu(mnuMain, 'Label', 'Quit', 'Callback', {@closeRequest, obj})
+            obj.mnuMain=uimenu(obj.hFig, 'Label', 'Main');
+                    uimenu(obj.mnuMain, 'Label', 'Quit', 'Callback', {@closeRequest, obj})
                     
-            mnuImage=uimenu(obj.hFig, 'Label', 'Image');
-                    uimenu(mnuImage, 'Label', 'Export Current View to Workspace', ...
+            obj.mnuImage=uimenu(obj.hFig, 'Label', 'Image');
+                    uimenu(obj.mnuImage, 'Label', 'Export Current View to Workspace', ...
                                      'Callback', {@exportViewToWorkspace, obj})
-                    uimenu(mnuImage, 'Label', 'Detailed image processing steps...', ...
+                    uimenu(obj.mnuImage, 'Label', 'Detailed image processing steps...', ...
                                      'Callback', {@changeProcessingSteps, obj});
             
-            mnuPlugins=uimenu(obj.hFig, 'Label', 'Plugins');
-                    addPlugins(mnuPlugins, obj)
+            obj.mnuPlugins=uimenu(obj.hFig, 'Label', 'Plugins');
+                    addPlugins(obj.mnuPlugins, obj)
             
             %% Contrast adjustment object definitions
             obj.hAxContrastHist=axes(...
@@ -143,8 +157,7 @@ classdef goggleViewer<handle
             
             %% Show the figure, we're done here!
             obj.hFig.Visible='on';
-        end
-        
+        end 
     end
     
     methods(Access=protected)
@@ -181,6 +194,7 @@ classdef goggleViewer<handle
         function executeScroll(obj, p)
             stdout=obj.mainDisplay.seekZ(p);
             if stdout
+                notify(obj, 'Scrolled')
                 obj.changeAxes;
             else
                 goggleDebugTimingInfo(0, 'GV: Scroll did not cause an axis change',toc, 's')
@@ -242,6 +256,7 @@ classdef goggleViewer<handle
             end
             
             if movedFlag
+                notify(obj, 'Panned')
                 obj.changeAxes;
             else
                 goggleDebugTimingInfo(0, 'GV: Pan did not cause an axis change',toc, 's')
@@ -269,6 +284,7 @@ classdef goggleViewer<handle
         %% --- Zooming
         function executeZoom(obj, zoomfactor)
              zoom(obj.hImgAx,zoomfactor)
+             notify(obj, 'Zoomed')
              obj.changeAxes
         end
         
@@ -308,6 +324,18 @@ classdef goggleViewer<handle
             end
         end
     end
+    
+    methods % Destructor
+        function delete(obj)
+            if ishandle(obj.hFig)
+                gbSetting('viewer.mainFigurePosition', obj.hFig.Position)
+                delete(obj.hFig);
+            end
+            delete(obj.overviewDSS)
+            deleteInfoPanel(obj, 'all')
+            delete(timerfind);
+        end
+    end
 end
 
 function startDebugOutput
@@ -340,7 +368,15 @@ function hFigMain_KeyPress (~, eventdata, obj)
 end
 function mouseMove (~, ~, obj)
     C = get (obj.hImgAx, 'CurrentPoint');
-    notify(obj, 'CursorPositionChanged', CursorPositionData(C));
+    xl=xlim(obj.hImgAx);
+    yl=ylim(obj.hImgAx);
+    x=C(1, 1);
+    y=C(2, 2);
+    if x>=xl(1) && x<=xl(2) && y>=yl(1) && y<=yl(2)
+        notify(obj, 'CursorPositionChangedWithinImageAxes', CursorPositionData(C));
+    else
+        notify(obj, 'CursorPositionChangedOutsideImageAxes')
+    end        
 end
 function hFigMain_ScrollWheel(~, eventdata, obj)
     startDebugOutput
@@ -373,10 +409,6 @@ function adjustContrast(hContrastLim, ~, obj)
     end
 end
 function closeRequest(~,~,obj)
-gbSetting('viewer.mainFigurePosition', obj.hFig.Position)
-deleteInfoPanel(obj, 'all')
-delete(timerfind); 
-delete(obj.hFig); 
 delete(obj)
 end
 function changeProcessingSteps(~, ~, obj)
@@ -384,6 +416,9 @@ function changeProcessingSteps(~, ~, obj)
     newPipeline=setImageProcessingPipeline(zvm.imageProcessingPipeline);
     zvm.imageProcessingPipeline=newPipeline;
     zvm.clearCache;
+end
+function handleMouseClick(~,~, obj)
+    notify(obj, 'ViewClicked');
 end
 
 %% Utilities
@@ -457,12 +492,12 @@ function addPlugins(hMenuBase, obj)
         error('plugins directory not found')
     end
     
-    pluginsFound=dir(fullfile(pluginsDir, '*.m'));
+    filesInPluginsDirectory=dir(fullfile(pluginsDir, '*.m'));
     
-    for ii=1:numel(pluginsFound)
-        if ~isAbstractPlugin(pluginsDir, pluginsFound(ii).name)
+    for ii=1:numel(filesInPluginsDirectory)
+        if isValidGoggleBoxPlugin(pluginsDir, filesInPluginsDirectory(ii).name)
             
-            [pluginDisplayString, pluginStartCallback]=getPluginInfo(pluginsFound(ii));
+            [pluginDisplayString, pluginStartCallback]=getPluginInfo(filesInPluginsDirectory(ii));
                        
             uimenu(hMenuBase, 'Label', pluginDisplayString, 'Callback', pluginStartCallback, 'UserData', obj)
             
@@ -471,16 +506,34 @@ function addPlugins(hMenuBase, obj)
 end
 
 
-function abstractPluginFlag=isAbstractPlugin(pluginsDir, pluginsFile)
-f=fopen(fullfile(pluginsDir, pluginsFile));
-codeStr=fread(f, Inf, '*char')';
-abstractPluginFlag=strfind(lower(codeStr), 'abstract');
-if isempty(abstractPluginFlag)
-    abstractPluginFlag=0;
-else
-    abstractPluginFlag=1;
+
+
+function isGBPlugin=isValidGoggleBoxPlugin(pluginsDir, pluginsFile)
+    fName=fullfile(pluginsDir, pluginsFile);
+    if isdir(fName)
+        isGBPlugin=0;
+    else
+        f=fopen(fullfile(pluginsDir, pluginsFile));
+        codeStr=fread(f, Inf, '*char')';
+        hasGBPAsSuperClass=~isempty(strfind(codeStr, '<goggleBoxPlugin'));
+        if hasGBPAsSuperClass
+            isGBPlugin=~isAbstractCode(codeStr);
+        else
+            isGBPlugin=0;
+        end
+        fclose(f);
+    end
 end
-fclose(f);
+
+function abstractPluginFlag=isAbstractCode(codeStr)
+   
+    abstractPluginFlag=strfind(lower(codeStr), 'abstract');
+    if isempty(abstractPluginFlag)
+        abstractPluginFlag=0;
+    else
+        abstractPluginFlag=1;
+    end
+   
 end
 
 function [pluginDisplayString, pluginStartCallback]=getPluginInfo(pluginFile)

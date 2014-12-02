@@ -205,7 +205,7 @@ classdef goggleViewInfoPanel<handle
             
            %% Add listeners
            obj.updateListener=event.listener(parent, 'ViewChanged', @obj.updateDisplay);
-            obj.cursorListener=event.listener(parent, 'CursorPositionChanged', @obj.updateCurrentCursorPosition);
+            obj.cursorListener=event.listener(parent, 'CursorPositionChangedWithinImageAxes', @obj.updateCurrentCursorPosition);
         end
         %% Update Display
         function updateDisplay(obj, ~, ~)
@@ -215,11 +215,9 @@ classdef goggleViewInfoPanel<handle
             C=round(evData.CursorPosition);
             x=C(1, 1);
             y=C(2, 2);
-            if x>str2double(obj.xLimMin.String) && x<str2double(obj.xLimMax.String) &&...
-                    y>str2double(obj.yLimMin.String) && y<str2double(obj.yLimMax.String)
-                obj.cursorX.String=x; 
-                obj.cursorY.String=y; 
-            end
+            
+            obj.cursorX.String=x;
+            obj.cursorY.String=y;
         end
         function showFileOnDiskStatus(obj)
             
@@ -280,10 +278,10 @@ function doUpdate(obj)
     obj.yLimMax.String=sprintf('%i',yl(2));
     
     zIdx=obj.goggleViewerDisplay.currentIndex;
-    zIdxOrignalLayerID=obj.goggleViewerDisplay.currentZPlaneOriginalLayerID;
+    zIdxOrignalVoxels=obj.goggleViewerDisplay.currentZPlaneOriginalVoxels;
     
-    zActual=obj.goggleViewerDisplay.overviewStack.zCoords(zIdx);
-    obj.zPosition.String=sprintf('Layer %04i (%ium)', zIdxOrignalLayerID, round(zActual));
+    zActual=obj.goggleViewerDisplay.overviewStack.zCoordsUnits(zIdx);
+    obj.zPosition.String=sprintf('%04i (%ium)', zIdxOrignalVoxels, round(zActual));
     
     %% Zoom info and file status. File name info.
     

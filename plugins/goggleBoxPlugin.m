@@ -1,4 +1,4 @@
-classdef(Abstract) goggleBoxPlugin
+classdef(Abstract) goggleBoxPlugin<handle
     %GOGGLEBOXPLUGIN Base class for goggleBoxPlugins. 
     
     properties

@@ -60,7 +60,7 @@ classdef goggleZoomedViewManager<handle
                 fp=obj.currentSliceFileFullPath;
                 regionSpec=getRegionSpecFromParent(parent);
                 ds=parent.downSamplingForCurrentZoomLevel;
-                z=parent.currentZPlaneOriginalFileNumber;
+                z=parent.currentZPlaneOriginalVoxels;
                 
                 goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view creation starting',toc,'s')
                 obj.zoomedViewArray(end+1)=goggleZoomedView(fp, regionSpec, ds, z, obj);
@@ -90,7 +90,7 @@ classdef goggleZoomedViewManager<handle
         %% Getters
         function csfn=get.currentSliceFileName(obj)
             stitchedFileNameList=obj.parentViewerDisplay.overviewStack.originalStitchedFileNames;
-            indexInFileNameList=obj.parentViewerDisplay.currentZPlaneOriginalFileNumber;
+            indexInFileNameList=obj.parentViewerDisplay.currentZPlaneOriginalVoxels;
             csfn=stitchedFileNameList{indexInFileNameList};
         end
         function csfp=get.currentSliceFileFullPath(obj)
@@ -154,7 +154,7 @@ function v=findMatchingView(obj)
     
     viewX=xlim(parent.axes);
     viewY=ylim(parent.axes);
-    viewZ=parent.currentZPlaneOriginalFileNumber;
+    viewZ=parent.currentZPlaneOriginalVoxels;
     viewDS=parent.downSamplingForCurrentZoomLevel;
     
     planesInMemX={obj.zoomedViewArray.x};
@@ -188,7 +188,8 @@ function updateImage(obj, idx)
        obj.hImg=image('Parent', obj.parentViewerDisplay.axes, ...
            'Visible', 'off', ...
            'CDataMapping', 'Scaled', ...
-           'Tag', 'zoomedView');
+           'Tag', 'zoomedView', ...
+           'HitTest', 'off');
    end
    %% Update Image
    obj.hImg.XData=zv.x;
