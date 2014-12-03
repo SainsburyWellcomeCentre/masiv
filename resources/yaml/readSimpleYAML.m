@@ -29,20 +29,30 @@ function s=scanYamlFile(fid, currentDepth)
         l=strsplit(wholeLine, ':');
         if ~isempty(wholeLine)
             nm=l{1};
-            val=l{2};
-            
             indentLevel=sum(nm==' ')/4;
             nm=strtrim(nm);
+            
             if indentLevel>currentDepth
-                error('Indent level jump with unknown cause')
+                error('Indent level jump with unknown cause at line %s', wholeLine)
             elseif indentLevel<currentDepth
+                if~exist('s', 'var')&&nargout>0
+                    s=[];
+                end
                 fseek(fid, beginningPos, 'bof');
                 return
+            end
+            
+            if numel(l)==1&&strcmp(nm, '-')
+                % It's a sequence
+                fseek(fid, beginningPos, 'bof');
+                s=yaml2structarray(fid, currentDepth);
             else
+                val=l{2};
                 if isempty(val)
-                    %recurse
+                    % This is a structure. Recurse the next lines
                     s.(nm)=scanYamlFile(fid, currentDepth+1);
                 else
+                    % Name-value pair
                     if ~isempty(str2num(val))
                         val=str2num(val);
                     else
@@ -53,5 +63,27 @@ function s=scanYamlFile(fid, currentDepth)
             end
         end
     end
+end
+
+function s=yaml2structarray(fid, currentDepth)
+    s=[];
+    while ~feof(fid)&&strcmp(strtrim(fgetl(fid)), '-');
+        if isempty(s)
+            s=scanYamlFile(fid, currentDepth+1);
+        else
+            s(end+1)=scanYamlFile(fid, currentDepth+1); %#ok<AGROW>
+        end
+    end
 
 end
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        

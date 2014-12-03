@@ -35,10 +35,13 @@ classdef goggleMarker
             end
         end
         %% Conversion function
-       
+        function s=toStructArray(obj)
+            s=struct('x', {obj.xVoxel}, 'y', {obj.yVoxel}, 'z', {obj.zVoxel});
+        end
         %% Getter
         function col=get.color(obj)
             col=obj.type.color;
         end
+        
     end
 end

@@ -64,7 +64,8 @@ classdef goggleCellCounter<goggleBoxPlugin
                 gbSetting('cellCounter.unitSizeHideHighlights', 0);
                 gbSetting('cellCounter.maximumDistanceVoxelsForDeletion', 500)
             end
-            
+            gbSetting('cellCounter.importExportDefault', gbSetting('defaultDirectory'))
+
             %% Main UI initialisation
             obj.hFig=figure(...
                 'Position', pos, ...
@@ -435,6 +436,31 @@ function deleteFig(~, ~, obj)
 end
 
 function exportData(~, ~, obj)
+    [f,p]=uiputfile('*.yml', 'Export Markers', gbSetting('cellCounter.importExportDefault'));
+    if isnumeric(f)&&f==0
+        return
+    end
+    
+    s=struct;
+    for ii=1:numel(obj.markerTypes)
+        thisType=obj.markerTypes(ii);
+        s.(thisType.name).color=thisType.color;
+        markersOfThisType=obj.markers([obj.markers.type]==thisType);
+        if ~isempty(markersOfThisType)
+            s.(thisType.name).markers=markersOfThisType.toStructArray;
+        end
+    end
+    
+    writeSimpleYAML(s, fullfile(p, f))
+    
+    obj.changeFlag=0;
+    
+    gbSetting('cellCounter.importExportDefault', fullfile(p, f))
+    
+    tic
+    readSimpleYAML(fullfile(p,f))
+    
+    toc
 end
 
 %% Utilities
@@ -442,7 +468,7 @@ function ms=defaultMarkerTypes(nTypes)
 ms(nTypes)=goggleMarkerType;
 cols=lines(nTypes);
 for ii=1:nTypes
-    ms(ii).name=sprintf('Type %u', ii);
+    ms(ii).name=sprintf('Type%u', ii);
     ms(ii).color=cols(ii, :);
 end
 end
@@ -501,7 +527,7 @@ proposedNewName=inputdlg('Change marker name to:', 'Cell Counter: Change Marker 
 if isempty(proposedNewName)
     return
 else
-    proposedNewName=proposedNewName{1};
+    proposedNewName=matlab.lang.makeValidName(proposedNewName{1});
 end
 if ismember(proposedNewName, {parentObj.markerTypes.name})
     msgbox(sprintf('Name %s is alread taken!', proposedNewName), 'Cell Counter')
