@@ -63,6 +63,7 @@ classdef goggleCellCounter<goggleBoxPlugin
                 gbSetting('cellCounter.unitSizeHideHighlights', 0);
                 gbSetting('cellCounter.maximumDistanceVoxelsForDeletion', 500)
             end
+            
             %% Main UI initialisation
             obj.hFig=figure(...
                 'Position', pos, ...
@@ -72,6 +73,7 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'Name', ['Cell Counter: ' obj.goggleViewer.mosaicInfo.experimentName], ...
                 'Color', gbSetting('viewer.panelBkgdColor'), ...
                 'KeyPressFcn', {@keyPress, obj});
+            
             %% Marker selection initialisation
             obj.hMarkerButtonGroup=uibuttongroup(...
                 'Parent', obj.hFig, ...
@@ -80,6 +82,7 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'BackgroundColor', gbSetting('viewer.mainBkgdColor'));
             obj.markerTypes=defaultMarkerTypes(10);
             updateMarkerTypeUISelections(obj);
+            
             %% Mode selection initialisation
             obj.hModeButtonGroup=uibuttongroup(...
                 'Parent', obj.hFig, ...
@@ -108,6 +111,7 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'Value', 0, ...
                 'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
                 'ForegroundColor', gbSetting('viewer.textMainColor'));
+            
             %% Listener Declarations
             obj.cursorListenerInsideAxes=event.listener(obj.goggleViewer, 'CursorPositionChangedWithinImageAxes', @obj.updateCursorWithinAxes);
             obj.cursorListenerOutsideAxes=event.listener(obj.goggleViewer, 'CursorPositionChangedOutsideImageAxes', @obj.updateCursorOutsideAxes);
@@ -115,9 +119,9 @@ classdef goggleCellCounter<goggleBoxPlugin
             obj.scrolledListener=event.listener(obj.goggleViewer, 'Scrolled', @obj.drawMarkers);
             obj.zoomedListener=event.listener(obj.goggleViewer, 'Zoomed', @obj.drawMarkers);
             obj.keyPressListener=event.listener(obj.goggleViewer, 'KeyPress', @obj.parentKeyPress);
-            %% Freeze menu
-            obj.setParentMenuEnabled('off')
             
+            %% Freeze menu
+            obj.setParentMenuEnabled('off')            
             
         end
         
@@ -448,7 +452,7 @@ h.UIContextMenu=mnuChangeMarkerColor;
 end
 
 %% Marker change callbacks
-function changeMarkerTypeName(~, ev, obj, parentObj)
+function changeMarkerTypeName(~, ~, obj, parentObj)
 oldName=obj.String;
 proposedNewName=inputdlg('Change marker name to:', 'Cell Counter: Change Marker Name', 1, {oldName});
 
@@ -474,9 +478,30 @@ if ~isempty(parentObj.markers)
     end
 end
 %% Refresh panel
-parentObj.updateMarkerTypeUISelections;
+obj.String=proposedNewName;
 end
 
-function changeMarkerTypeColor(~, ev, obj, parentObj)
+function changeMarkerTypeColor(~, ~, obj, parentObj)
+oldType=parentObj.markerTypes(obj.UserData);
+newCol=uisetcolor(oldType.color);
+if numel(newCol)<3
+    return
+end
+%% Change type
+newType=oldType;newType.color=newCol;
+parentObj.markerTypes(obj.UserData)=newType;
+%% Change matching markers
 
+if ~isempty(parentObj.markers)
+    markersWithOldTypeIdx=find([parentObj.markers.type]==oldType);
+    for ii=1:numel(markersWithOldTypeIdx)
+        parentObj.markers(markersWithOldTypeIdx(ii)).type=newType;
+    end
+end
+
+%% Change panel indicator
+set(findobj(parentObj.hColorIndicatorPanel, 'UserData', obj.UserData), 'BackgroundColor', newType.color);
+
+%% Redraw markers
+parentObj.drawMarkers;
 end
