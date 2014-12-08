@@ -19,21 +19,32 @@ classdef goggleMarker
                 end
             end
             if nargin>1
-                if isscalar(x)&&isnumeric(x)
+                if ~isscalar(x)
+                    if any(diff([numel(x) numel(y) numel(z)]));
+                        error('x y and z vectors must be of equal size')
+                    end
+                    obj(numel(x))=goggleMarker;
+                    for ii=1:numel(x)
+                        obj(ii)=goggleMarker(type, x(ii), y(ii), z(ii));
+                    end
+                elseif isnumeric(x)
                     obj.xVoxel=x;
-                end
-            end
-            if nargin>2
-                if isscalar(y)&&isnumeric(y)
-                    obj.yVoxel=y;
-                end
-            end
-            if nargin>3
-                if isscalar(z)&&isnumeric(z)
-                    obj.zVoxel=z;
+                    if nargin>2
+                        if ~isnumeric(y)||numel(y)~=1
+                            error('Y must be a numeric scalar')
+                        end
+                        obj.yVoxel=y;
+                    end
+                    if nargin>3 
+                        if ~isnumeric(z)||numel(z)~=1
+                            error('Z must be a numeric scalar')
+                        end
+                        obj.zVoxel=z;
+                    end
                 end
             end
         end
+        
         %% Conversion function
         function s=toStructArray(obj)
             s=struct('x', {obj.xVoxel}, 'y', {obj.yVoxel}, 'z', {obj.zVoxel});
