@@ -55,6 +55,10 @@ classdef goggleMarker
         end
         %% Iseq
         function e=eq(obj, obj2)
+            if isempty(obj)||isempty(obj2)
+                e=0;
+                return
+            end
             if isscalar(obj)
                 if ~isa(obj2, 'goggleMarker')
                     error('Comparator must be a goggleMarker object')
@@ -80,6 +84,9 @@ classdef goggleMarker
                 end
                 
             end
+        end
+        function e=ne(obj, obj2)
+            e=~(obj==obj2);
         end
         
     end

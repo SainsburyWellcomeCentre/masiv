@@ -461,12 +461,17 @@ function exportData(~, ~, obj)
     obj.changeFlag=0;
     
     gbSetting('cellCounter.importExportDefault', fullfile(p, f))
-    
+    %% Read it back in to check it's OK
     try
-        readSimpleYAML(fullfile(p,f));
-        msgbox(sprintf('YAML file successfully exported to\n%s', fullfile(p, f)))
+        s=readSimpleYAML(fullfile(p,f));
+        [m,t]=convertStructArrayToMarkerAndTypeArrays(s);
+        if any(m~=obj.markers)||any(t~=obj.markerTypes)
+            error('YAML file validation failed')
+        else
+            msgbox(sprintf('YAML file successfully exported to\n%s\nand validated', fullfile(p, f)))
+        end
     catch err
-        errordlg('Export does not appear to have been successful. YAML file seems corrupted', 'Cell Counter')
+        errordlg(sprintf('Export does not appear to have been successful.\nYAML file seems corrupted, or could not be verified'), 'Cell Counter')
         rethrow(err)
     end
 end
@@ -486,13 +491,11 @@ function importData(~, ~, obj)
         errordlg('Import error', 'Cell Counter')
         rethrow(err)
     end
-    
-    f=fieldnames(s);
-    markerTypes(numel(f))=goggleMarkerType;
-    for ii=1:numel(f)
-        markerTypes(ii).name=f{ii};
-        markerTypes(ii).color=s.(f{ii}).color;
-    end
+    [m,t]=convertStructArrayToMarkerAndTypeArrays(s);
+    obj.markerTypes=t;
+    obj.markers=m;
+    obj.updateMarkerTypeUISelections();
+    obj.drawMarkers();
 end
 
 %% Utilities
@@ -536,6 +539,20 @@ switch key
             obj.hModeDelete.Value=1;
         end
 end
+end
+
+function [m, t]=convertStructArrayToMarkerAndTypeArrays(s)
+    f=fieldnames(s);
+    t(numel(f))=goggleMarkerType;
+    m=[];
+    for ii=1:numel(f)
+        t(ii).name=f{ii};
+        t(ii).color=s.(f{ii}).color;
+        if isfield(s.(f{ii}), 'markers')
+            sm=s.(f{ii}).markers;
+            m=[m goggleMarker(t(ii), [sm.x], [sm.y], [sm.z])]; %#ok<AGROW>
+        end
+    end
 end
 
 %% Set up context menus to change markers

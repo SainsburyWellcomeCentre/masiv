@@ -17,15 +17,20 @@ classdef goggleMarkerType
                 error('Can''t compare goggleMarkerType to an object not of this class')
             end
             if numel(obj)>1
-                if numel(obj2)==1
-                    tmpObj=obj;
-                    obj=obj2;
-                    obj2=tmpObj;
+                if numel(obj2)==1 
+                    iseq=obj2==obj;
                 else
-                    error('Can''t compare two object arrays')
+                    iseq=zeros(size(obj));
+                    for ii=1:numel(obj)
+                        iseq(ii)=obj(ii)==obj2(ii);
+                    end
                 end
+            else
+                iseq= strcmp(obj.name, {obj2.name})&cellfun(@(x) all(abs(x-obj.color)<1e-5), {obj2.color});
             end
-            iseq= strcmp(obj.name, {obj2.name})&cellfun(@(x) all(x==obj.color), {obj2.color});
+        end
+        function neq=ne(obj,obj2)
+            neq=~(obj==obj2);
         end
     end
 end
