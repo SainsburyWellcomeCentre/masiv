@@ -153,8 +153,10 @@ classdef goggleViewer<handle
             set(findall(gcf, '-property','FontName'), 'FontName', gbSetting('font.name'))
             
             %% Start parallel pool
+            h=splashWindow('Starting Parallel Pool', 'goggleViewer');
+            drawnow;
             gcp();
-            
+            delete(h);
             %% Show the figure, we're done here!
             obj.hFig.Visible='on';
         end 
