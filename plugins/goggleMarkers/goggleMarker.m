@@ -53,6 +53,34 @@ classdef goggleMarker
         function col=get.color(obj)
             col=obj.type.color;
         end
+        %% Iseq
+        function e=eq(obj, obj2)
+            if isscalar(obj)
+                if ~isa(obj2, 'goggleMarker')
+                    error('Comparator must be a goggleMarker object')
+                end
+                if ~isscalar(obj2)
+                    e=obj2==obj;
+                else
+                    e=(obj.xVoxel==obj2.xVoxel)&&(obj.yVoxel==obj2.yVoxel)&&(obj.zVoxel==obj2.zVoxel)&&(obj.type==obj2.type);
+                end
+              
+            else
+                if (numel(obj)==numel(obj2))
+                    e=zeros(numel(obj), 1);
+                    for ii=1:numel(obj)
+                        e(ii)=obj(ii)==obj2(ii);
+                    end
+                elseif isscalar(obj2)
+                    for ii=1:numel(obj)
+                        e(ii)=obj(ii)==obj2;
+                    end
+                else
+                    error('arrays must be of the same size')
+                end
+                
+            end
+        end
         
     end
 end
