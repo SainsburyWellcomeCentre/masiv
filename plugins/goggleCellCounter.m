@@ -126,7 +126,8 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'FontSize', obj.fontSize, ...
                 'Value', 1, ...
                 'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'));
+                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'Callback', {@importData, obj});
             uicontrol(...
                 'Parent', obj.hFig, ...
                 'Style', 'pushbutton', ...
@@ -450,17 +451,48 @@ function exportData(~, ~, obj)
             s.(thisType.name).markers=markersOfThisType.toStructArray;
         end
     end
-    
-    writeSimpleYAML(s, fullfile(p, f))
+    try
+        writeSimpleYAML(s, fullfile(p, f))
+    catch err
+        errordlg('YAML file could not be created', 'Cell Counter')
+        rethrow(err)
+    end
     
     obj.changeFlag=0;
     
     gbSetting('cellCounter.importExportDefault', fullfile(p, f))
     
-    tic
-    readSimpleYAML(fullfile(p,f))
+    try
+        readSimpleYAML(fullfile(p,f));
+        msgbox(sprintf('YAML file successfully exported to\n%s', fullfile(p, f)))
+    catch err
+        errordlg('Export does not appear to have been successful. YAML file seems corrupted', 'Cell Counter')
+        rethrow(err)
+    end
+end
+
+function importData(~, ~, obj)
+     if obj.changeFlag
+        agree=questdlg(sprintf('There are unsaved changes that will be lost.\nAre you sure you want to import markers?'), 'Cell Counter', 'Yes', 'No', 'Yes');
+        if strcmp(agree, 'No')
+            return
+        end
+     end
+    [f,p]=uigetfile('*.yml', 'Import Markers', gbSetting('cellCounter.importExportDefault'));
     
-    toc
+    try
+        s=readSimpleYAML(fullfile(p, f));
+    catch
+        errordlg('Import error', 'Cell Counter')
+        rethrow(err)
+    end
+    
+    f=fieldnames(s);
+    markerTypes(numel(f))=goggleMarkerType;
+    for ii=1:numel(f)
+        markerTypes(ii).name=f{ii};
+        markerTypes(ii).color=s.(f{ii}).color;
+    end
 end
 
 %% Utilities

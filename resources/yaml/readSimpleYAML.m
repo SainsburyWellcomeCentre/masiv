@@ -67,12 +67,25 @@ end
 
 function s=yaml2structarray(fid, currentDepth)
     s=[];
-    while ~feof(fid)&&strcmp(strtrim(fgetl(fid)), '-');
+    oldPos=ftell(fid);
+    newL=fgetl(fid);
+    while ischar(newL)
+        
+        if isempty(strfind(newL, '-'))
+            fseek(fid, oldPos, 'bof');
+            break
+        else
+            
+        end
+           
         if isempty(s)
             s=scanYamlFile(fid, currentDepth+1);
         else
-            s(end+1)=scanYamlFile(fid, currentDepth+1); %#ok<AGROW>
+            s(end+1)=scanYamlFile(fid, currentDepth+1);
         end
+        
+         oldPos=ftell(fid);
+         newL=fgetl(fid);
     end
 
 end
