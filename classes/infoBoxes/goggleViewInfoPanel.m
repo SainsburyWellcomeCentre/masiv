@@ -225,8 +225,6 @@ classdef goggleViewInfoPanel<handle
             zvm=gvd.zoomedViewManager;
             
             zoomLevel=gvd.zoomLevel;
-            zvm.currentSliceFileExistsOnDisk;               
-
             
             if zoomLevel<=gbSetting('viewerDisplay.minZoomLevelForDetailedLoad')
                 obj.onDiskIndicator.Visible='off';
@@ -278,10 +276,10 @@ function doUpdate(obj)
     obj.yLimMax.String=sprintf('%i',yl(2));
     
     zIdx=obj.goggleViewerDisplay.currentIndex;
-    zIdxOrignalVoxels=obj.goggleViewerDisplay.currentZPlaneOriginalVoxels;
+    zIdxOriginalVoxels=obj.goggleViewerDisplay.currentZPlaneOriginalVoxels;
     
     zActual=obj.goggleViewerDisplay.overviewStack.zCoordsUnits(zIdx);
-    obj.zPosition.String=sprintf('%04i (%ium)', zIdxOrignalVoxels, round(zActual));
+    obj.zPosition.String=sprintf('%04i (%ium)', zIdxOriginalVoxels, round(zActual));
     
     %% Zoom info and file status. File name info.
     

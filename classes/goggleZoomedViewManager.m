@@ -145,6 +145,12 @@ classdef goggleZoomedViewManager<handle
         end
        
     end
+    
+    methods
+        function lims=currentViewStretchLim(obj, pctile)
+            lims=stretchlim(obj.hImg.CData, pctile);
+        end
+    end
 end
 
 function v=findMatchingView(obj)
