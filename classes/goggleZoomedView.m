@@ -1,6 +1,6 @@
 classdef goggleZoomedView<handle
     properties(SetAccess=protected)
-        imageData
+        rawImageData
     end
     properties(SetAccess=protected)
         regionSpec
@@ -14,6 +14,7 @@ classdef goggleZoomedView<handle
     properties(SetAccess=protected, Dependent)
         sizeMiB
         imageInMemory
+        imageData
     end
     
     methods
@@ -39,11 +40,14 @@ classdef goggleZoomedView<handle
         end
         %% Getters
         function szMiB=get.sizeMiB(obj)
-            szBytes=numel(obj.imageData)*2; % 16 bit images
+            szBytes=numel(obj.rawImageData)*2; % 16 bit images
             szMiB=szBytes/(1024*1024);
         end
         function inmem=get.imageInMemory(obj)
-            inmem=~isempty(obj.imageData);
+            inmem=~isempty(obj.rawImageData);
+        end
+        function I=get.imageData(obj)
+            I=obj.rawImageData;
         end
        
     end
@@ -80,7 +84,7 @@ function checkForLoadedImage(t, ~, obj, f)
         goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has been loaded. Processing', toc,'s')
         I=processImage(I, obj);
         goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has been filtered', toc,'s')
-        obj.imageData=I;
+        obj.rawImageData=I;
         goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image data read', toc,'s')
         stop(t)
         goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Timer stopped', toc,'s')

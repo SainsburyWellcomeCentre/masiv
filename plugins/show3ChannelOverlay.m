@@ -23,9 +23,12 @@ classdef show3ChannelOverlay<goggleBoxPlugin
             fprintf('Load time: %3.2fs\n', toc),tic
                        
             I=double(cat(3, ch01, ch02, ch03));
-            %if strcmp(questdlg('Apply unmixing?', '3 channel display', 'Yes', 'No', 'Yes'), 'Yes')
+            fprintf('Converted to double time: %3.2fs\n', toc)
+            if strcmp(questdlg('Apply unmixing?', '3 channel display', 'Yes', 'No', 'Yes'), 'Yes')
+                tic
                 I=unmix(I);
-            %end
+            end
+            
             fprintf('Unmixed in %3.2fs\n', toc),tic
             figure
             subplot('Position', [0.05 0.06 0.2 0.9])
