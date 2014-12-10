@@ -471,9 +471,11 @@ function exportData(~, ~, obj)
     for ii=1:numel(obj.markerTypes)
         thisType=obj.markerTypes(ii);
         s.(thisType.name).color=thisType.color;
-        markersOfThisType=obj.markers([obj.markers.type]==thisType);
-        if ~isempty(markersOfThisType)
-            s.(thisType.name).markers=markersOfThisType.toStructArray;
+        if~isempty(obj.markers)
+            markersOfThisType=obj.markers([obj.markers.type]==thisType);
+            if ~isempty(markersOfThisType)
+                s.(thisType.name).markers=markersOfThisType.toStructArray;
+            end
         end
     end
     try
