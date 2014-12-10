@@ -18,6 +18,9 @@ classdef goggleZoomedView<handle
         imageInMemory
         imageData
     end
+    properties
+        checkForLoadedImageTimer
+    end
     
     methods
         %% Constructor
@@ -56,7 +59,24 @@ classdef goggleZoomedView<handle
         end
         
         %% Load function
-        function backgroundLoad(obj, p)
+        function backgroundLoad(obj, p, timerAutoStart)
+            % Sets up an asynchronous load using parfeval. Sets up a timer
+            % to check for completion of the load task, and execute
+            % post-loading processing
+            %
+            % obj:  a goggleZoomed view object
+            %
+            % p:    (optional) a Parallel worker pool. If not specified,
+            % the current worker pool will be used (and created, if
+            % necessary)
+            %
+            % timerAutoStart: (optional) if set to 0, the timer will be 
+            %created but not started. It can then be started manually:
+            % (start(obj.checkForLoadedImageTimer))
+            
+            if nargin<3||isempty(timerAutoStart)
+                timerAutoStart=1;
+            end
             
             if nargin<2||isempty(p)
                 p=gcp;
@@ -67,12 +87,14 @@ classdef goggleZoomedView<handle
             f=parfeval(p, @openTiff, 1, obj.filePath, obj.regionSpec, obj.downSampling);
             goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground: parfeval started', toc,'s')
             
-            t=timer('BusyMode', 'queue', 'ExecutionMode', 'fixedSpacing', 'Period', 0.01, 'TimerFcn', {@checkForLoadedImage, obj, f}, 'Name', 'zoomedView');
+            obj.checkForLoadedImageTimer=timer('BusyMode', 'queue', 'ExecutionMode', 'fixedSpacing', 'Period', .01, 'TimerFcn', {@checkForLoadedImage, obj, f}, 'Name', 'zoomedView');
             goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground: Timer created', toc,'s')
             
             addLineToReadQueueFile
-            start(t)
-            goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground: Timer started', toc,'s')
+            if timerAutoStart
+                start(obj.checkForLoadedImageTimer)
+                goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground: Timer started', toc,'s')
+            end
         end
 
         
