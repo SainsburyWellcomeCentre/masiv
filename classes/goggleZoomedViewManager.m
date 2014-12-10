@@ -1,10 +1,10 @@
 classdef goggleZoomedViewManager<handle
     properties(SetAccess=protected)
         currentImageFilePath
+        zoomedViewArray=goggleZoomedView
     end
     properties(Access=protected)
         parentViewerDisplay
-        zoomedViewArray=goggleZoomedView
         hImg
         currentSliceFileExistsOnDiskCache
     end
@@ -32,7 +32,7 @@ classdef goggleZoomedViewManager<handle
             if isempty(v)
                 goggleDebugTimingInfo(2, 'GZVM.updateView: Creating new view...', toc,'s')
                 try
-                    stdout=obj.createNewView;
+                    stdout=obj.createNewViewForCurrentView;
                     notify(obj.parentViewerDisplay.parentViewer, 'CacheChanged')
                     if stdout==0
                         obj.hide
@@ -52,22 +52,43 @@ classdef goggleZoomedViewManager<handle
             end
         end
         
-        function stdout=createNewView(obj)
-            if obj.currentSliceFileExistsOnDisk
+        function stdout=createNewView(obj, regionSpec, z, ds, loadedCallback)
+            
+            if nargin<5
+                loadedCallback=[];
+            end
+                        
+            goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view creation starting',toc,'s')
+            stdout=1;
+            
+            basedir=obj.parentViewerDisplay.parentViewer.overviewDSS.baseDirectory;
+            f=obj.parentViewerDisplay.parentViewer.overviewDSS.originalStitchedFileNames{z};
+            
+            fp=fullfile(basedir, f);
+            try
+                v=goggleZoomedView(fp, regionSpec, ds, z, obj, loadedCallback);
+                obj.zoomedViewArray(end+1)=v;
+            catch err
+                rethrow(err)
+            end
+            goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view created',toc,'s')
+               
+        end
+        
+        function stdout=createNewViewForCurrentView(obj)
+             if obj.currentSliceFileExistsOnDisk
                 
                 parent=obj.parentViewerDisplay;
                 
-                fp=obj.currentSliceFileFullPath;
                 regionSpec=getRegionSpecFromParent(parent);
                 ds=parent.downSamplingForCurrentZoomLevel;
                 z=parent.currentZPlaneOriginalVoxels;
                 
-                goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view creation starting',toc,'s')
-                obj.zoomedViewArray(end+1)=goggleZoomedView(fp, regionSpec, ds, z, obj);
-                goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view created',toc,'s')
+                loadedCallback=@() obj.updateView();
                 
+                stdout=obj.createNewView(regionSpec,z, ds, loadedCallback);                
                 obj.cleanUpCache();
-                stdout=1;
+                
             else
                 stdout=0;
             end

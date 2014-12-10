@@ -10,6 +10,7 @@ classdef goggleZoomedView<handle
         x
         y
         z
+        completedFcn
     end
     properties(SetAccess=protected, Dependent)
         sizeMiB
@@ -19,12 +20,15 @@ classdef goggleZoomedView<handle
     
     methods
         %% Constructor
-        function obj=goggleZoomedView(filePath, regionSpec, downSampling, z, parentZoomedViewManager)
+        function obj=goggleZoomedView(filePath, regionSpec, downSampling, z, parentZoomedViewManager, completedFcn)
             if nargin>0
                 goggleDebugTimingInfo(3, 'GZV Constructor: starting', toc,'s')
                 obj.regionSpec=regionSpec;
                 obj.downSampling=downSampling;
                 obj.filePath=filePath;
+                if iscell(obj.filePath)
+                    obj.filePath=obj.filePath{1};
+                end
                 
                 obj.x=obj.regionSpec(1):obj.downSampling:obj.regionSpec(1)+obj.regionSpec(3)-1;
                 obj.y=obj.regionSpec(2):obj.downSampling:obj.regionSpec(2)+obj.regionSpec(4)-1;
@@ -32,11 +36,29 @@ classdef goggleZoomedView<handle
                 
                 obj.parentZoomedViewManager=parentZoomedViewManager;
                 
+                if nargin<6||isempty(completedFcn)
+                    obj.completedFcn=[];
+                else
+                    if ~isa(completedFcn, 'function_handle')
+                        error('Completed Callback function must be a handle')
+                    end
+                    obj.completedFcn=completedFcn;
+                end
+                
                 goggleDebugTimingInfo(3, 'GZV Constructor: completed, calling loadViewImageInBackground...', toc,'s')
                 loadViewImageInBackground(obj)
+                
             else
                 obj.z=-1;
             end
+        end
+        
+        %% Callback function
+        function executeCompletedFcn(obj)
+              if ~isempty(obj.completedFcn)
+                  fun=obj.completedFcn;
+                  fun(); %execute with no extra arguments
+              end     
         end
         %% Getters
         function szMiB=get.sizeMiB(obj)
@@ -72,7 +94,10 @@ end
 function checkForLoadedImage(t, ~, obj, f)
     try
         [idx, I]=fetchNext(f, 0.01);
-    catch 
+    catch err
+        for ii=1:numel(err.stack)
+            disp(err.stack(ii))
+        end
         idx=[];
         stop(t)
         delete(t)
@@ -91,7 +116,8 @@ function checkForLoadedImage(t, ~, obj, f)
         delete(t)
         goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Timer deleted', toc,'s')
         goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Calling ZVM updateView...', toc,'s')
-        obj.parentZoomedViewManager.updateView();
+      
+        executeCompletedFcn(obj)
     end
 end
 
