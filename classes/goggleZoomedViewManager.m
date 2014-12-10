@@ -52,21 +52,20 @@ classdef goggleZoomedViewManager<handle
             end
         end
         
-        function stdout=createNewView(obj, regionSpec, z, ds, loadedCallback)
+        function v=createNewView(obj, regionSpec, z, ds, loadedCallback)
             
             if nargin<5
                 loadedCallback=[];
             end
                         
             goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view creation starting',toc,'s')
-            stdout=1;
             
             basedir=obj.parentViewerDisplay.parentViewer.overviewDSS.baseDirectory;
             f=obj.parentViewerDisplay.parentViewer.overviewDSS.originalStitchedFileNames{z};
             
             fp=fullfile(basedir, f);
             try
-                v=goggleZoomedView(fp, regionSpec, ds, z, obj, loadedCallback);
+                v=goggleZoomedView(fp, regionSpec, ds, z, 'completedFcn', loadedCallback, 'processingFcns', obj.imageProcessingPipeline);
                 obj.zoomedViewArray(end+1)=v;
             catch err
                 rethrow(err)
@@ -86,12 +85,15 @@ classdef goggleZoomedViewManager<handle
                 
                 loadedCallback=@() obj.updateView();
                 
-                stdout=obj.createNewView(regionSpec,z, ds, loadedCallback);                
+                v=obj.createNewView(regionSpec,z, ds, loadedCallback);  
+                if ~isempty(v)
+                    stdout=1;
+                    v.backgroundLoad;
+                else
+                    stdout=0;
+                end
                 obj.cleanUpCache();
-                
-            else
-                stdout=0;
-            end
+             end
         end
         
         function hide(obj)
