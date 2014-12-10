@@ -4,12 +4,12 @@ classdef goggleZoomedView<handle
     end
     properties(SetAccess=protected)
         regionSpec
-        downSampling
+        downSampling=-1
         filePath
         parentZoomedViewManager
-        x
-        y
-        z
+        x=-1
+        y=-1
+        z=-1
         completedFcn
         processingFcns
     end
@@ -41,7 +41,7 @@ classdef goggleZoomedView<handle
                 p=inputParser;
                 p.FunctionName='goggleZoomedViewManager.constructor';
                 addParameter(p, 'processingFcns', [], @checkValidPipeline);
-                addParameter(p, 'completedFcn', [], @(x) isa(x, 'function_handle'));
+                addParameter(p, 'completedFcn', [], @(x) isempty(x)||isa(x, 'function_handle'));
                 p.parse(varargin{:});
                 
                 obj.processingFcns=p.Results.processingFcns;

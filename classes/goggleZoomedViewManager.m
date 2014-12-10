@@ -1,12 +1,17 @@
 classdef goggleZoomedViewManager<handle
     properties(SetAccess=protected)
         currentImageFilePath
-        zoomedViewArray=goggleZoomedView
+        zoomedViewArray
     end
     properties(Access=protected)
         parentViewerDisplay
         hImg
         currentSliceFileExistsOnDiskCache
+        
+        planesInMemX
+        planesInMemY
+        planesInMemZ
+        planesInMemDS
     end
     properties(SetAccess=protected, Dependent)
         cacheMemoryUsed
@@ -33,7 +38,6 @@ classdef goggleZoomedViewManager<handle
                 goggleDebugTimingInfo(2, 'GZVM.updateView: Creating new view...', toc,'s')
                 try
                     stdout=obj.createNewViewForCurrentView;
-                    notify(obj.parentViewerDisplay.parentViewer, 'CacheChanged')
                     if stdout==0
                         obj.hide
                     end
@@ -53,25 +57,18 @@ classdef goggleZoomedViewManager<handle
         end
         
         function v=createNewView(obj, regionSpec, z, ds, loadedCallback)
-            
+            % Constructs the file path from spec and creates a GZV object
             if nargin<5
                 loadedCallback=[];
             end
                         
-            goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view creation starting',toc,'s')
-            
+                goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view creation starting',toc,'s')
             basedir=obj.parentViewerDisplay.parentViewer.overviewDSS.baseDirectory;
-            f=obj.parentViewerDisplay.parentViewer.overviewDSS.originalStitchedFileNames{z};
+            f=obj.parentViewerDisplay.parentViewer.overviewDSS.originalStitchedFileNames{z};            
+            fp=fullfile(basedir, f);  
             
-            fp=fullfile(basedir, f);
-            try
-                v=goggleZoomedView(fp, regionSpec, ds, z, 'completedFcn', loadedCallback, 'processingFcns', obj.imageProcessingPipeline);
-                obj.zoomedViewArray(end+1)=v;
-            catch err
-                rethrow(err)
-            end
-            goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view created',toc,'s')
-               
+            v=goggleZoomedView(fp, regionSpec, ds, z, 'completedFcn', loadedCallback, 'processingFcns', obj.imageProcessingPipeline);
+                goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view created',toc,'s')
         end
         
         function stdout=createNewViewForCurrentView(obj)
@@ -88,6 +85,7 @@ classdef goggleZoomedViewManager<handle
                 v=obj.createNewView(regionSpec,z, ds, loadedCallback);  
                 if ~isempty(v)
                     stdout=1;
+                    obj.addViewToArray(v)
                     v.backgroundLoad;
                 else
                     stdout=0;
@@ -96,13 +94,20 @@ classdef goggleZoomedViewManager<handle
              end
         end
         
+        function addViewToArray(obj, v)
+            if ~isempty(obj.zoomedViewArray)
+                obj.zoomedViewArray(end+1)=v;
+            else
+                obj.zoomedViewArray=v;
+            end
+        end
+        
         function hide(obj)
             obj.hImg.Visible='off';
         end
         
         %% Cache functions
         function cleanUpCache(obj)
-            obj.clearInvalidPlanes();
             obj.reduceToCacheLimit();
         end
         
@@ -110,6 +115,7 @@ classdef goggleZoomedViewManager<handle
             obj.zoomedViewArray=goggleZoomedView;
             obj.updateView();
         end
+        
         %% Getters
         function csfn=get.currentSliceFileName(obj)
             stitchedFileNameList=obj.parentViewerDisplay.overviewStack.originalStitchedFileNames;
@@ -135,7 +141,21 @@ classdef goggleZoomedViewManager<handle
             cData=obj.hImg.CData;
         end
         function cmem=get.cacheMemoryUsed(obj)
-            cmem=sum([obj.zoomedViewArray.sizeMiB]);
+            if ~isempty(obj.zoomedViewArray)
+                cmem=sum([obj.zoomedViewArray.sizeMiB]);
+            else
+                cmem=0;
+            end
+        end
+        
+        %% Setters
+        function set.zoomedViewArray(obj, zv)
+            obj.zoomedViewArray=zv;
+            obj.planesInMemX={obj.zoomedViewArray.x}; %#ok<MCSUP>
+            obj.planesInMemY={obj.zoomedViewArray.y};   %#ok<MCSUP>
+            obj.planesInMemZ=[obj.zoomedViewArray.z];   %#ok<MCSUP>
+            obj.planesInMemDS=[obj.zoomedViewArray.downSampling]; %#ok<MCSUP>
+            notify(obj.parentViewerDisplay.parentViewer, 'CacheChanged') %#ok<MCSUP>
         end
     end
     
@@ -156,13 +176,6 @@ classdef goggleZoomedViewManager<handle
             end
         end
         
-        function clearInvalidPlanes(obj)
-            goggleDebugTimingInfo(2, 'GZVM.clearInvalidPlanes: Checking for invalid planes...', toc,'s')
-            invalidIdx=[obj.zoomedViewArray.z]<0;
-            obj.zoomedViewArray=obj.zoomedViewArray(~invalidIdx);
-            goggleDebugTimingInfo(2, sprintf('GZVM.clearInvalidPlanes: %u invalid planes found and cleared.',sum(invalidIdx)), toc,'s')
-        end
-        
         function moveZVToTopOfCacheStack(obj, idx)
             obj.zoomedViewArray=obj.zoomedViewArray([idx 1:idx-1 idx+1:end]);
         end
@@ -178,35 +191,36 @@ end
 
 function v=findMatchingView(obj)
     goggleDebugTimingInfo(2, 'GZVM.findMatchingView: Checking for matching planes...', toc,'s')
-    obj.clearInvalidPlanes
-    parent=obj.parentViewerDisplay;
-    
-    viewX=xlim(parent.axes);
-    viewY=ylim(parent.axes);
-    viewZ=parent.currentZPlaneOriginalVoxels;
-    viewDS=parent.downSamplingForCurrentZoomLevel;
-    
-    planesInMemX={obj.zoomedViewArray.x};
-    planesInMemY={obj.zoomedViewArray.y};
-    planesInMemZ=[obj.zoomedViewArray.z];
-    planesInMemDS=[obj.zoomedViewArray.downSampling];
-    
-    %% Allow a slightly smaller image (5xdownsampling) to be considered a match
-    %    (Takes care of rounding errors)
-    allowablePixelsSmallerThanView=5*viewDS;
-    viewX=viewX+[1 -1]*allowablePixelsSmallerThanView;
-    viewY=viewY+[1 -1]*allowablePixelsSmallerThanView;
-    
-    %%
-    xMatch=(cellfun(@min, planesInMemX)<=viewX(1))&(cellfun(@max, planesInMemX)>=viewX(2));
-    yMatch=(cellfun(@min, planesInMemY)<=viewY(1))&(cellfun(@max, planesInMemY)>=viewY(2));
-    v=find( xMatch & ...
-        yMatch & ...
-        viewZ==planesInMemZ & ...
-        viewDS==planesInMemDS);
-    
-    goggleDebugTimingInfo(2, 'GZVM.findMatchingView: Comparison complete.', toc,'s')
-
+    if isempty(obj.zoomedViewArray)
+        v=[];
+        return
+    else
+        %% Get the current view limits
+        parent=obj.parentViewerDisplay;
+        
+        viewX=xlim(parent.axes);
+        viewY=ylim(parent.axes);
+        viewZ=parent.currentZPlaneOriginalVoxels;
+        viewDS=parent.downSamplingForCurrentZoomLevel;
+        
+        
+        
+        %% Allow a slightly smaller image (5xdownsampling) to be considered a match
+        %    (Takes care of rounding errors)
+        allowablePixelsSmallerThanView=5*viewDS;
+        viewX=viewX+[1 -1]*allowablePixelsSmallerThanView;
+        viewY=viewY+[1 -1]*allowablePixelsSmallerThanView;
+        
+        %% Do comparison
+        xMatch=(cellfun(@min, obj.planesInMemX)<=viewX(1))&(cellfun(@max, obj.planesInMemX)>=viewX(2));
+        yMatch=(cellfun(@min, obj.planesInMemY)<=viewY(1))&(cellfun(@max, obj.planesInMemY)>=viewY(2));
+        v=find( xMatch & ...
+            yMatch & ...
+            viewZ==obj.planesInMemZ & ...
+            viewDS==obj.planesInMemDS);
+        
+        goggleDebugTimingInfo(2, 'GZVM.findMatchingView: Comparison complete.', toc,'s')
+    end
 end
 
 function updateImage(obj, idx)
