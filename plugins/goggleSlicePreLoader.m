@@ -5,9 +5,11 @@ classdef goggleSlicePreLoader<goggleBoxPlugin
         nAfter
         hFig
         
+        hEnabledCheckBox
+        
         hViewChangedListener
         hClosingListener
-        hEnabledCheckBox
+        hKeyboardListener
     end
     
     methods
@@ -31,7 +33,8 @@ classdef goggleSlicePreLoader<goggleBoxPlugin
                 'MenuBar', 'none', 'NumberTitle', 'off', ...
                 'Color', gbSetting('viewer.mainBkgdColor'), ...
                 'Resize', 'off', 'Name', 'PreLoader', ...
-                'CloseRequestFcn', {@closeReqFcn, obj});
+                'CloseRequestFcn', {@closeReqFcn, obj}, ...
+                'KeyPressFcn', {@keyPress, obj});
                 
             
            setUpSettingBox('Before:', 'preLoader.nBefore', 0.5, obj, 'nBefore')
@@ -60,11 +63,13 @@ classdef goggleSlicePreLoader<goggleBoxPlugin
                'FontSize', gbSetting('font.size')+1, ...
                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
-               'String', 'Enable', ...
-               'Value', 1);
+               'String', 'Enable (p)', ...
+               'Value', 1, ...
+               'Callback', {@enabledCheckboxValueChange, obj});
 
            obj.hViewChangedListener=event.listener(obj.parent, 'ViewChanged', @obj.viewChangedListenerCallback);
            obj.hClosingListener=event.listener(obj.parent, 'ViewerClosing', @obj.viewerClosingListenerCallback);
+           obj.hKeyboardListener=event.listener(obj.parent, 'KeyPress', @obj.handleMainWindowKeyPress);
            
            obj.viewChangedListenerCallback;
         end
@@ -122,12 +127,33 @@ classdef goggleSlicePreLoader<goggleBoxPlugin
         function viewerClosingListenerCallback(obj, ~,~)
             obj.deleteObj();
         end
+        function handleMainWindowKeyPress(obj, ~,ev)
+            keyPress([], ev.KeyPressData, obj)
+        end
+        
     end
+    
     %% Display String
     methods(Static)
         function d=displayString()
             d='PreLoader...';
         end
+    end
+end
+
+%% Other callbacks
+function enabledCheckboxValueChange(chckbx, ~, parentObj)
+    if chckbx.Value
+        parentObj.doPreLoading;
+    end
+end
+
+function keyPress(~, eventdata, obj)
+    key=eventdata.Key;
+    ctrlMod=ismember('control', eventdata.Modifier);
+    
+    if strcmp(key, 'p') && ~ctrlMod
+        obj.hEnabledCheckBox.Value=~obj.hEnabledCheckBox.Value;
     end
 end
 
@@ -306,3 +332,4 @@ end
 function closeReqFcn(~,~,obj)
     obj.deleteObj;
 end
+
