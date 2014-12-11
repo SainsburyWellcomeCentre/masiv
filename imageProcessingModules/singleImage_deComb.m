@@ -1,9 +1,9 @@
-classdef singleImage_deComb<singleImage_DisplayProcesor
+classdef singleImage_deComb<singleImage_DisplayProcessor
    
     methods
         function obj=singleImage_deComb
             % Don't really need a constructor
-            obj=obj@singleImage_DisplayProcesor;
+            obj=obj@singleImage_DisplayProcessor;
         end
         function s=toString(~)
             s='De-Comb';

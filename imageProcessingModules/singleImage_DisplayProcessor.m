@@ -1,4 +1,4 @@
-classdef (Abstract) singleImage_DisplayProcesor
+classdef (Abstract) singleImage_DisplayProcessor
     %singleImage_DisplayProcesor Base class for image processing modules
       
     methods (Abstract)

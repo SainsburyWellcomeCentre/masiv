@@ -1,4 +1,4 @@
-classdef singleImage_blur<singleImage_DisplayProcesor
+classdef singleImage_blur<singleImage_DisplayProcessor
     properties
         filterSize
         sigma

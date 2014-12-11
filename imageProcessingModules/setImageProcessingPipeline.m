@@ -84,11 +84,11 @@ function modulePipeline=setImageProcessingPipeline(modulePipeline)
         displayNames={};
         moduleNames={};
         
-        baseDir=fileparts(which('singleImage_DisplayProcesor'));
+        baseDir=fileparts(which('singleImage_DisplayProcessor'));
         filesInBaseDir=dir(fullfile(baseDir, '*.m'));
         for ii=1:numel(filesInBaseDir)
             nm=strrep(filesInBaseDir(ii).name, '.m', '');
-            if ismember(superclasses(nm), 'singleImage_DisplayProcesor')
+            if ismember(superclasses(nm), 'singleImage_DisplayProcessor')
                 moduleNames=[moduleNames {nm}]; %#ok<AGROW>
                 displayNames=[displayNames, eval(sprintf('%s.displayName', nm))]; %#ok<AGROW>
             end
