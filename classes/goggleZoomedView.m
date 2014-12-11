@@ -173,7 +173,7 @@ end
 function validProcessingStep=checkIndividualPipelineObject(objToCheck)
     validProcessingStep=isobject(objToCheck);
     if validProcessingStep
-        objToCheckClassInfo=meta.class(objToCheck);
+        objToCheckClassInfo=metaclass(objToCheck);
         superClassList=objToCheckClassInfo.SuperclassList;
         validProcessingStep=ismember('singleImage_DisplayProcessor', {superClassList.Name});
     end

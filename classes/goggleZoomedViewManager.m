@@ -1,17 +1,19 @@
 classdef goggleZoomedViewManager<handle
     properties(SetAccess=protected)
         currentImageFilePath
+        
         zoomedViewArray
+        planesInMemX
+        planesInMemY
+        planesInMemZ
+        planesInMemDS
     end
     properties(Access=protected)
         parentViewerDisplay
         hImg
         currentSliceFileExistsOnDiskCache
         
-        planesInMemX
-        planesInMemY
-        planesInMemZ
-        planesInMemDS
+       
     end
     properties(SetAccess=protected, Dependent)
         cacheMemoryUsed
@@ -85,7 +87,7 @@ classdef goggleZoomedViewManager<handle
                 v=obj.createNewView(regionSpec,z, ds, loadedCallback);  
                 if ~isempty(v)
                     stdout=1;
-                    obj.addViewToArray(v)
+                    obj.addViewsToArray(v)
                     v.backgroundLoad;
                 else
                     stdout=0;
@@ -94,9 +96,10 @@ classdef goggleZoomedViewManager<handle
              end
         end
         
-        function addViewToArray(obj, v)
+        function addViewsToArray(obj, v)
+            
             if ~isempty(obj.zoomedViewArray)
-                obj.zoomedViewArray(end+1)=v;
+                obj.zoomedViewArray=[obj.zoomedViewArray v];
             else
                 obj.zoomedViewArray=v;
             end

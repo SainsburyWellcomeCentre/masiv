@@ -39,6 +39,7 @@ classdef goggleViewer<handle
         CursorPositionChangedOutsideImageAxes
         ViewClicked
         KeyPress
+        ViewerClosing
     end
    
     methods % Constructor
@@ -329,6 +330,7 @@ classdef goggleViewer<handle
     
     methods % Destructor
         function delete(obj)
+            notify(obj, 'ViewerClosing')
             if ishandle(obj.hFig)
                 gbSetting('viewer.mainFigurePosition', obj.hFig.Position)
                 delete(obj.hFig);
