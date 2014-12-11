@@ -7,6 +7,7 @@ classdef goggleSlicePreLoader<goggleBoxPlugin
         
         hViewChangedListener
         hClosingListener
+        hEnabledCheckBox
     end
     
     methods
@@ -33,67 +34,84 @@ classdef goggleSlicePreLoader<goggleBoxPlugin
                 'CloseRequestFcn', {@closeReqFcn, obj});
                 
             
-           setUpSettingBox('Before:', 'preLoader.nBefore', 0.8, obj, 'nBefore')
-           setUpSettingBox('After:', 'preLoader.nAfter', 0.65, obj, 'nAfter')
+           setUpSettingBox('Before:', 'preLoader.nBefore', 0.5, obj, 'nBefore')
+           setUpSettingBox('After:', 'preLoader.nAfter', 0.35, obj, 'nAfter')
            
            uicontrol(...
                'Style', 'pushbutton', ...
                'Parent', obj.hFig, ...
                'Units', 'normalized', ...
                'Position', [0.5 0.05 0.45 0.15], ...
-               'HorizontalAlignment', 'center', ...
+               'HorizontalAlignment', 'left', ...
                'FontName', gbSetting('font.name'), ...
                'FontSize', gbSetting('font.size'), ...
                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
                'String', 'Close', ...
                'Callback', {@closeReqFcn, obj});
+           
+           obj.hEnabledCheckBox=uicontrol(...
+               'Style', 'checkbox', ...
+               'Parent', obj.hFig, ...
+               'Units', 'normalized', ...
+               'Position', [0.6 0.7 0.35 0.15], ...
+               'HorizontalAlignment', 'center', ...
+               'FontName', gbSetting('font.name'), ...
+               'FontSize', gbSetting('font.size')+1, ...
+               'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
+               'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+               'String', 'Enable', ...
+               'Value', 1);
 
            obj.hViewChangedListener=event.listener(obj.parent, 'ViewChanged', @obj.viewChangedListenerCallback);
            obj.hClosingListener=event.listener(obj.parent, 'ViewerClosing', @obj.viewerClosingListenerCallback);
+           
+           obj.viewChangedListenerCallback;
         end
         
         function doPreLoading(obj)
-                        
-            goggleDebugTimingInfo(1, 'PreLoader: starting', toc, 's')
-            
-            currentView_spec=getCurrentView(obj);
-            
-            newViewsToCreate_spec=createNewViewSpecs(obj, currentView_spec);
-            
-            newViewsToCreate_spec=excludeViewSpecsMatchingAlreadyLoadedGZV(obj, newViewsToCreate_spec);
-            
-            newViewsToCreate_spec=sortByDistanceFromCurrentPlace(newViewsToCreate_spec, currentView_spec);
-            
-            goggleDebugTimingInfo(1, 'PreLoader: Views to create calculated', toc, 's')
-            
-            if ~isempty(newViewsToCreate_spec)
-                % Initialise
-                newViews(numel(newViewsToCreate_spec))=goggleZoomedView;
+            if obj.hEnabledCheckBox.Value
                 
-                for ii=1:numel(newViewsToCreate_spec)
-                    newViews(ii)=createGZV(obj, newViewsToCreate_spec(ii));
-                    startLoading(newViews(ii));
-                    prepareTimer(newViews(ii), 1);
+                goggleDebugTimingInfo(1, 'PreLoader: starting', toc, 's')
+                
+                currentView_spec=getCurrentView(obj);                
+                newViewsToCreate_spec=createNewViewSpecs(obj, currentView_spec);                
+                newViewsToCreate_spec=excludeViewSpecsMatchingAlreadyLoadedGZV(obj, newViewsToCreate_spec);                
+                newViewsToCreate_spec=sortByDistanceFromCurrentPlace(newViewsToCreate_spec, currentView_spec);
+                
+                goggleDebugTimingInfo(1, 'PreLoader: Views to create calculated', toc, 's')
+                
+                if ~isempty(newViewsToCreate_spec)
+                    % Initialise
+                    newViews(numel(newViewsToCreate_spec))=goggleZoomedView;
+                    
+                    for ii=1:numel(newViewsToCreate_spec)
+                        newViews(ii)=createGZV(obj, newViewsToCreate_spec(ii));
+                        startLoading(newViews(ii));
+                        prepareTimer(newViews(ii), 1);
+                    end
+                    
+                    goggleDebugTimingInfo(1, 'PreLoader: Views created', toc, 's')
+                    addNewViewsToZVMArray(obj, newViews)
+                    
+                    for ii=1:numel(newViews)
+                        start(newViews(ii).checkForLoadedImageTimer);
+                    end
+                    goggleDebugTimingInfo(1, 'PreLoader: All timers started', toc, 's')
+                else
+                    goggleDebugTimingInfo(1, 'PreLoader: All views in memory', toc, 's')
                 end
                 
-                goggleDebugTimingInfo(1, 'PreLoader: Views created', toc, 's')
-                addNewViewsToZVMArray(obj, newViews)
-                
-                for ii=1:numel(newViews)
-                    start(newViews(ii).checkForLoadedImageTimer);
-                end
-                goggleDebugTimingInfo(1, 'PreLoader: All timers started', toc, 's')
-            else
-                goggleDebugTimingInfo(1, 'PreLoader: All views in memory', toc, 's')
             end
         end
 
         function deleteObj(obj)
+            gbSetting('preLoader.position', obj.hFig.Position)
             delete(obj.hFig)
             delete(obj)
         end
     end
+    
     %% Listener Callbacks
     methods(Access=protected)
         function viewChangedListenerCallback(obj, ~,~)
@@ -122,7 +140,7 @@ function setUpSettingBox(displayName, settingName, yPosition, parentObject, obje
         'Style', 'edit', ...
         'Parent', parentObject.hFig, ...
         'Units', 'normalized', ...
-        'Position', [0.66 yPosition 0.28 0.09], ...
+        'Position', [0.5 yPosition 0.45 0.12], ...
         'FontName', fn, ...
         'FontSize', fs, ...
         'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
@@ -141,7 +159,7 @@ function setUpSettingBox(displayName, settingName, yPosition, parentObject, obje
         'Style', 'text', ...
         'Parent', parentObject.hFig, ...
         'Units', 'normalized', ...
-        'Position', [0.02 yPosition 0.61 0.07], ...
+        'Position', [0.02 yPosition+0.02 0.46 0.07], ...
         'HorizontalAlignment', 'right', ...
         'FontName', fn, ...
         'FontSize', fs-1, ...
@@ -214,6 +232,7 @@ function newViewsToCreate_spec=sortByDistanceFromCurrentPlace(newViewsToCreate_s
     [~, sortOrder]=sort(abs([newViewsToCreate_spec.Z]-currentView_spec.Z));
     newViewsToCreate_spec=newViewsToCreate_spec(sortOrder);
 end
+
 %% New view creation and loading
 function newView=createGZV(obj, spec)
     
@@ -236,7 +255,7 @@ function addNewViewsToZVMArray(obj, newViews)
     zvm.addViewsToArray(newViews);
 end
 
-%%
+%% Region spec
 function v=clipRegionSpecBorder(v)
 %% Allow a slightly smaller image (5xdownsampling) to be considered a match
     %    (Takes care of rounding errors)

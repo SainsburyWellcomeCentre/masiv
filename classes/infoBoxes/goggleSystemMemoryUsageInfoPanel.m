@@ -167,8 +167,7 @@ classdef goggleSystemMemoryUsageInfoPanel<handle
                 'ForegroundColor', hsv2rgb([0.6 0.6 0.8]), ...
                 'HitTest', 'off');
            %%
-           obj.tmr=timer('ExecutionMode', 'fixedSpacing', 'Period', 2, 'TimerFcn', {@updateMemoryUsage, obj});
-           
+           obj.tmr=timer('Name', 'Memory Info', 'ExecutionMode', 'fixedSpacing', 'Period', 2, 'TimerFcn', {@updateMemoryUsage, obj});
            
            start(obj.tmr)
            
