@@ -23,7 +23,12 @@ classdef goggleCacheInfoPanel<handle
                 'Units', 'normalized', ...
                 'Position', position, ...
                 'BackgroundColor', gbSetting('viewer.panelBkgdColor'), ...
-                'ButtonDownFcn', {@changeCacheSize, obj});
+                'ButtonDownFcn', {@clickCallback, obj});
+            
+            mnuCache=uicontextmenu;
+            uimenu(mnuCache, 'Label', 'Clear cache...', 'Callback', {@clearCacheCallback, obj})
+            obj.mainPanel.UIContextMenu=mnuCache;
+            
             obj.axMeter=axes(...
                 'Parent', obj.mainPanel, ...
                 'Position', [0.02 0.42 0.96 0.3], ...
@@ -84,6 +89,10 @@ classdef goggleCacheInfoPanel<handle
     end
 end
 
+function clearCacheCallback(~,~,obj)
+    obj.parent.mainDisplay.zoomedViewManager.clearCache();
+end
+
 function drawBackgroundPatch(hAx)
     x=[0 0.5 1 1 0.5 0];
     y=[0 0  0   1   1   1];
@@ -93,6 +102,16 @@ function drawBackgroundPatch(hAx)
     c=[green;yellow;red;red;yellow;green];
     patch('Parent', hAx, 'Faces', [1 2 3 4 5 6], 'Vertices', [x; y]', 'EdgeColor', 'none',...
         'FaceVertexCData',c,'FaceColor', 'interp', 'HitTest', 'off');
+end
+
+
+function clickCallback(~, ~, obj)
+    switch obj.parent.hFig.SelectionType
+        case 'alt'
+        case 'extend'
+        otherwise
+            changeCacheSize([], [], obj)
+    end
 end
 
 function changeCacheSize(~,~, obj)
