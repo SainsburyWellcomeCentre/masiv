@@ -97,7 +97,9 @@ classdef goggleSlicePreLoader<goggleBoxPlugin
     %% Listener Callbacks
     methods(Access=protected)
         function viewChangedListenerCallback(obj, ~,~)
-            obj.doPreLoading
+            if obj.parent.mainDisplay.zoomedViewNeeded
+                obj.doPreLoading
+            end
         end
         function viewerClosingListenerCallback(obj, ~,~)
             obj.deleteObj();

@@ -37,6 +37,8 @@ classdef goggleViewerDisplay<handle
         viewPixelSizeOriginalVoxels
         
         currentImageViewData
+        
+        zoomedViewNeeded
     end
     
     methods
@@ -83,10 +85,7 @@ classdef goggleViewerDisplay<handle
         end
                
         function updateZoomedView(obj)
-            goggleDebugTimingInfo(1, 'GVD.updateZoomedView: Call started. Checking need...', toc, 's')
-            z=obj.zoomLevel;
-            goggleDebugTimingInfo(1, 'GVD.updateZoomedView: zoomLevel calculated...', toc, 's')
-            if z>gbSetting('viewerDisplay.minZoomLevelForDetailedLoad')
+            if obj.zoomedViewNeeded
                 goggleDebugTimingInfo(1, 'GVD.updateZoomedView: Zoomed image needed. Updating view...', toc, 's')
                 obj.zoomedViewManager.updateView()
                 goggleDebugTimingInfo(1, 'GVD.updateZoomedView: View updated', toc, 's')
@@ -96,7 +95,12 @@ classdef goggleViewerDisplay<handle
                 goggleDebugTimingInfo(1, 'GVD.updateZoomedView: Zoomed image hidden', toc, 's')
             end
         end
-        %% Getters       
+        %% Getters    
+        function n=get.zoomedViewNeeded(obj)
+            z=obj.zoomLevel;
+            n=(z>gbSetting('viewerDisplay.minZoomLevelForDetailedLoad'));
+        end
+        
         function cpd=get.currentPlaneData(obj)
             cpd=obj.overviewStack.I(:,:,obj.currentIndex);
         end
