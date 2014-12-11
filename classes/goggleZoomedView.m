@@ -44,7 +44,7 @@ classdef goggleZoomedView<handle
                 p=inputParser;
                 p.FunctionName='goggleZoomedViewManager.constructor';
                 addParameter(p, 'processingFcns', [], @checkValidPipeline);
-                addParameter(p, 'completedFcn', [], @(x) isempty(x)||isa(x, 'function_handle'));
+                addParameter(p, 'completedFcn', [], @(x) isempty(x)||isa(x, 'function_handle')||iscell(x));
                 p.parse(varargin{:});
                 
                 obj.processingFcns=p.Results.processingFcns;
@@ -100,10 +100,30 @@ classdef goggleZoomedView<handle
         
         %% Callback function
         function executeCompletedFcn(obj)
+            %
+            % The completedFcn can be either a function handle, or a cell
+            % array containing the function handle and any number of
+            % inputs. These inputs are then fed in to the function at
+            % run-time. To specify the created goggleZoomedView object
+            % itself, use 'obj' as a parameter
+            %
+            % e.g. ...'completedFcn', {@foo, 'obj'}
+            %
               if ~isempty(obj.completedFcn)
                   goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Running load completion callback', toc,'s')
-                  fun=obj.completedFcn;
-                  fun(); %execute with no extra arguments
+                  if iscell(obj.completedFcn)
+                      fun=obj.completedFcn{1};
+                      if numel(obj.completedFcn)>1
+                          extraArgs=obj.completedFcn(2:end);
+                          extraArgs{strcmp(extraArgs, 'newObj')}=obj;
+                          fun(extraArgs{:})
+                      else
+                          fun(); %execute with no extra arguments
+                      end
+                  else 
+                      fun=obj.completedFcn;
+                      fun(); %execute with no extra arguments
+                  end
               end     
         end
         %% Getters

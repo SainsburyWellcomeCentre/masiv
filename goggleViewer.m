@@ -146,10 +146,11 @@ classdef goggleViewer<handle
             axis(obj.hImgAx, 'equal')
             
             %% Info boxes
-            obj.addInfoPanel(goggleViewInfoPanel(obj, obj.hFig, [0.83 0.5 0.16 0.31], obj.mainDisplay));
-            obj.addInfoPanel(goggleReadQueueInfoPanel(obj.hFig, [0.83 0.4 0.16 0.09], obj.mainDisplay.zoomedViewManager));
-            obj.addInfoPanel(goggleCacheInfoPanel(obj, [0.83 0.3 0.16 0.09]));
-            obj.addInfoPanel(goggleSystemMemoryUsageInfoPanel(obj.hFig, [0.83 0.11 0.16 0.18], obj.mainDisplay.zoomedViewManager));
+            obj.addInfoPanel(goggleViewInfoPanel(obj, obj.hFig, [0.83 0.49 0.16 0.31], obj.mainDisplay));
+            obj.addInfoPanel(gogglePreLoader(obj, [0.83 0.39 0.16 0.09]));
+            obj.addInfoPanel(goggleReadQueueInfoPanel(obj.hFig, [0.83 0.29 0.16 0.09], obj.mainDisplay.zoomedViewManager));
+            obj.addInfoPanel(goggleCacheInfoPanel(obj, [0.83 0.19 0.16 0.09]));
+            obj.addInfoPanel(goggleSystemMemoryUsageInfoPanel(obj.hFig, [0.83 0.03 0.16 0.15], obj.mainDisplay.zoomedViewManager));
             %% Set fonts to something nice
             set(findall(gcf, '-property','FontName'), 'FontName', gbSetting('font.name'))
             
@@ -331,13 +332,13 @@ classdef goggleViewer<handle
     methods % Destructor
         function delete(obj)
             notify(obj, 'ViewerClosing')
+            delete(obj.overviewDSS)
+            deleteInfoPanel(obj, 'all')
+            delete(timerfind);
             if ishandle(obj.hFig)
                 gbSetting('viewer.mainFigurePosition', obj.hFig.Position)
                 delete(obj.hFig);
             end
-            delete(obj.overviewDSS)
-            deleteInfoPanel(obj, 'all')
-            delete(timerfind);
         end
     end
 end
