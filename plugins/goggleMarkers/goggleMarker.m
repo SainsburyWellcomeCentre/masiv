@@ -88,6 +88,12 @@ classdef goggleMarker
         function e=ne(obj, obj2)
             e=~(obj==obj2);
         end
+        %% Sorting
+        function [sorted, idx]=sort(obj)
+           xyz=cat(1, [obj.xVoxel],[obj.yVoxel], [obj.zVoxel]);
+           [~, idx]=sortrows(xyz', [3 1 2]);
+           sorted=obj(idx);
+        end
         
     end
 end

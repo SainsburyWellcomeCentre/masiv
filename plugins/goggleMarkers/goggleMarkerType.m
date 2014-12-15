@@ -32,5 +32,10 @@ classdef goggleMarkerType
         function neq=ne(obj,obj2)
             neq=~(obj==obj2);
         end
+        
+        function [sorted, idx]=sort(obj)
+            [~, idx]=sort({obj.name});
+            sorted=obj(idx);
+        end
     end
 end
