@@ -41,6 +41,10 @@ classdef goggleCellCounter<goggleBoxPlugin
         currentType
         cursorZVoxels
         cursorZUnits
+        
+        correctionOffset
+        deCorrectedCursorX
+        deCorrectedCursorY
     end
     
     methods
@@ -312,7 +316,7 @@ classdef goggleCellCounter<goggleBoxPlugin
         
         %% Functions
         function UIaddMarker(obj)
-            newMarker=goggleMarker(obj.currentType, obj.cursorX, obj.cursorY, obj.cursorZVoxels);
+            newMarker=goggleMarker(obj.currentType, obj.deCorrectedCursorX, obj.deCorrectedCursorY, obj.cursorZVoxels);
             if isempty(obj.markers)
                 obj.markers=newMarker;
             else
@@ -353,7 +357,9 @@ classdef goggleCellCounter<goggleBoxPlugin
             %% Calculate position and size
             zRadius=(gbSetting('cellCounter.markerDiameter.z')/2);
             
-            allMarkerZRelativeToCurrentPlaneVoxels=(abs([obj.markers.zVoxel]-obj.cursorZVoxels));
+            markerZVoxel=[obj.markers.zVoxel];
+            
+            allMarkerZRelativeToCurrentPlaneVoxels=(abs(markerZVoxel-obj.cursorZVoxels));
             
             idx=allMarkerZRelativeToCurrentPlaneVoxels<zRadius;
             if ~any(idx)
@@ -363,6 +369,9 @@ classdef goggleCellCounter<goggleBoxPlugin
             
             markerX=[markersWithinViewOfThisPlane.xVoxel];
             markerY=[markersWithinViewOfThisPlane.yVoxel];
+            
+            [markerX, markerY]=correctXY(obj, markerX, markerY, markerZVoxel);
+            
             markerRelZ=allMarkerZRelativeToCurrentPlaneVoxels(idx);
             markerSz=(gbSetting('cellCounter.markerDiameter.xy')*(1-markerRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
             
@@ -386,14 +395,16 @@ classdef goggleCellCounter<goggleBoxPlugin
         end
         
         function drawMarkerHighlights(obj)
-            
-            allMarkerZRelativeToCurrentPlaneUnits=(abs([obj.markers.zVoxel]-obj.cursorZVoxels));
-            %% Draw rings around markers in this plane
+            markerZVoxel=[obj.markers.zVoxel];
+            allMarkerZRelativeToCurrentPlaneUnits=(abs(markerZVoxel-obj.cursorZVoxels));
+            %% Draw spots within markers in this plane
             markerInThisPlaneIdx=allMarkerZRelativeToCurrentPlaneUnits==0;
             markersInThisPlane=obj.markers(markerInThisPlaneIdx);
             
             markerX=[markersInThisPlane.xVoxel];
             markerY=[markersInThisPlane.yVoxel];
+            
+            [markerX, markerY]=correctXY(obj, markerX, markerY, markerZVoxel);
             
             markerSz=(gbSetting('cellCounter.markerDiameter.xy')*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels)^2;
             
@@ -435,6 +446,21 @@ classdef goggleCellCounter<goggleBoxPlugin
         end
         function z=get.cursorZUnits(obj)
             z=obj.goggleViewer.mainDisplay.currentZPlaneUnits;
+        end
+        
+        function offset=get.correctionOffset(obj)
+            zvm=obj.goggleViewer.mainDisplay.zoomedViewManager;
+            if isempty(zvm.xyPositionAdjustProfile)
+                offset=[0 0];
+            else
+                offset=zvm.xyPositionAdjustProfile(obj.cursorZVoxels, :);
+            end
+        end
+        function x=get.deCorrectedCursorX(obj)
+            x=obj.cursorX-obj.correctionOffset(2);
+        end
+        function y=get.deCorrectedCursorY(obj)
+             y=obj.cursorY-obj.correctionOffset(1);
         end
     end
     
@@ -580,6 +606,18 @@ function [m, t]=convertStructArrayToMarkerAndTypeArrays(s)
             m=[m goggleMarker(t(ii), [sm.x], [sm.y], [sm.z])]; %#ok<AGROW>
         end
     end
+end
+
+function [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ)
+    zvm=obj.goggleViewer.mainDisplay.zoomedViewManager;
+    if isempty(zvm.xyPositionAdjustProfile)
+        return
+    else
+        offsets=zvm.xyPositionAdjustProfile(markerZ, :);
+        markerX=markerX+offsets(: , 2)';
+        markerY=markerY+offsets(: , 1)';
+    end
+        
 end
 
 %% Set up context menus to change markers

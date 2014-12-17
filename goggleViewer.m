@@ -87,6 +87,9 @@ classdef goggleViewer<handle
                                      'Callback', {@exportViewToWorkspace, obj})
                     uimenu(obj.mnuImage, 'Label', 'Detailed image processing steps...', ...
                                      'Callback', {@changeProcessingSteps, obj});
+                    uimenu(obj.mnuImage, 'Label', 'Adjust precise XY position', ...
+                                     'Callback', {@adjustXYPosClick, obj});
+                                
             
             obj.mnuPlugins=uimenu(obj.hFig, 'Label', 'Plugins');
                     addPlugins(obj.mnuPlugins, obj)
@@ -449,6 +452,22 @@ function handleMouseClick(~,~, obj)
     notify(obj, 'ViewClicked');
 end
 
+function adjustXYPosClick(caller,~,obj)
+    zvm=obj.mainDisplay.zoomedViewManager;
+    if isempty(zvm.xyPositionAdjustProfile)
+        zProfile=loadXYAlignmentProfile;
+        if ~isempty(zProfile)
+            zvm.xyPositionAdjustProfile=zProfile;
+            caller.Checked='on';
+            zvm.clearCache;
+        end
+    else
+        caller.Checked='off';
+        zvm.xyPositionAdjustProfile=[];
+        zvm.clearCache;
+    end
+end
+
 %% Utilities
 function updateContrastHistogram(dsStack,hContrastHist_Axes)
 data=dsStack.hImg.CData;
@@ -512,6 +531,17 @@ function exportViewToWorkspace(~,~,obj)
     end
 end
 
+function zProfile=loadXYAlignmentProfile
+    [f,p]=uigetfile({'*.zpfl', 'Z-Profile (*.zpfl)'; '*.csv', 'CSV-File (*.csv)'; '*.*', 'All Files (*.*)'}, 'Select Z Profile To Register To', gbSetting('defaultDirectory'));
+    pathToCSVFile=fullfile(p,f);
+    if exist(pathToCSVFile, 'file')
+        zProfile=dlmread(pathToCSVFile);
+        zProfile=zProfile(:, [2 1]); %reverse to get correct x and y
+    else
+        zProfile=[];
+    end
+end
+
 %% Plugins menu creation
 function addPlugins(hMenuBase, obj)
     pluginsDir=fullfile(fileparts(which('goggleViewer')), 'plugins');
@@ -532,8 +562,6 @@ function addPlugins(hMenuBase, obj)
         end
     end
 end
-
-
 
 
 function isGBPlugin=isValidGoggleBoxPlugin(pluginsDir, pluginsFile)

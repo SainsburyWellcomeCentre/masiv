@@ -12,6 +12,7 @@ classdef goggleZoomedView<handle
         z=-1
         completedFcn
         processingFcns
+        positionAdjustment
     end
     properties(SetAccess=protected, Dependent)
         sizeMiB
@@ -45,11 +46,12 @@ classdef goggleZoomedView<handle
                 p.FunctionName='goggleZoomedViewManager.constructor';
                 addParameter(p, 'processingFcns', [], @checkValidPipeline);
                 addParameter(p, 'completedFcn', [], @(x) isempty(x)||isa(x, 'function_handle')||iscell(x));
+                addParameter(p, 'positionAdjustment', [0 0], @(x) isnumeric(x)&&numel(x)==2&&all(round(x)==x))
                 p.parse(varargin{:});
                 
                 obj.processingFcns=p.Results.processingFcns;
                 obj.completedFcn=p.Results.completedFcn;
-                
+                obj.positionAdjustment=p.Results.positionAdjustment;
                 %% Display that creation is done
                 goggleDebugTimingInfo(3, 'GZV Constructor: completed. Ready to load image.', toc,'s')
                 
@@ -84,7 +86,9 @@ classdef goggleZoomedView<handle
             
             goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground starting', toc,'s')
             
-            f=parfeval(p, @openTiff, 1, obj.filePath, obj.regionSpec, obj.downSampling);
+            rSpec=adjustRegionSpecUsingOffset(obj.regionSpec, obj.positionAdjustment);
+            
+            f=parfeval(p, @openTiff, 1, obj.filePath, rSpec, obj.downSampling);
             goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground: parfeval started', toc,'s')
             
             obj.checkForLoadedImageTimer=timer('BusyMode', 'queue', 'ExecutionMode', 'fixedSpacing', 'Period', .01, 'TimerFcn', {@checkForLoadedImage, obj, f}, 'Name', 'zoomedView');
@@ -200,13 +204,11 @@ function validProcessingStep=checkIndividualPipelineObject(objToCheck)
 end
 
 
-
-
-
-
-
-
-
+function regionSpec=adjustRegionSpecUsingOffset(regionSpec, offset)
+    disp(offset)
+    regionSpec(1)=regionSpec(1)-offset(2);
+    regionSpec(2)=regionSpec(2)-offset(1);
+end
 
 
 

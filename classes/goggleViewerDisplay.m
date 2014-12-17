@@ -9,7 +9,6 @@ classdef goggleViewerDisplay<handle
         currentIndex
         hImg
         zoomedViewManager
-        
     end
     properties
         contrastLims

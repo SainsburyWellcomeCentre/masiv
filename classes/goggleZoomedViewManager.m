@@ -12,8 +12,6 @@ classdef goggleZoomedViewManager<handle
         parentViewerDisplay
         hImg
         currentSliceFileExistsOnDiskCache
-        
-       
     end
     properties(SetAccess=protected, Dependent)
         cacheMemoryUsed
@@ -25,6 +23,7 @@ classdef goggleZoomedViewManager<handle
     end
     properties 
         imageProcessingPipeline
+        xyPositionAdjustProfile=[];
     end
     methods
         %% Constructor
@@ -69,7 +68,16 @@ classdef goggleZoomedViewManager<handle
             f=obj.parentViewerDisplay.parentViewer.overviewDSS.originalStitchedFileNames{z};            
             fp=fullfile(basedir, f);  
             
-            v=goggleZoomedView(fp, regionSpec, ds, z, 'completedFcn', loadedCallback, 'processingFcns', obj.imageProcessingPipeline);
+            if ~isempty(obj.xyPositionAdjustProfile)
+                offset=(obj.xyPositionAdjustProfile(z, :));
+            else
+                offset=[0 0];
+            end
+            
+            v=goggleZoomedView(fp, regionSpec, ds, z, ...
+                                'completedFcn', loadedCallback,...
+                                'processingFcns', obj.imageProcessingPipeline, ...
+                                'positionAdjustment', offset);
                 goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view created',toc,'s')
         end
         
