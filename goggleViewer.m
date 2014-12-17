@@ -536,7 +536,6 @@ function zProfile=loadXYAlignmentProfile
     pathToCSVFile=fullfile(p,f);
     if exist(pathToCSVFile, 'file')
         zProfile=dlmread(pathToCSVFile);
-        zProfile=zProfile(:, [2 1]); %reverse to get correct x and y
     else
         zProfile=[];
     end
