@@ -80,7 +80,7 @@ classdef goggleCacheInfoPanel<handle
             cacheUsed=obj.gzvm.cacheMemoryUsed;
             fracUsed=cacheUsed/cacheLimit;
             obj.cacheStatusText.String=sprintf('%u/%uMiB (%u%%) in use', round(cacheUsed), cacheLimit, round(fracUsed*100));
-            obj.foregroundBlockingPatch.Position=[fracUsed, 0, 1-fracUsed, 1];
+            obj.foregroundBlockingPatch.Position=[fracUsed, 0, max(0,1-fracUsed), 1];
         end
         %% Destructor
         function delete(obj)

@@ -357,9 +357,9 @@ classdef goggleCellCounter<goggleBoxPlugin
             %% Calculate position and size
             zRadius=(gbSetting('cellCounter.markerDiameter.z')/2);
             
-            markerZVoxel=[obj.markers.zVoxel];
+            allMarkerZVoxel=[obj.markers.zVoxel];
             
-            allMarkerZRelativeToCurrentPlaneVoxels=(abs(markerZVoxel-obj.cursorZVoxels));
+            allMarkerZRelativeToCurrentPlaneVoxels=(abs(allMarkerZVoxel-obj.cursorZVoxels));
             
             idx=allMarkerZRelativeToCurrentPlaneVoxels<zRadius;
             if ~any(idx)
@@ -369,8 +369,9 @@ classdef goggleCellCounter<goggleBoxPlugin
             
             markerX=[markersWithinViewOfThisPlane.xVoxel];
             markerY=[markersWithinViewOfThisPlane.yVoxel];
+            markerZ=[markersWithinViewOfThisPlane.zVoxel];
             
-            [markerX, markerY]=correctXY(obj, markerX, markerY, markerZVoxel);
+            [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ);
             
             markerRelZ=allMarkerZRelativeToCurrentPlaneVoxels(idx);
             markerSz=(gbSetting('cellCounter.markerDiameter.xy')*(1-markerRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
@@ -395,17 +396,19 @@ classdef goggleCellCounter<goggleBoxPlugin
         end
         
         function drawMarkerHighlights(obj)
-            markerZVoxel=[obj.markers.zVoxel];
-            allMarkerZRelativeToCurrentPlaneUnits=(abs(markerZVoxel-obj.cursorZVoxels));
+            allMarkerZVoxel=[obj.markers.zVoxel];
+            allMarkerZRelativeToCurrentPlaneUnits=(abs(allMarkerZVoxel-obj.cursorZVoxels));
             %% Draw spots within markers in this plane
             markerInThisPlaneIdx=allMarkerZRelativeToCurrentPlaneUnits==0;
             markersInThisPlane=obj.markers(markerInThisPlaneIdx);
             
             markerX=[markersInThisPlane.xVoxel];
             markerY=[markersInThisPlane.yVoxel];
-            
-            [markerX, markerY]=correctXY(obj, markerX, markerY, markerZVoxel);
-            
+            markerZ=[markersInThisPlane.zVoxel];
+
+            if~isempty(markerX)
+                [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ);
+            end
             markerSz=(gbSetting('cellCounter.markerDiameter.xy')*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels)^2;
             
             if markerSz>=gbSetting('cellCounter.minimumSize')
