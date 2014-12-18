@@ -11,10 +11,14 @@ function offsets=getImageFilesXYOffsets(imageFileListSource, imageFileListTarget
     offsets=zeros(numel(imageFileListSource), 2);
     %% Process each pair
     for ii=1:numel(imageFileListTarget)
+        if ~exist(imageFileListTarget{ii}, 'file')||~exist(imageFileListSource{ii}, 'file')
+            offsets(ii, :)=[0 0];
+        else
         targetImageFFT=fft2(openTiff(imageFileListTarget{ii}, regionSpec, 1));
         sourceImageFFT=fft2(openTiff(imageFileListSource{ii}, regionSpec, 1));
         output=dftregistration(targetImageFFT, sourceImageFFT, 1);
         offsets(ii, :)=output(3:4);
+        end
     end
     % Sort out where it's too much
     eucDist=sqrt(sum(offsets.^2, 2));

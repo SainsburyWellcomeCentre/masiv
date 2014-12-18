@@ -101,6 +101,8 @@ classdef goggleZoomedViewManager<handle
                     stdout=0;
                 end
                 obj.cleanUpCache();
+             else
+                 stdout=0;
              end
         end
         

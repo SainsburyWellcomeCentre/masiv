@@ -568,8 +568,8 @@ function [dist, idx]=minEucDist2DToMarker(markerCollection, obj)
 mX=[markerCollection.xVoxel];
 mY=[markerCollection.yVoxel];
 
-x=obj.cursorX;
-y=obj.cursorY;
+x=obj.deCorrectedCursorX;
+y=obj.deCorrectedCursorY;
 
 euclideanDistance=sqrt((mX-x).^2+(mY-y).^2);
 [dist, idx]=min(euclideanDistance);
