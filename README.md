@@ -12,8 +12,8 @@
 
 * Clone the repo and add to the MATLAB path
 * Dependencies:
-  * MATLAB
-  * Image Processing Toolbox
+   * MATLAB
+   * Image Processing Toolbox
 * Run 'goggleViewer'
 
 ### Contribution guidelines ###
