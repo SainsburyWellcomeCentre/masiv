@@ -3,20 +3,18 @@
 
 ### What does goggleViewer do? ###
 
-goggleViewer is an experimental image viewer, designed for large (>100GB) 3D image datasets.
-It works by creating a downsampled stack, which is then navigated as you would a regular 3D image stack. However, the program pulls data from the hard disk to a cache when zoomed in, allowing all the original detail to be viewed
-
+*goggleViewer is an experimental image viewer, designed for large (>100GB) 3D image datasets.
+*It works by creating a downsampled stack, which is then navigated as you would a regular 3D image stack. 
+*However, the program pulls data from the hard disk to a cache when zoomed in, allowing all the original detail to be viewed
+*A plugin class can be easily subclassed to create user-defined plugins. For example, a cell counter plugin is included.
 
 ### How do I get set up? ###
 
-* Summary of set up
-
-* Configuration
-* Dependencies
- MATLAB
-* Database configuration
-* How to run tests
-* Deployment instructions
+* Clone the repo and add to the MATLAB path
+* Dependencies:
+* * MATLAB
+* * Image Processing Toolbox
+* Run 'goggleViewer'
 
 ### Contribution guidelines ###
 
