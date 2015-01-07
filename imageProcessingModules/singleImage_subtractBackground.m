@@ -26,7 +26,7 @@ classdef singleImage_subtractBackground<singleImage_DisplayProcessor
             obj.amount=amount;
         end
         function s=toString(obj)
-            s=sprintf('Blur: Size %u Sigma %3.2f', obj.filterSize, obj.sigma);
+            s=sprintf('Background Subtraction: Size %u Sigma %3.2f, %u%%', obj.filterSize, obj.sigma, round(obj.amount*100));
         end
         
         function I=processImage(obj, I, ~)

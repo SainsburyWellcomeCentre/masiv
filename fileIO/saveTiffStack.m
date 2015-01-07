@@ -22,7 +22,7 @@ function saveTiffStack(I, fileName, outputMode)
                 fprintf('File size: %uMB. Using standard imWrite...\n ', tiffStackSizeMB(I))
                 fprintf('Saving slice 1 of 1...\n')
             case 'g'
-                swb=SuperWaitBar(size(I, 3), sprintf('File size:%uMB. Saving file to: %s with standard imwrite', tiffStackSizeMB(I),fileName));
+                swb=SuperWaitBar(size(I, 3), sprintf('File size:%uMB. Saving file to: %s with standard imwrite', tiffStackSizeMB(I),strrep(fileName, '_', '\_')));
         end
         imwrite(I(:,:,1), fileName);
         if strcmp(outputMode, 'g');swb.progress();end
@@ -69,7 +69,7 @@ function writeBigTiff(I, filename, outputMode)
         case 'c'
             fprintf('File size: %uMB. Using Tiff class to create BigTIFF file...\n ', tiffStackSizeMB(I))
         case 'g'
-            swb=SuperWaitBar(size(I, 3), sprintf('File size:%uMB. Saving file to: %s using Tiff class to create BigTIFF file', tiffStackSizeMB(I),filename));
+            swb=SuperWaitBar(size(I, 3), sprintf('File size:%uMB. Saving file to: %s using Tiff class to create BigTIFF file', tiffStackSizeMB(I),strrep(fileName, '_', '\_')));
     end
     %% Write the first slice
     write(bt,  I(:,:,1));
