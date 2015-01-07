@@ -30,6 +30,8 @@
             * Select the channel
             * Specify which slices to use. For example, to use every 3rd slice (in an experiment with 3000 slices), the correct settings would be 1, 3, 3000
             * Specify downsampling factor in XY. 10 works nicely for Alex. A reasonable starting point would be a downsampling factor that will reduce the size of the images to one roughly the number of pixels on your monitor. If the stitched images are 10,000 pixels wide, and your monitor has 1600x1200 pixels, a factor of 6-7 would be about right.
+            * The downsampled stack will be created and saved to disk, then the viewer will open.
+
     
 
 ### This is crap, it doesn't work ###
