@@ -12,8 +12,11 @@
 
 * Clone the repo and add to the MATLAB path
 * Dependencies:
-   * MATLAB
-   * Image Processing Toolbox
+    * MATLAB
+        * Image Processing Toolbox
+        * Parallel Processing Toolbox
+        * Statistics Toolbox
+    * [Subpixel Registration](http://www.mathworks.com/matlabcentral/fileexchange/18401-efficient-subpixel-image-registration-by-cross-correlation)
 * Run 'goggleViewer'
 
 ### Contribution guidelines ###
