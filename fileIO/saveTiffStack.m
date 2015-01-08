@@ -63,13 +63,24 @@ function writeBigTiff(I, filename, outputMode)
     tags.Compression            = Tiff.Compression.None;
     tags.Software               =   'goggleBox';
     
+    switch class(I)
+        
+        case {'logical', 'uint8', 'uint16', 'uint32'}
+            tags.SampleFormt            = 1; %UInt
+        case {'int8', 'int16', 'int32'}
+            tags.SampleFormt            = 2; %Int
+        case {'single' 'double'}
+            tags.SampleFormat           = 3; %IEEEFP
+        otherwise
+            error('Unknown Image class type')
+    end
     setTag(bt, tags);
     %% Prepare output
     switch outputMode
         case 'c'
             fprintf('File size: %uMB. Using Tiff class to create BigTIFF file...\n ', tiffStackSizeMB(I))
         case 'g'
-            swb=SuperWaitBar(size(I, 3), sprintf('File size:%uMB. Saving file to: %s using Tiff class to create BigTIFF file', tiffStackSizeMB(I),strrep(fileName, '_', '\_')));
+            swb=SuperWaitBar(size(I, 3), sprintf('File size:%uMB. Saving file to: %s using Tiff class to create BigTIFF file', tiffStackSizeMB(I),strrep(filename, '_', '\_')));
     end
     %% Write the first slice
     write(bt,  I(:,:,1));
@@ -107,7 +118,19 @@ end
 
 function bitDepth=getBitDepth(I)
     pxStr=regexp(class(I), '[0-9]*', 'match');
+    if ~isempty(pxStr)
     bitDepth=str2double(pxStr{:});
+    else
+        switch class(I)
+            case 'double'
+                bitDepth=64;
+            case 'single'
+                bitDepth=32;
+            otherwise
+                error('unknown format')
+        end
+    end
+               
 end
 
 function n=needBigTiff(I)
