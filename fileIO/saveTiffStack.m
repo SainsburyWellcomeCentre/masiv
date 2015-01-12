@@ -66,11 +66,11 @@ function writeBigTiff(I, filename, outputMode)
     switch class(I)
         
         case {'logical', 'uint8', 'uint16', 'uint32'}
-            tags.SampleFormt            = 1; %UInt
+            tags.SampleFormat            = 1; %UInt
         case {'int8', 'int16', 'int32'}
-            tags.SampleFormt            = 2; %Int
+            tags.SampleFormat            = 2; %Int
         case {'single' 'double'}
-            tags.SampleFormat           = 3; %IEEEFP
+            tags.SampleFormat            = 3; %IEEEFP
         otherwise
             error('Unknown Image class type')
     end
