@@ -102,7 +102,11 @@ end
 %% Close
 fclose(fh);
 %% Assign
-obj.metaData=info;
+if isempty(info)||~isstruct(info)
+    error('Invalid metadata file')
+else
+    obj.metaData=info;
+end
 end
 
 function obj=getStitchedImagePaths(obj)
