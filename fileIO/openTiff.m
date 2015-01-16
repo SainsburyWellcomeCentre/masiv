@@ -59,9 +59,10 @@ end
 if nargin<4||isempty(methodFlag)
     methodFlag=2;
 end
-% Crop spec
 
-if nargin>1
+
+% Crop spec
+if nargin>1 & length(regionSpec)==4
     if ~isnumeric(regionSpec)||~isvector(regionSpec)||numel(regionSpec)~=4||any(regionSpec<1)
             error(sprintf('regionSpec must be 4-element numeric vector with all elements > 0.\n Start indices are 1-based; w and h must be positive integers'))
     end
