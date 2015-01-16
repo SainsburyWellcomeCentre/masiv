@@ -110,7 +110,12 @@ switch methodFlag
         if ~doCrop
             [x,y,~,h,x2,~]=getCropParams([1 1 info.Width info.Height]);
         end
-        fseek(fh, info.StripOffsets+(y-1)*info.Width*info.BitDepth/8, 'bof');
+        
+        offset=info.StripOffsets(1)+(y-1)*info.Width*info.BitDepth/8;
+        fseek(fh, offset, 'bof');
+
+        %the second argument allows us (if cropping was requested)
+        %to read all rows, but only the requested rows (we transpose below)
         I=fread(fh, [info.Width, h], ['*' selectMATLABDataType(info)], 0, 'ieee-be');
         I=I(x:x2, :)';
         fclose(fh);
