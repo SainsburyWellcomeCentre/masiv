@@ -72,6 +72,29 @@ else
     doCrop=0;
 end
 
+%Do not do methods 2 or 3 if data are compressed
+info=imfinfo(fileName);
+if ~strcmp(info.Compression,'Uncompressed') & methodFlag>1
+  fprintf('images are %s compressed. Reverting to imread.\n',info.Compression)
+
+  if doCrop
+    methodFlag=1;
+  else
+    methodFlag=0;
+  end
+  
+end
+       
+
+%Don't do method 2 if not cropping
+if ~doCrop & methodFlag==1
+  methodFlag=0;
+end
+
+
+
+
+       
 %% Do it
 switch methodFlag
     case 0 %Read in, select region in memory. ~6s per slice
@@ -80,14 +103,10 @@ switch methodFlag
             I=I(y:y2, x:x2);
         end
     case 1 % Pixel region selection in imread. ~6s per slice
-        if doCrop
-            I=imread(fileName, 'PixelRegion', {[y y2] [x x2]});
-        else
-            error('Method 1 (PixelRegion) requires a specified region. To use this option with no crop, choose method 0')
-        end
+        I=imread(fileName, 'PixelRegion', {[y y2] [x x2]});
     case 2 % fread needed lines only; select pixels within line in memory. This is the fastest currently implemented.
         fh=fopen(fileName);
-        info=imfinfo(fileName);
+        
         if ~doCrop
             [x,y,~,h,x2,~]=getCropParams([1 1 info.Width info.Height]);
         end
