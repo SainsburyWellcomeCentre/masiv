@@ -1,8 +1,47 @@
-function I = openTiff( fileName, regionSpec , downSample, methodFlag)
+function [I,info] = openTiff(fileName, regionSpec, downSample, methodFlag)
+% fast loading of a tiff (or a portion of a TIFF) from disk
 %
-% regionSpec: [x y w h], origin top left corner. 1 based.
+% function [I,info] = openTiff(fileName, regionSpec, downSample, methodFlag)
 %
+% 
+% Purpose
+% Fast tiff loading that bypasses imread. For fast loading you will
+% need un-cropped images. This function reverts to imread if the 
+% input image is compressed. Two fast reading approaches are
+% provided. 
+%
+% 
+% Inputs
+% fileName - relative or full path to the tiff image. (string)
+% regionSpec - Optional vector of length 4 defining the sub-region
+%              of the image to load. [x y w h], origin top left
+%              corner. Indexing is 1 based. If empty or missing, 
+%              the full image is loaded. 
+% downSample - Optionally down-sample by this factor using bicubic 
+%              interpolation. If 1, missing, or empty then no down
+%              sampling is performed. 
+% methodFlag - Optional argument (a scalar from 0 to 3) which
+%              defines the method for loading tiff file. Methods
+%              are:
+%                  0 - built-in imread with cropping performed
+%                      after loading. 
+%                  1 - built-in imread with cropping performed
+%                      during loading. 
+%                  2 - raw reading with fread. [default]. Fastest
+%                      for full and, particularly, cropped images.
+%                  3 - raw reading with memmap. Slower than (2) if
+%                      image is cropped. 
+%
+%
+% Output 
+% I - matrix containing the image read from disk.
+% info - a structure containing the image header information. 
+%
+%
+% Alex Brown
 
+  
+  
 %% Input parsing
 if ~ischar(fileName)
     error('fileName must be a single character array')
