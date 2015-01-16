@@ -116,8 +116,12 @@ delimiterInTextFile='\r\n';
 searchPattern=[obj.sampleName, '_StitchedImagesPaths_'];
 
 listFilePaths=dir(fullfile(obj.baseDirectory, [searchPattern '*.txt']));
+if isempty(listFilePaths)
+  error('No %s*.txt files found.\n',searchPattern)
+end
 
 obj.stitchedImagePaths=struct;
+
 
 for ii=1:numel(listFilePaths)
   

@@ -46,6 +46,11 @@ classdef goggleViewer<handle
         function obj=goggleViewer(mosaicInfoIn, idx)
             obj=obj@handle;
             %% Get mosaic info if none provided
+            if verLessThan('matlab', '8.4.0')
+              error('%s requires MATLAB 2014b or newer',mfilename)
+            end
+            
+
             if nargin<1 ||isempty(mosaicInfoIn)
                 fp=uigetdir(gbSetting('defaultDirectory'), 'Please select base directory of the stitched mosaic');
                 if isempty(fp) || isnumeric(fp)
