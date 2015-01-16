@@ -116,18 +116,30 @@ switch methodFlag
 
         %the second argument allows us (if cropping was requested)
         %to read all rows, but only the requested rows (we transpose below)
-        I=fread(fh, [info.Width, h], ['*' selectMATLABDataType(info)], 0, 'ieee-be');
+        I=fread(fh, [info.Width, h], ['*' selectMATLABDataType(info)], 0, selectMachineFormat(info));
+
+        %Now trim the image to retain only the columns
         I=I(x:x2, :)';
+
         fclose(fh);
-    case 3 %memmap method
+    case 3 %memmap method. This is equally fast as the fread method
+           %for un-cropped images. It's much slower when images are
+           %cropped. 
         info=imfinfo(fileName);
         if ~doCrop
             [x,y,~,~,x2,y2]=getCropParams([1 1 info.Width info.Height]);
         end
-        m=memmapfile(fileName, 'Offset', info.StripOffsets, 'Format', {selectMATLABDataType(info), [info.Width info.Height], 'm'});
+        m=memmapfile(fileName,...
+                     'Offset', info.StripOffsets(1),...
+                     'Format', {selectMATLABDataType(info),...
+                     [info.Width info.Height], 'm'});
         dat=m.Data;
         I=dat.m(x:x2, y:y2);
-        I=swapbytes(I)';
+        I=I';
+        if ~isempty(strfind(info.ByteOrder,'big-'))
+          I=swapbytes(I);
+        end
+        
 end
 
 
@@ -139,12 +151,29 @@ end
 
 
 function [x,y,w,h,x2,y2]=getCropParams(regionSpec)
-   x=regionSpec(1);
-    y=regionSpec(2);
-    w=regionSpec(3);
-    h=regionSpec(4);
-    y2=y+h-1;
-    x2=x+w-1;
+  x=regionSpec(1);
+  y=regionSpec(2);
+  w=regionSpec(3);
+  h=regionSpec(4);
+  y2=y+h-1;
+  x2=x+w-1;
+end
+
+
+function mft=selectMachineFormat(info)
+  if ~isempty(strfind(info.ByteOrder,'little-'))
+    mft = 'ieee-le';
+  elseif ~isempty(strfind(info.ByteOrder,'big-'))
+    mft = 'ieee-be';
+  else
+    fprintf('Can not determine byte order. defaulting to native.\n')
+    mft = 'n';
+    return
+  end
+  
+  if ~isempty(strfind(info.ByteOrder,'64'))
+    mft = [mft,'.l64'];
+  end
 end
 
 
@@ -157,4 +186,5 @@ switch info.BitDepth
     otherwise
         error('Unknown Data Type')
 end
+
 end
