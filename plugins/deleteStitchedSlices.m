@@ -7,6 +7,7 @@ properties
 end
 methods
     function obj=deleteStitchedSlices(caller, ~, channels, slices)
+        obj=obj@goggleBoxPlugin(caller);
         %% Parse input
         if isa(caller, 'TVStitchedMosaicInfo')
             mosaicInfo=caller;
@@ -29,6 +30,7 @@ methods
         if isempty(channels)||isempty(slices)
             [channels, slices]=getSlicesForDeletion(mosaicInfo, channels, slices);
             if isempty(channels)||isempty(slices)
+                deleteRequest(obj)
                 return
             end
             filesToDelete=getFilesToDelete(mosaicInfo, channels, slices);
@@ -39,8 +41,12 @@ methods
             else
                 goggleDebugTimingInfo(0, 'File Deletion Cancelled')
             end
+            deleteRequest(obj)
         end
        
+    end
+    function deleteRequest(obj)
+        deleteRequest@goggleBoxPlugin(obj);
     end
 end
 methods(Static)

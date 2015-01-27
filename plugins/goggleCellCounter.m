@@ -1,6 +1,5 @@
 classdef goggleCellCounter<goggleBoxPlugin
     properties
-        goggleViewer
         hFig
         
         cursorListenerInsideAxes
@@ -50,7 +49,7 @@ classdef goggleCellCounter<goggleBoxPlugin
     methods
         %% Constructor
         function obj=goggleCellCounter(caller, ~)
-            obj=obj@goggleBoxPlugin;
+            obj=obj@goggleBoxPlugin(caller);
             obj.goggleViewer=caller.UserData;
             
             %% Settings
@@ -73,7 +72,7 @@ classdef goggleCellCounter<goggleBoxPlugin
             %% Main UI initialisation
             obj.hFig=figure(...
                 'Position', pos, ...
-                'CloseRequestFcn', {@deleteFig, obj}, ...
+                'CloseRequestFcn', {@deleteRequest, obj}, ...
                 'MenuBar', 'none', ...
                 'NumberTitle', 'off', ...
                 'Name', ['Cell Counter: ' obj.goggleViewer.mosaicInfo.experimentName], ...
@@ -176,9 +175,7 @@ classdef goggleCellCounter<goggleBoxPlugin
             obj.zoomedListener=event.listener(obj.goggleViewer, 'Zoomed', @obj.drawMarkers);
             obj.keyPressListener=event.listener(obj.goggleViewer, 'KeyPress', @obj.parentKeyPress);
             
-            %% Freeze menu
-            obj.setParentMenuEnabled('off')            
-            
+        
         end
         
         %% Set up markers
@@ -436,10 +433,6 @@ classdef goggleCellCounter<goggleBoxPlugin
             obj.hCountIndicatorText(idx).String=sprintf('%u', num);
         end
         
-        function setParentMenuEnabled(obj, val)
-            obj.goggleViewer.mnuPlugins.Enable=val;
-        end
-        
         %% Getters
         function type=get.currentType(obj)
             type=obj.markerTypes(obj.hMarkerButtonGroup.SelectedObject.UserData);
@@ -476,7 +469,7 @@ end
 
 %% Callbacks
 
-function deleteFig(~, ~, obj)
+function deleteRequest(~, ~, obj)
     if obj.changeFlag
         agree=questdlg(sprintf('There are unsaved changes that will be lost.\nAre you sure you want to end this session?'), 'Cell Counter', 'Yes', 'No', 'Yes');
         if strcmp(agree, 'No')
@@ -484,8 +477,8 @@ function deleteFig(~, ~, obj)
         end
     end
     obj.clearMarkers;
+    deleteRequest@goggleBoxPlugin(obj);
     obj.goggleViewer.hFig.Pointer='arrow';
-    obj.setParentMenuEnabled('on')
     delete(obj.hFig);
     delete(obj);
 end

@@ -6,10 +6,9 @@ classdef zProfileCreator<goggleBoxPlugin
     
     methods
         function obj=zProfileCreator(caller, ~)
-            
-            gv=caller.UserData;
-            mainDisp=gv.mainDisplay;
-            t=gv.mosaicInfo;
+            obj=obj@goggleBoxPlugin(caller);
+            mainDisp=obj.goggleViewer.mainDisplay;
+            t=obj.mosaicInfo;
             
             %% Default view
             x=num2str(round(mainDisp.viewXLimOriginalCoords(1)));
@@ -20,16 +19,24 @@ classdef zProfileCreator<goggleBoxPlugin
             %% Define the region to use to calculate the offsets. x,y, specify the top left corner
             xywh=inputdlg({'x', 'y', 'w', 'h'}, 'Region spec for z-profile calculation', 1, {x y w h});
             if isempty(xywh)
+                 deleteRequest(obj)
                 return
             else
                 try
                     xywh=cellfun(@str2num, xywh);
                 catch
                     errordlg('Invalid specification. Aborting.')
+                    deleteRequest(obj)
                     return
                 end
             end
-            o=mosaicStackOffset(t, 'Ch01', xywh);
+            try
+                chan=obj.goggleViewer.overviewDSS.channel;
+                o=mosaicStackOffset(t, chan, xywh);
+            catch err
+                 deleteRequest(obj)
+                 rethrow(err)
+            end
             %% Check that in the region you care about, the offsets aren't too far off 0
             
             [xoffset, yoffset]=getOffsetAdjustment(o);
@@ -45,9 +52,13 @@ classdef zProfileCreator<goggleBoxPlugin
             else
             dlmwrite(fullfile(p,f), o);
             end
+            deleteRequest(obj)
+        end
+        
+        function deleteRequest(obj)
+            deleteRequest@goggleBoxPlugin(obj);
         end
     end
-    
     methods(Static)
         function f=displayString()
             f='Create Z-profile...';
@@ -111,7 +122,7 @@ function offsets=getImageFilesXYOffsets(imageFileListSource, imageFileListTarget
         case 1
             offsets(eucDist>maxMove, :)=offsets(eucDist>maxMove, :)*maxMove./eucDist;
         otherwise
-            error('Unrecognised exceedMaxBehaviou')
+            error('Unrecognised exceedMaxBehaviour')
     end
     %% Make it cumulative
     offsets=cumsum(offsets);
