@@ -60,11 +60,10 @@ if nargin<4||isempty(methodFlag)
     methodFlag=2;
 end
 
-
-% Crop spec
-if nargin>1 & length(regionSpec)==4
+%% Crop spec
+if nargin>1 && length(regionSpec)==4
     if ~isnumeric(regionSpec)||~isvector(regionSpec)||numel(regionSpec)~=4||any(regionSpec<1)
-            error(sprintf('regionSpec must be 4-element numeric vector with all elements > 0.\n Start indices are 1-based; w and h must be positive integers'))
+            error('regionSpec must be 4-element numeric vector with all elements > 0.\n Start indices are 1-based; w and h must be positive integers')
     end
     [x,y,~,h,x2,y2]=getCropParams(regionSpec);
     doCrop=1;
@@ -72,9 +71,10 @@ else
     doCrop=0;
 end
 
+%% Exceptions to method selection
 %Do not do methods 2 or 3 if data are compressed
 info=imfinfo(fileName);
-if ~strcmp(info.Compression,'Uncompressed') & methodFlag>1
+if ~strcmp(info.Compression,'Uncompressed') && methodFlag>1
   fprintf('images are %s compressed. Reverting to imread.\n',info.Compression)
 
   if doCrop
@@ -86,15 +86,12 @@ if ~strcmp(info.Compression,'Uncompressed') & methodFlag>1
 end
        
 
-%Don't do method 2 if not cropping
-if ~doCrop & methodFlag==1
-  methodFlag=0;
-end
+%Don't do method 2 if not cropping: Edit AB: Why not? It's still quicker
+% if ~doCrop && methodFlag==1
+%   methodFlag=0;
+% end
 
 
-
-
-       
 %% Do it
 switch methodFlag
     case 0 %Read in, select region in memory. ~6s per slice
