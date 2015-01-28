@@ -8,7 +8,7 @@ classdef goggleZoomedViewManager<handle
         planesInMemZ
         planesInMemDS
     end
-    properties(Access=protected)
+    properties(SetAccess=protected)
         parentViewerDisplay
         hImg
         currentSliceFileExistsOnDiskCache
@@ -74,7 +74,7 @@ classdef goggleZoomedViewManager<handle
                 offset=[0 0];
             end
             
-            v=goggleZoomedView(fp, regionSpec, ds, z, ...
+            v=goggleZoomedView(fp, regionSpec, ds, z, obj, ...
                                 'completedFcn', loadedCallback,...
                                 'processingFcns', obj.imageProcessingPipeline, ...
                                 'positionAdjustment', offset);

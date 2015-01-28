@@ -25,12 +25,12 @@ classdef goggleZoomedView<handle
     
     methods
         %% Constructor
-        function obj=goggleZoomedView(filePath, regionSpec, downSampling, z, varargin)
+        function obj=goggleZoomedView(filePath, regionSpec, downSampling, z, parent, varargin)
             if nargin>0
                 %% Output that we've started
                 goggleDebugTimingInfo(3, 'GZV Constructor: starting', toc,'s')
                 %% Input parsing
-                
+                obj.parentZoomedViewManager=parent;
                 obj.regionSpec=regionSpec;
                 obj.downSampling=downSampling;
                 obj.filePath=filePath;
@@ -88,7 +88,9 @@ classdef goggleZoomedView<handle
             
             rSpec=adjustRegionSpecUsingOffset(obj.regionSpec, obj.positionAdjustment);
             
-            f=parfeval(p, @openTiff, 1, obj.filePath, rSpec, obj.downSampling);
+            DSS=obj.parentZoomedViewManager.parentViewerDisplay.overviewStack;
+            currentDSFactor=obj.parentZoomedViewManager.parentViewerDisplay.downSamplingForCurrentZoomLevel;
+            f=parfeval(p, @getAvailableZoomedImageDataFromDisk, 1, DSS, currentDSFactor, obj.filePath, obj.downSampling, rSpec);
             goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground: parfeval started', toc,'s')
             
             obj.checkForLoadedImageTimer=timer('BusyMode', 'queue', 'ExecutionMode', 'fixedSpacing', 'Period', .01, 'TimerFcn', {@checkForLoadedImage, obj, f}, 'Name', 'zoomedView');
@@ -210,23 +212,124 @@ function regionSpec=adjustRegionSpecUsingOffset(regionSpec, offset)
     regionSpec(2)=regionSpec(2)-offset(1);
 end
 
+function I=getAvailableZoomedImageDataFromDisk(DSS, currentDownscaleFactor, filePath, downSampling, rSpec)
+    
+    info=imfinfo(filePath);
+    [xoffset, yoffset]=checkTiffFileForOffset(info);
+    
+    rSpecAdjustedForCrop=rSpec-[xoffset yoffset 0 0];
+    
+    %% Check to see if the required region spec is fully, partially, or not on disk
+    
+    switch checkRSpecImageStatus(info, rSpecAdjustedForCrop)
+        case 0
+            I=upsampleDSSToRegionSpec(DSS, currentDownscaleFactor, filePath, rSpec);
+        case 1
+            I=upsampleDSSToRegionSpec(DSS, currentDownscaleFactor, filePath, rSpec);
+            rSpecThatCanBeLoaded=getRSpecPortionThatIsOnDisk(rSpecAdjustedForCrop, info);
+            IDetail=openTiff(filePath, rSpecThatCanBeLoaded, downSampling);
+            I=insertDetailIntoImage(I, IDetail, rSpecAdjustedForCrop, rSpecThatCanBeLoaded, currentDownscaleFactor);
+        case 2
+            I=openTiff(filePath, rSpecAdjustedForCrop, downSampling);
+    end
+end
+
+function [xoffset, yoffset]=checkTiffFileForOffset(info)
+
+    if isfield(info, 'XPosition')
+        xoffset=info.XPosition;
+    else
+        xoffset=0;
+    end
+    if isfield(info, 'YPosition')
+        yoffset=info.YPosition;
+    else
+        yoffset=0;
+    end
+end
+
+function status=checkRSpecImageStatus(info, rSpec)
+% Returns whether the specified region spec is fully (2), partially (1) or
+% not at all (0) present in the image file
+    if rSpec(1)>info.Width || rSpec(2) > info.Height ||...
+        (rSpec(1)+rSpec(3)-1) < 1 || (rSpec(1)+rSpec(3)-1) < 1
+        status = 0;
+    elseif rSpec(1)<1 || rSpec(2) < 1 ||...
+        (rSpec(1)+rSpec(3) > info.Width) || (rSpec(2)+rSpec(4) > info.Height)        
+        status=1;
+    else
+        status=2;
+    end
+end
+
+function I=upsampleDSSToRegionSpec(DSS, currentDownscaleFactor, filePath, rSpec)
+    %% Work out which slice in the DSS to use
+    [~, requestedSliceFileName, ~]=fileparts(filePath);
+    sliceFileIdx=~cellfun(@isempty, strfind(DSS.originalStitchedFileNames, requestedSliceFileName));
+    %% Work out the limits of the requested region spec
+    idx_x1=find(DSS.xCoordsVoxels<rSpec(1), 1, 'last');
+    idx_y1=find(DSS.yCoordsVoxels<rSpec(2), 1, 'last');
+    idx_xEnd=find(DSS.xCoordsVoxels>(rSpec(1)+rSpec(3)-1), 1, 'first');
+    idx_yEnd=find(DSS.yCoordsVoxels>(rSpec(2)+rSpec(4)-1), 1, 'first');
+    
+    x=idx_x1:idx_xEnd;
+    y=idx_y1:idx_yEnd;
+    z=DSS.zCoordsVoxels==find(sliceFileIdx);
+    %% Copy the right chunk of DS image
+    dsImg=DSS.I(y, x, z);
+    
+    %% Upsample the image and the x and y
+    
+    scaleFac=DSS.xyds/currentDownscaleFactor;
+    
+    usImg=imresize(dsImg, scaleFac, 'bilinear');
+    xUs=DSS.xCoordsVoxels(idx_x1):scaleFac:DSS.xCoordsVoxels(idx_xEnd);
+    yUs=DSS.yCoordsVoxels(idx_y1):scaleFac:DSS.yCoordsVoxels(idx_yEnd);
+
+    [~, idx_x1_us]=min(abs(xUs-rSpec(1)));
+    [~, idx_y1_us]=min(abs(yUs-rSpec(2)));
+    
+    I=usImg(idx_y1_us:idx_y1_us+ceil(rSpec(4)/currentDownscaleFactor)-1, idx_x1_us:idx_x1_us+ceil(rSpec(3)/currentDownscaleFactor)-1);
+end
+
+function rSpec=getRSpecPortionThatIsOnDisk(rSpec, info)
+
+    if rSpec(1)<1
+        shiftRight=1-rSpec(1);
+    else
+        shiftRight=0;
+    end
+    if rSpec(2)<1
+        shiftDown=1-rSpec(2);
+    else
+        shiftDown=0;
+    end
+    
+    rSpec=rSpec+[shiftRight shiftDown -shiftRight -shiftDown];
+    
+    if (rSpec(1)+rSpec(3)-1)>info.Width
+        widthReduction=info.Width-(rSpec(1)+rSpec(3)-1);
+    else
+        widthReduction=0;
+    end
+    
+    if (rSpec(2)+rSpec(4)-1)>info.Height
+        heightReduction=info.Height-(rSpec(2)+rSpec(4)-1);
+    else
+        heightReduction=0;
+    end
+    
+    rSpec=rSpec-[0 0 widthReduction heightReduction];
 
 
+end
 
+function I=insertDetailIntoImage(I, IDetail, rSpecOriginal, rSpecModified, currentDownscaleFactor)
+xStart=round((rSpecModified(1)-rSpecOriginal(1))/currentDownscaleFactor)+1;
+yStart=round((rSpecModified(2)-rSpecOriginal(2))/currentDownscaleFactor)+1;
+xEnd=xStart+size(IDetail, 2)-1;
+yEnd=yStart+size(IDetail, 1)-1;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+I(yStart:yEnd, xStart:xEnd)=IDetail;
+end
 
