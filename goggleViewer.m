@@ -295,28 +295,30 @@ classdef goggleViewer<handle
         
         %% --- Zooming
         function executeZoom(obj, zoomfactor)
-            obj.centreView();
+            C = get (obj.hImgAx, 'CurrentPoint');
             zoom(obj.hImgAx,zoomfactor)
+            obj.centreView(C);
             notify(obj, 'Zoomed')
             obj.changeAxes
         end
-        function centreView(obj)
-            C = get (obj.hImgAx, 'CurrentPoint');
+        function centreView(obj, pointToCenterUpon)
             xl=xlim(obj.hImgAx);
             yl=ylim(obj.hImgAx);
-            x=C(1, 1);
-            y=C(2, 2);
+            x=pointToCenterUpon(1, 1);
+            y=pointToCenterUpon(2, 2);
             
-            if x>=xl(1) && x<=xl(2) && y>=yl(1) && y<=yl(2)
-                centrePointX=mean(xl);
-                centrePointY=mean(yl);
-                
-                moveX=round(x-centrePointX);
-                moveY=round(y-centrePointY);
-                                               
-                xlim(obj.hImgAx, xl+moveX);
-                ylim(obj.hImgAx, yl+moveY);
-            end
+            %% Calculate move
+            centrePointX=mean(xl);
+            centrePointY=mean(yl);
+            
+            xMove=round(x-centrePointX);
+            yMove=round(y-centrePointY);
+            %% Check move is within limits
+            [xMove, yMove]=checkPanWithinLimits(obj, xMove, yMove);
+            %% Do the move
+            xlim(obj.hImgAx, xl+xMove);
+            ylim(obj.hImgAx, yl+yMove);
+            
         end
         
         %% ---Update axes
