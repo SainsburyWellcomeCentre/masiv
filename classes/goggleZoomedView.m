@@ -84,29 +84,49 @@ classdef goggleZoomedView<handle
                 p=gcp;
             end
             
-            goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground starting', toc,'s')
-            
+            goggleDebugTimingInfo(3, 'GZV.backgroundLoad starting', toc,'s')
+            %% Adjust spec if using precise xy adjustments
             rSpec=adjustRegionSpecUsingOffset(obj.regionSpec, obj.positionAdjustment);
+            %% Check for crop and set up appropriate load
             
-            DSS=obj.parentZoomedViewManager.parentViewerDisplay.overviewStack;
-            currentDSFactor=obj.parentZoomedViewManager.parentViewerDisplay.downSamplingForCurrentZoomLevel;
-            f=parfeval(p, @getAvailableZoomedImageDataFromDisk, 1, DSS, currentDSFactor, obj.filePath, obj.downSampling, rSpec);
-            goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground: parfeval started', toc,'s')
+            info=imfinfo(obj.filePath);
             
+            if ~isfield(info, 'XPosition') % No crop so just load the whole thing
+                goggleDebugTimingInfo(3, 'GZV.backgroundLoad: Uncropped image. Performing standard load', toc,'s')
+                f=parfeval(p, @openTiff, 1,obj.filePath, rSpec, obj.downSampling);
+            else
+                goggleDebugTimingInfo(3, 'GZV.backgroundLoad: Cropped image. Checking status of requested region', toc,'s')
+                [xoffset, yoffset]=checkTiffFileForOffset(info);
+                rSpecAdjustedForCrop=rSpec-[xoffset yoffset 0 0];
+
+                switch checkRSpecImageStatus(info, rSpecAdjustedForCrop)
+                    case 0 % requested region is not on disk
+                        goggleDebugTimingInfo(3, 'GZV.backgroundLoad: Region not on disk; upscaling DSS', toc,'s')
+                        f=parfeval(p, @upsampleDSSToRegionSpec, 1, currentDownscaleFactor, obj.filePath, rSpec);
+                    case 1 % requested region is partly on disk
+                        goggleDebugTimingInfo(3, 'GZV.backgroundLoad: Region partially on disk; performing partial load', toc,'s')
+                        f=setUpAsyncPartialLoad(obj, info, rSpec, rSpecAdjustedForCrop);
+                    case 2 % requested region is fully on disk
+                        goggleDebugTimingInfo(3, 'GZV.backgroundLoad: Region fully on disk; loading', toc,'s')
+                        f=parfeval(p, @openTiff, 1, obj.filePath, rSpecAdjustedForCrop, obj.downSampling);
+                end
+            end
+            
+            goggleDebugTimingInfo(3, 'GZV.backgroundLoad: parfeval started', toc,'s')
+
             obj.checkForLoadedImageTimer=timer('BusyMode', 'queue', 'ExecutionMode', 'fixedSpacing', 'Period', .01, 'TimerFcn', {@checkForLoadedImage, obj, f}, 'Name', 'zoomedView');
-            goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground: Timer created', toc,'s')
+            goggleDebugTimingInfo(3, 'GZV.backgroundLoad: Timer created', toc,'s')
             
             addLineToReadQueueFile
             if timerAutoStart
                 start(obj.checkForLoadedImageTimer)
-                goggleDebugTimingInfo(3, 'GZV.loadViewImageInBackground: Timer started', toc,'s')
+                goggleDebugTimingInfo(3, 'GZV.backgroundLoad: Timer started', toc,'s')
             end
         end
 
         
         %% Callback function
         function executeCompletedFcn(obj)
-            %
             % The completedFcn can be either a function handle, or a cell
             % array containing the function handle and any number of
             % inputs. These inputs are then fed in to the function at
@@ -149,7 +169,7 @@ end
 
 
 function checkForLoadedImage(t, ~, obj, f)
-    try
+   try
         [idx, I]=fetchNext(f, 0.01);
     catch err
         for ii=1:numel(err.stack)
@@ -180,7 +200,13 @@ end
 function I=processImage(I, obj)
     f=obj.processingFcns;   
     for ii=1:numel(f)
-        I=f{ii}.processImage(I, obj);
+        if isa(f{ii}, 'function_handle')
+            % It's a plain function 
+            I=f{ii}(I, obj);
+        else
+            % It's an imageProcessing module object (probably)
+            I=f{ii}.processImage(I, obj);
+        end
     end
 end
 
@@ -205,33 +231,9 @@ function validProcessingStep=checkIndividualPipelineObject(objToCheck)
     end
 end
 
-
 function regionSpec=adjustRegionSpecUsingOffset(regionSpec, offset)
-    disp(offset)
     regionSpec(1)=regionSpec(1)-offset(2);
     regionSpec(2)=regionSpec(2)-offset(1);
-end
-
-function I=getAvailableZoomedImageDataFromDisk(DSS, currentDownscaleFactor, filePath, downSampling, rSpec)
-    
-    info=imfinfo(filePath);
-    [xoffset, yoffset]=checkTiffFileForOffset(info);
-    
-    rSpecAdjustedForCrop=rSpec-[xoffset yoffset 0 0];
-    
-    %% Check to see if the required region spec is fully, partially, or not on disk
-    
-    switch checkRSpecImageStatus(info, rSpecAdjustedForCrop)
-        case 0
-            I=upsampleDSSToRegionSpec(DSS, currentDownscaleFactor, filePath, rSpec);
-        case 1
-            I=upsampleDSSToRegionSpec(DSS, currentDownscaleFactor, filePath, rSpec);
-            rSpecThatCanBeLoaded=getRSpecPortionThatIsOnDisk(rSpecAdjustedForCrop, info);
-            IDetail=openTiff(filePath, rSpecThatCanBeLoaded, downSampling);
-            I=insertDetailIntoImage(I, IDetail, rSpecAdjustedForCrop, rSpecThatCanBeLoaded, currentDownscaleFactor);
-        case 2
-            I=openTiff(filePath, rSpecAdjustedForCrop, downSampling);
-    end
 end
 
 function [xoffset, yoffset]=checkTiffFileForOffset(info)
@@ -246,6 +248,7 @@ function [xoffset, yoffset]=checkTiffFileForOffset(info)
     else
         yoffset=0;
     end
+    
 end
 
 function status=checkRSpecImageStatus(info, rSpec)
@@ -292,6 +295,28 @@ function I=upsampleDSSToRegionSpec(DSS, currentDownscaleFactor, filePath, rSpec)
     I=usImg(idx_y1_us:idx_y1_us+ceil(rSpec(4)/currentDownscaleFactor)-1, idx_x1_us:idx_x1_us+ceil(rSpec(3)/currentDownscaleFactor)-1);
 end
 
+function f=setUpAsyncPartialLoad(obj, info, rSpec, rSpecAdjustedForCrop)
+    
+    DSS=obj.parentZoomedViewManager.parentViewerDisplay.overviewStack;
+    currentDSFactor=obj.parentZoomedViewManager.parentViewerDisplay.downSamplingForCurrentZoomLevel;
+    
+    I=upsampleDSSToRegionSpec(DSS, currentDSFactor, obj.filePath, rSpec);
+    rSpecThatCanBeLoaded=getRSpecPortionThatIsOnDisk(rSpecAdjustedForCrop, info);
+    
+    f=parfeval(@openTiff, 1, obj.filePath, rSpecThatCanBeLoaded, obj.downSampling);
+    
+    insertImageFcn=@(IDetail, obj) insertDetailIntoImage(I, IDetail, rSpecAdjustedForCrop, rSpecThatCanBeLoaded, currentDSFactor);
+    
+    if isempty(obj.processingFcns)
+        obj.processingFcns={insertImageFcn};
+    elseif iscell(obj.processingFcns)
+        obj.processingFcns=[insertImageFcn, obj.processingFcns];
+    else
+        error('Can''t parse processingFcns list')
+    end
+    
+end
+
 function rSpec=getRSpecPortionThatIsOnDisk(rSpec, info)
 
     if rSpec(1)<1
@@ -308,13 +333,13 @@ function rSpec=getRSpecPortionThatIsOnDisk(rSpec, info)
     rSpec=rSpec+[shiftRight shiftDown -shiftRight -shiftDown];
     
     if (rSpec(1)+rSpec(3)-1)>info.Width
-        widthReduction=info.Width-(rSpec(1)+rSpec(3)-1);
+        widthReduction=(rSpec(1)+rSpec(3)-1)-info.Width;
     else
         widthReduction=0;
     end
     
     if (rSpec(2)+rSpec(4)-1)>info.Height
-        heightReduction=info.Height-(rSpec(2)+rSpec(4)-1);
+        heightReduction=(rSpec(2)+rSpec(4)-1)-info.Height;
     else
         heightReduction=0;
     end
@@ -324,12 +349,13 @@ function rSpec=getRSpecPortionThatIsOnDisk(rSpec, info)
 
 end
 
-function I=insertDetailIntoImage(I, IDetail, rSpecOriginal, rSpecModified, currentDownscaleFactor)
-xStart=round((rSpecModified(1)-rSpecOriginal(1))/currentDownscaleFactor)+1;
-yStart=round((rSpecModified(2)-rSpecOriginal(2))/currentDownscaleFactor)+1;
+function I=insertDetailIntoImage(I, IDetail, rSpecAdjustedForCrop, rSpecThatCanBeLoaded, currentDownscaleFactor)
+xStart=round((rSpecThatCanBeLoaded(1)-rSpecAdjustedForCrop(1))/currentDownscaleFactor)+1;
+yStart=round((rSpecThatCanBeLoaded(2)-rSpecAdjustedForCrop(2))/currentDownscaleFactor)+1;
 xEnd=xStart+size(IDetail, 2)-1;
 yEnd=yStart+size(IDetail, 1)-1;
 
-I(yStart:yEnd, xStart:xEnd)=IDetail;
+I(yStart:yEnd, xStart:xEnd)=IDetail; % Slip the loaded data in to the upscaled downsampled stack
+
 end
 
