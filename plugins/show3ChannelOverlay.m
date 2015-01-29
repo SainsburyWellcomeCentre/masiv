@@ -7,6 +7,7 @@ classdef show3ChannelOverlay<goggleBoxPlugin
     
     methods
         function obj=show3ChannelOverlay(caller, ~)
+            obj=obj@goggleBoxPlugin(caller);
             gvObj=caller.UserData;
             mosaicInfo=gvObj.mosaicInfo;
             
@@ -53,7 +54,10 @@ classdef show3ChannelOverlay<goggleBoxPlugin
 
             imshow(I)
             
-           
+            deleteRequest(obj)
+        end
+        function deleteRequest(obj)
+            deleteRequest@goggleBoxPlugin(obj)
         end
     end
     
