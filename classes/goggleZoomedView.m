@@ -310,7 +310,7 @@ function f=setUpAsyncPartialLoad(obj, info, rSpec, rSpecAdjustedForCrop)
     if isempty(obj.processingFcns)
         obj.processingFcns={insertImageFcn};
     elseif iscell(obj.processingFcns)
-        obj.processingFcns=[insertImageFcn, obj.processingFcns];
+        obj.processingFcns=[{insertImageFcn}, obj.processingFcns];
     else
         error('Can''t parse processingFcns list')
     end
