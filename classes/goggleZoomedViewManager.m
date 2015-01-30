@@ -109,7 +109,7 @@ classdef goggleZoomedViewManager<handle
         function addViewsToArray(obj, v)
             obj.reduceToCacheLimit()
             if ~isempty(obj.zoomedViewArray)
-                obj.zoomedViewArray=[obj.zoomedViewArray v];
+                obj.zoomedViewArray=[v obj.zoomedViewArray];
             else
                 obj.zoomedViewArray=v;
             end
