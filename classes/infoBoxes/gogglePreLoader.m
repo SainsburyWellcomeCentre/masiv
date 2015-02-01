@@ -74,14 +74,16 @@ classdef gogglePreLoader<handle
                 
                 goggleDebugTimingInfo(1, 'PreLoader: starting', toc, 's')
                 
-                currentView_spec=getCurrentView(obj);                
-                newViewsToCreate_spec=createNewViewSpecs(obj, currentView_spec);                
-                newViewsToCreate_spec=excludeViewSpecsMatchingAlreadyLoadedGZV(obj, newViewsToCreate_spec);                
-                newViewsToCreate_spec=sortByDistanceFromCurrentPlace(newViewsToCreate_spec, currentView_spec);
+                currentView_spec=getCurrentView(obj);                                                 
+                newViewsToCreate_spec=createNewViewSpecs(obj, currentView_spec);
+                newViewsToCreate_spec=excludeViewSpecsMatchingAlreadyLoadedGZV(obj, newViewsToCreate_spec);    
+                 goggleDebugTimingInfo(1, 'PreLoader: Views to create calculated', toc, 's')
+                 
                 
-                goggleDebugTimingInfo(1, 'PreLoader: Views to create calculated', toc, 's')
+               
                 
                 if ~isempty(newViewsToCreate_spec)
+                    newViewsToCreate_spec=sortByDistanceFromCurrentPlace(newViewsToCreate_spec, currentView_spec);
                     % Initialise
                     newViews(numel(newViewsToCreate_spec))=goggleZoomedView;
                     
@@ -228,8 +230,10 @@ function z=calculateZVoxels_ofSlicesToLoad(obj, currentViewZ)
     z=obj.parent.overviewDSS.idx(idx);
 end
 
-function specsToCreate=excludeViewSpecsMatchingAlreadyLoadedGZV(obj,specsToCreate)    
+function specsToCreate=excludeViewSpecsMatchingAlreadyLoadedGZV(obj,specsToCreate) 
+    goggleDebugTimingInfo(1, 'PreLoader: Checking for existing matching views', toc, 's')
     viewsInMemory_spec=getLoadedViewSpecs(obj);
+    goggleDebugTimingInfo(1, 'PreLoader: existing matching viewspecs retrieved', toc, 's')
     specsThatAlreadyExist=[];
     
     for ii=1:numel(specsToCreate)
@@ -291,16 +295,30 @@ function v=getLoadedViewSpecs(obj)
 
 end
 
-function v=checkForMatchingView(viewSpec, viewsInMemory)
-
-    xMatch=(cellfun(@min, viewsInMemory.X)<=viewSpec.X(1))&(cellfun(@max, viewsInMemory.X)>=viewSpec.X(2));
-    yMatch=(cellfun(@min, viewsInMemory.Y)<=viewSpec.Y(1))&(cellfun(@max, viewsInMemory.Y)>=viewSpec.Y(2));
-    v= (xMatch & ...
-        yMatch & ...
-        viewSpec.Z==viewsInMemory.Z & ...
-        viewSpec.DS==viewsInMemory.DS);
-    
-    v=~isempty(find(v, 1));
+function vIdx=checkForMatchingView(viewSpec, viewsInMemory)
+    zMatch=find(viewSpec.Z==viewsInMemory.Z);
+    if any(zMatch)
+        inMemX=viewsInMemory.X(zMatch);
+        xzMatch=find(cellfun(@min, inMemX)<=viewSpec.X(1))&(cellfun(@max, inMemX)>=viewSpec.X(2));
+        if any(xzMatch)
+            inMemY=viewsInMemory.Y(zMatch);
+            yxzMatch=find(cellfun(@min, inMemY)<=viewSpec.Y(1))&(cellfun(@max, inMemY)>=viewSpec.Y(2));
+            if any(yxzMatch)
+                dsyxzMatch=find(viewSpec.DS==viewsInMemory.DS(zMatch));
+                if any(dsyxzMatch)
+                    vIdx=zMatch(xzMatch(yxzMatch(dsyxzMatch(1))));
+                else
+                    vIdx=[];
+                end
+            else
+                vIdx=[];
+            end
+        else
+            vIdx=[];
+        end
+    else
+        vIdx=[];
+    end
 end
 
 %% Utility functions
