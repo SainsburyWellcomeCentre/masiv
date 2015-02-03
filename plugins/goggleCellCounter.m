@@ -31,6 +31,7 @@ classdef goggleCellCounter<goggleBoxPlugin
         
         scrolledListener
         zoomedListener
+        gvClosingListener
         
         changeFlag=0
         
@@ -174,6 +175,7 @@ classdef goggleCellCounter<goggleBoxPlugin
             obj.scrolledListener=event.listener(obj.goggleViewer, 'Scrolled', @obj.drawMarkers);
             obj.zoomedListener=event.listener(obj.goggleViewer, 'Zoomed', @obj.drawMarkers);
             obj.keyPressListener=event.listener(obj.goggleViewer, 'KeyPress', @obj.parentKeyPress);
+            obj.gvClosingListener=event.listener(obj.goggleViewer, 'ViewerClosing', @obj.parentClosing);
             
         
         end
@@ -310,6 +312,9 @@ classdef goggleCellCounter<goggleBoxPlugin
         function parentKeyPress(obj, ~,ev)
             keyPress([], ev.KeyPressData, obj);
         end
+        function parentClosing(obj, ~, ~)
+            deleteRequest([],[], obj,1) %force quit
+        end
         
         %% Functions
         function UIaddMarker(obj)
@@ -350,45 +355,47 @@ classdef goggleCellCounter<goggleBoxPlugin
         end
         
         function drawMarkers(obj, ~, ~)
-            obj.clearMarkers;
-            %% Calculate position and size
-            zRadius=(gbSetting('cellCounter.markerDiameter.z')/2);
-            
-            allMarkerZVoxel=[obj.markers.zVoxel];
-            
-            allMarkerZRelativeToCurrentPlaneVoxels=(abs(allMarkerZVoxel-obj.cursorZVoxels));
-            
-            idx=allMarkerZRelativeToCurrentPlaneVoxels<zRadius;
-            if ~any(idx)
-                return
-            end
-            markersWithinViewOfThisPlane=obj.markers(idx);
-            
-            markerX=[markersWithinViewOfThisPlane.xVoxel];
-            markerY=[markersWithinViewOfThisPlane.yVoxel];
-            markerZ=[markersWithinViewOfThisPlane.zVoxel];
-            
-            [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ);
-            
-            markerRelZ=allMarkerZRelativeToCurrentPlaneVoxels(idx);
-            markerSz=(gbSetting('cellCounter.markerDiameter.xy')*(1-markerRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
-            
-            markerSz=max(markerSz, gbSetting('cellCounter.minimumSize'));
-            
-            markerCol=cat(1, markersWithinViewOfThisPlane.color);
-            
-            hImgAx=obj.goggleViewer.hImgAx;
-            prevhold=ishold(hImgAx);
-            hold(hImgAx, 'on')
-            %% Draw
-            obj.hDisplayedMarkers=scatter(obj.goggleViewer.hImgAx, markerX , markerY, markerSz, markerCol, 'filled', 'HitTest', 'off');
-            %% Draw highlights on this plane if we're not too zoomed out
-            
-            obj.drawMarkerHighlights;
-            
-            %% Restore hold
-            if ~prevhold
-                hold(hImgAx, 'off')
+            if ~isempty(obj.markers)
+                obj.clearMarkers;
+                %% Calculate position and size
+                zRadius=(gbSetting('cellCounter.markerDiameter.z')/2);
+                
+                allMarkerZVoxel=[obj.markers.zVoxel];
+                
+                allMarkerZRelativeToCurrentPlaneVoxels=(abs(allMarkerZVoxel-obj.cursorZVoxels));
+                
+                idx=allMarkerZRelativeToCurrentPlaneVoxels<zRadius;
+                if ~any(idx)
+                    return
+                end
+                markersWithinViewOfThisPlane=obj.markers(idx);
+                
+                markerX=[markersWithinViewOfThisPlane.xVoxel];
+                markerY=[markersWithinViewOfThisPlane.yVoxel];
+                markerZ=[markersWithinViewOfThisPlane.zVoxel];
+                
+                [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ);
+                
+                markerRelZ=allMarkerZRelativeToCurrentPlaneVoxels(idx);
+                markerSz=(gbSetting('cellCounter.markerDiameter.xy')*(1-markerRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
+                
+                markerSz=max(markerSz, gbSetting('cellCounter.minimumSize'));
+                
+                markerCol=cat(1, markersWithinViewOfThisPlane.color);
+                
+                hImgAx=obj.goggleViewer.hImgAx;
+                prevhold=ishold(hImgAx);
+                hold(hImgAx, 'on')
+                %% Draw
+                obj.hDisplayedMarkers=scatter(obj.goggleViewer.hImgAx, markerX , markerY, markerSz, markerCol, 'filled', 'HitTest', 'off');
+                %% Draw highlights on this plane if we're not too zoomed out
+                
+                obj.drawMarkerHighlights;
+                
+                %% Restore hold
+                if ~prevhold
+                    hold(hImgAx, 'off')
+                end
             end
         end
         
@@ -469,8 +476,8 @@ end
 
 %% Callbacks
 
-function deleteRequest(~, ~, obj)
-    if obj.changeFlag
+function deleteRequest(~, ~, obj, forceQuit)
+    if obj.changeFlag && ~(nargin>3 && forceQuit ==1)
         agree=questdlg(sprintf('There are unsaved changes that will be lost.\nAre you sure you want to end this session?'), 'Cell Counter', 'Yes', 'No', 'Yes');
         if strcmp(agree, 'No')
             return
