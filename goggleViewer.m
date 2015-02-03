@@ -206,9 +206,11 @@ classdef goggleViewer<handle
         function executeScroll(obj, p)
             stdout=obj.mainDisplay.seekZ(p);
             if stdout
+                  
                 obj.changeAxes;
-                drawnow;
-                notify(obj, 'Scrolled')                                
+                notify(obj, 'Scrolled')
+
+                                              
             else
                 goggleDebugTimingInfo(0, 'GV: Scroll did not cause an axis change',toc, 's')
             end
@@ -270,7 +272,6 @@ classdef goggleViewer<handle
             
             if movedFlag
                 obj.changeAxes;
-                drawnow;
                 notify(obj, 'Panned')
             else
                 goggleDebugTimingInfo(0, 'GV: Pan did not cause an axis change',toc, 's')
@@ -301,7 +302,6 @@ classdef goggleViewer<handle
             zoom(obj.hImgAx,zoomfactor)
             obj.centreView(C);
             obj.changeAxes
-            drawnow();
             notify(obj, 'Zoomed')
 
         end
