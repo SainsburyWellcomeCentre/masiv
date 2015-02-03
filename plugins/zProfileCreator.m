@@ -105,10 +105,11 @@ function offsets=getImageFilesXYOffsets(imageFileListSource, imageFileListTarget
         if ~exist(imageFileListTarget{ii}, 'file')||~exist(imageFileListSource{ii}, 'file')
             offsets(ii, :)=[0 0];
         else
-        targetImageFFT=fft2(openTiff(imageFileListTarget{ii}, regionSpec, 1));
-        sourceImageFFT=fft2(openTiff(imageFileListSource{ii}, regionSpec, 1));
-        output=dftregistration(targetImageFFT, sourceImageFFT, 1);
-        offsets(ii, :)=output(3:4);
+            regionSpecAdjusted=checkImagesForCropAndAdjustRegionSpecToMach(imageFileListTarget{ii}, imageFileListSource{ii}, regionSpec);
+            targetImageFFT=fft2(openTiff(imageFileListTarget{ii}, regionSpecAdjusted, 1));
+            sourceImageFFT=fft2(openTiff(imageFileListSource{ii}, regionSpecAdjusted, 1));
+            output=dftregistration(targetImageFFT, sourceImageFFT, 1);
+            offsets(ii, :)=output(3:4);
         end
     end
     
@@ -126,6 +127,34 @@ function offsets=getImageFilesXYOffsets(imageFileListSource, imageFileListTarget
     end
     %% Make it cumulative
     offsets=cumsum(offsets);
+end
+
+function regionSpec=checkImagesForCropAndAdjustRegionSpecToMach(filePath1, filePath2, regionSpec)
+inf1=imfinfo(filePath1);
+inf2=imfinfo(filePath2);
+
+if isfield(inf1, 'XPosition')
+    xOffset1=inf1.XPosition;
+    yOffset1=inf1.YPosition;
+else
+    xOffset1=0;
+    yOffset1=0;
+end
+if isfield(inf2, 'XPosition')
+    xOffset2=inf2.XPosition;
+    yOffset2=inf2.YPosition;
+else    
+    xOffset1=0;
+    yOffset1=0;
+end
+
+if ~(xOffset1==xOffset2)||~(yOffset1==yOffset2)
+    error('Crop offsets should match')
+end
+
+regionSpec=regionSpec-[xOffset1, yOffset1, 0, 0]';
+
+
 end
 
 function [xOffset, yOffset]=getOffsetAdjustment(o)
