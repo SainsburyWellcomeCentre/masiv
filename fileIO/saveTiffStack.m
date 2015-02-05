@@ -1,4 +1,10 @@
 function saveTiffStack(I, fileName, outputMode)
+    %% Check filename
+    pth=fileparts(fileName);
+    if ~exist(pth, 'dir')
+        error('Specified path does not exist')
+    end
+        
     %% Output Mode
     if nargin<3||isempty(outputMode)
         outputMode='c';
