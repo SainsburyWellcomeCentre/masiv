@@ -41,7 +41,7 @@ function writeYamlEntry(fid,s, indentLevel)
         elseif ischar(s.(f{ii}))
             fprintf(fid, '%s: %s', f{ii}, s.(f{ii}));
         elseif isnumeric(s.(f{ii}))
-            fprintf(fid, '%s: %s', f{ii}, num2str(s.(f{ii})));
+            fprintf(fid, '%s: %s', f{ii}, mat2str(s.(f{ii})));
         else
             error('Unknown field type:%s', f{ii})
         end
@@ -70,7 +70,7 @@ function writeYamlStructArrayEntry(fid,s, indentLevel)
             end
             
             if isnumeric(s(jj).(f{ii}))
-                fprintf(fid, '%s: %s', f{ii}, num2str(s(jj).(f{ii})));
+                fprintf(fid, '%s: %s', f{ii}, mat2str(s(jj).(f{ii})));
             elseif ischar(s(jj).(f{ii}))
                 fprintf(fid, '%s: %s', f{ii}, s(jj).(f{ii}));
             elseif isstruct(s(jj).(f{ii}))
