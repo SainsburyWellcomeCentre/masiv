@@ -465,6 +465,22 @@ classdef goggleCellCounter<goggleBoxPlugin
         function y=get.deCorrectedCursorY(obj)
              y=obj.cursorY-obj.correctionOffset(1);
         end
+        
+        %% Setter
+        function set.changeFlag(obj, newVal)
+            obj.changeFlag=newVal;
+            if newVal==1
+                obj.registerPluginAsOpenWithParentViewer
+                if isempty(strfind(obj.hFig.Name, '*')) %#ok<MCSUP>
+                    obj.hFig.Name=[obj.hFig.Name '*']; %#ok<MCSUP>
+                end
+            elseif newVal==0
+                obj.deregisterPluginAsOpenWithParentViewer
+                obj.hFig.Name=strrep(obj.hFig.Name, '*', ''); %#ok<MCSUP>
+            else
+                error('Invalid change flag')
+            end
+        end
     end
     
     methods(Static)
@@ -484,6 +500,7 @@ function deleteRequest(~, ~, obj, forceQuit)
         end
     end
     obj.clearMarkers;
+    obj.deregisterPluginAsOpenWithParentViewer;
     deleteRequest@goggleBoxPlugin(obj);
     obj.goggleViewer.hFig.Pointer='arrow';
     delete(obj.hFig);

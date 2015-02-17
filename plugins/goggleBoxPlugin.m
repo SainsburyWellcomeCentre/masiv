@@ -19,6 +19,12 @@ classdef(Abstract) goggleBoxPlugin<handle
         function deleteRequest(obj)
             set(obj.parentMenuItem, 'Enable', 'on');
         end
+        function registerPluginAsOpenWithParentViewer(obj)
+            obj.goggleViewer.registerOpenPluginForCloseReqs(obj)
+        end
+        function deregisterPluginAsOpenWithParentViewer(obj)
+             obj.goggleViewer.deregisterOpenPluginForCloseReqs(obj)
+        end
         
     end
     methods(Static)

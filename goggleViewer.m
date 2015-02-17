@@ -5,6 +5,8 @@ classdef goggleViewer<handle
         numScrolls=0
         panxInt=0
         panyInt=0
+        %% open plugin windows that override close requests
+        openPluginsOverridingCloseReq={}
     end
     
     properties
@@ -362,6 +364,23 @@ classdef goggleViewer<handle
         end
     end
     
+    methods % Keep track of open plugins that want the viewer to cancel close requests
+        function registerOpenPluginForCloseReqs(obj, plg)
+            if isempty(obj.getCloseReqRegistrationIndexOfPlugin(plg))
+                obj.openPluginsOverridingCloseReq{end+1}=plg;
+            end
+        end
+        function deregisterOpenPluginForCloseReqs(obj, plg)
+            plgIdx=obj.getCloseReqRegistrationIndexOfPlugin(plg);
+            if ~isempty(plgIdx)
+                obj.openPluginsOverridingCloseReq(plgIdx)=[];
+            end
+        end
+        function idx=getCloseReqRegistrationIndexOfPlugin(obj, plg)
+            idx=cellfun(@(x) eq(plg, x), obj.openPluginsOverridingCloseReq);
+        end
+    end
+    
     methods % Destructor
         function delete(obj)
             notify(obj, 'ViewerClosing')
@@ -451,7 +470,11 @@ function adjustContrast(hContrastLim, ~, obj)
     end
 end
 function closeRequest(~,~,obj)
-delete(obj)
+if isempty(obj.openPluginsOverridingCloseReq)
+    delete(obj)
+else
+    msgbox('One or more plugins are open that require your attention before closing')
+end
 end
 function changeProcessingSteps(~, ~, obj)
     zvm=obj.mainDisplay.zoomedViewManager;
