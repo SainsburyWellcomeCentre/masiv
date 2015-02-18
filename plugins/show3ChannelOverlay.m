@@ -13,13 +13,26 @@ classdef show3ChannelOverlay<goggleBoxPlugin
             
             xView=round(gvObj.hImgAx.XLim);xView(xView<1)=1;
             yView=round(gvObj.hImgAx.YLim);yView(yView<1)=1;
-            sliceNum=gvObj.mainDisplay.currentZPlaneOriginalVoxels;
             
+            sliceNum=gvObj.mainDisplay.currentZPlaneOriginalVoxels;
             baseDir=mosaicInfo.baseDirectory;
+
+            %% Adjust for crop
+            info=imfinfo(fullfile(baseDir,mosaicInfo.stitchedImagePaths.Ch01{sliceNum}));
+            [xoffset, yoffset]=checkTiffFileForOffset(info);
+            xView=xView-xoffset;
+            yView=yView-yoffset;
+            %% Load
+            
             tic
-            ch01=(openTiff(fullfile(baseDir, mosaicInfo.stitchedImagePaths.Ch01{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
-            ch02=(openTiff(fullfile(baseDir, mosaicInfo.stitchedImagePaths.Ch02{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
-            ch03=(openTiff(fullfile(baseDir, mosaicInfo.stitchedImagePaths.Ch03{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
+            try
+                ch01=(openTiff(fullfile(baseDir, mosaicInfo.stitchedImagePaths.Ch01{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
+                ch02=(openTiff(fullfile(baseDir, mosaicInfo.stitchedImagePaths.Ch02{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
+                ch03=(openTiff(fullfile(baseDir, mosaicInfo.stitchedImagePaths.Ch03{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
+            catch
+                deleteRequest(obj)
+                error('Invalid file or region spec. Could not open image')
+            end
             clc
             fprintf('Load time: %3.2fs\n', toc),tic
                        
@@ -27,14 +40,19 @@ classdef show3ChannelOverlay<goggleBoxPlugin
             fprintf('Converted to double time: %3.2fs\n', toc)
             if strcmp(questdlg('Apply unmixing?', '3 channel display', 'Yes', 'No', 'Yes'), 'Yes')
                 tic
-                I=unmix(I);
+                try
+                    I=unmix(I);
+                catch
+                    deleteRequest(obj)
+                    error('Could not do unmixing')
+                end
             end
             
             fprintf('Unmixed in %3.2fs\n', toc),tic
             figure
             subplot('Position', [0.05 0.06 0.2 0.9])
             hold on
-            
+            %% Histogram
             bins=2000;
             
             histogram(I(:,:,1), bins, 'EdgeColor', 'none', 'FaceColor', hsv2rgb([0 0.8 0.8]))
@@ -45,7 +63,7 @@ classdef show3ChannelOverlay<goggleBoxPlugin
             fprintf('Histogram displayed in %3.2fs\n', toc),tic
 
             hold off
-
+            %% Display image
             subplot('Position', [0.28 0.02 0.68 0.96])
             I=trueColorImage(I);
             fprintf('Truecolor conversion in %3.2fs\n', toc),tic

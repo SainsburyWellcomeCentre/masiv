@@ -236,21 +236,6 @@ function regionSpec=adjustRegionSpecUsingOffset(regionSpec, offset)
     regionSpec(2)=regionSpec(2)-offset(1);
 end
 
-function [xoffset, yoffset]=checkTiffFileForOffset(info)
-
-    if isfield(info, 'XPosition')
-        xoffset=info.XPosition;
-    else
-        xoffset=0;
-    end
-    if isfield(info, 'YPosition')
-        yoffset=info.YPosition;
-    else
-        yoffset=0;
-    end
-    
-end
-
 function status=checkRSpecImageStatus(info, rSpec)
 % Returns whether the specified region spec is fully (2), partially (1) or
 % not at all (0) present in the image file
