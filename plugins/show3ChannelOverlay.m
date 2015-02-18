@@ -101,7 +101,7 @@ end
 function I=unmix(I)
     
     
-    I=doFilter(I, 1.5);
+    %I=doFilter(I, 1.5);
     I=doUnmix(I);
 
 end
@@ -144,7 +144,8 @@ function I=doUnmix(I)
 end
 
 function emissionMatrixNormalised=loadUnmixingVectorsNoGui()
-    sourceDirectory='unmixing/sources/';
+    basedir=fileparts(which('goggleViewer'));
+    sourceDirectory=fullfile(basedir, 'resources', 'unmix','sources');
     
     filesToLoad=cellfun(@(x) fullfile(sourceDirectory, [x '.csv']),  {'tagRFP', 'GFP', 'Cerulean'},'UniformOutput',0 );
     spectraNames=strrep(strrep(filesToLoad, '.csv', ''),sourceDirectory, '');
