@@ -124,8 +124,6 @@ obj.stitchedImagePaths=struct;
 
 
 for ii=1:numel(listFilePaths)
-  
-    
     %% Open txt file
     fp=fullfile(obj.baseDirectory, listFilePaths(ii).name);
     fh=fopen(fp);
@@ -135,7 +133,7 @@ for ii=1:numel(listFilePaths)
     fclose(fh);
     
     %% strip out absolute path to get relative file paths
-    channelFilePaths=strrep(channelFilePaths{1}, [fileparts(fileparts(channelFilePaths{1}{1})) '/'], '');
+    channelFilePaths=strrep(channelFilePaths{1}, [fileparts(fp),filesep], '');
     %% Get channel name
     channelName=strrep(strrep(listFilePaths(ii).name, searchPattern, ''), '.txt', '');
     %% Assign
