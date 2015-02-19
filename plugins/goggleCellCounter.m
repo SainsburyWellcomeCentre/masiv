@@ -493,6 +493,7 @@ end
 %% Callbacks
 
 function deleteRequest(~, ~, obj, forceQuit)
+    gbSetting('cellCounter.figurePosition', obj.hFig.Position)
     if obj.changeFlag && ~(nargin>3 && forceQuit ==1)
         agree=questdlg(sprintf('There are unsaved changes that will be lost.\nAre you sure you want to end this session?'), 'Cell Counter', 'Yes', 'No', 'Yes');
         if strcmp(agree, 'No')

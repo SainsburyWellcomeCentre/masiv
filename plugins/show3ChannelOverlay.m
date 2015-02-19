@@ -101,7 +101,7 @@ end
 function I=unmix(I)
     
     
-    %I=doFilter(I, 1.5);
+    I=doFilter(I, 1.5);
     I=doUnmix(I);
 
 end
