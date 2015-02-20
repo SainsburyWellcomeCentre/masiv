@@ -25,10 +25,24 @@ classdef show3ChannelOverlay<goggleBoxPlugin
             %% Load
             
             tic
+
             try
+                if length(fields(mosaicInfo.stitchedImagePaths))==1
+                    deleteRequest(obj)
+                    error('Only 1 imported channel found')
+                end
                 ch01=(openTiff(fullfile(baseDir, mosaicInfo.stitchedImagePaths.Ch01{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
                 ch02=(openTiff(fullfile(baseDir, mosaicInfo.stitchedImagePaths.Ch02{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
-                ch03=(openTiff(fullfile(baseDir, mosaicInfo.stitchedImagePaths.Ch03{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
+
+                if length(fields(mosaicInfo.stitchedImagePaths))==3
+                    fprintf('Loading chan 3\n')
+                    ch03=(openTiff(fullfile(baseDir, mosaicInfo.stitchedImagePaths.Ch03{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
+                else
+                    fprintf('Creating empty channel 3\n')
+                    ch03 = zeros(size(ch02),class(ch02));
+                end
+           
+                    
             catch
                 deleteRequest(obj)
                 error('Invalid file or region spec. Could not open image')
