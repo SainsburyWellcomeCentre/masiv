@@ -52,17 +52,21 @@ classdef show3ChannelOverlay<goggleBoxPlugin
                        
             I=double(cat(3, ch01, ch02, ch03));
             fprintf('Converted to double time: %3.2fs\n', toc)
-            if strcmp(questdlg('Apply unmixing?', '3 channel display', 'Yes', 'No', 'Yes'), 'Yes')
-                tic
-                try
-                    I=unmix(I);
-                catch
-                    deleteRequest(obj)
-                    error('Could not do unmixing')
+            %Only unmix if we have three channels
+            if length(fields(mosaicInfo.stitchedImagePaths))==3
+                if strcmp(questdlg('Apply unmixing?', '3 channel display', 'Yes', 'No', 'Yes'), 'Yes')
+                    tic
+                    try
+                        I=unmix(I);
+                        fprintf('Unmixed in %3.2fs\n', toc),tic
+                    catch
+                        deleteRequest(obj)
+                        error('Could not do unmixing')
+                    end
                 end
             end
             
-            fprintf('Unmixed in %3.2fs\n', toc),tic
+
             figure
             subplot('Position', [0.05 0.06 0.2 0.9])
             hold on
