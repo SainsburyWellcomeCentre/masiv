@@ -165,7 +165,7 @@ function emissionMatrixNormalised=loadUnmixingVectorsNoGui()
     basedir=fileparts(which('goggleViewer'));
     sourceDirectory=fullfile(basedir, 'resources', 'unmix','sources');
     
-    filesToLoad=cellfun(@(x) fullfile(sourceDirectory, [x '.csv']),  {'tagRFP', 'GFP', 'Cerulean'},'UniformOutput',0 );
+    filesToLoad=cellfun(@(x) fullfile(sourceDirectory, [x '.csv']),  {'mCherry', 'GFP', 'Cerulean'},'UniformOutput',0 );
     spectraNames=strrep(strrep(filesToLoad, '.csv', ''),sourceDirectory, '');
     
     %% Load spectral data
