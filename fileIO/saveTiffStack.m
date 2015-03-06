@@ -1,7 +1,7 @@
 function saveTiffStack(I, fileName, outputMode)
     %% Check filename
     pth=fileparts(fileName);
-    if ~isempty(pth)&&exist(pth, 'dir')
+    if ~isempty(pth)&&~exist(pth, 'dir')
         error('Specified path does not exist')
     end
         
