@@ -72,6 +72,8 @@ classdef goggleRegionIndicator<goggleBoxPlugin
             obj.mnuSetUnset=uicontextmenu;
             uimenu(obj.mnuSetUnset, 'Label', 'Set current region as marked', 'Callback', {@setCurrentViewAsMarked, obj})
             uimenu(obj.mnuSetUnset, 'Label', 'Set current region as unmarked', 'Callback', {@resetCurrentViewMarked, obj})
+            uimenu(obj.mnuSetUnset, 'Label', 'Save region marking', 'Callback', {@saveAlphaMap, obj})
+            uimenu(obj.mnuSetUnset, 'Label', 'Load region marking', 'Callback', {@loadAlphaMap, obj})
             obj.hImg.UIContextMenu=obj.mnuSetUnset;
             obj.hViewOutlineRect.UIContextMenu=obj.mnuSetUnset;
             obj.hMarkedOverlay.UIContextMenu=obj.mnuSetUnset;
@@ -122,5 +124,19 @@ function resetCurrentViewMarked(~, ~,obj)
     [xPos, yPos]=obj.getCurrentPos;
     xPos=round(xPos);yPos=round(yPos);
     obj.hMarkedOverlay.AlphaData(yPos(1):yPos(2), xPos(1):xPos(2))=0;
+end
+function saveAlphaMap(~,~,obj)
+I=obj.hMarkedOverlay.AlphaData;
+[f,p]=uiputfile('*.tif', 'Save Mark Map as...', gbSetting('defaultDirectory'));
+if ~isempty(f)&&~isempty(p)&&~isnumeric(p)&&~isnumeric(f)
+    imwrite(I,fullfile(p,f))
+end
+end
+function loadAlphaMap(~,~,obj)
+[f,p]=uigetfile('*.tif', 'Load Map Markings', gbSetting('defaultDirectory'));
+if ~isempty(f)&&~isempty(p)&&~isnumeric(p)&&~isnumeric(f)
+    I=imread(fullfile(p,f));
+    obj.hMarkedOverlay.AlphaData=I;
+end
 end
 

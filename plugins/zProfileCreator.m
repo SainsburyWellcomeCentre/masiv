@@ -48,7 +48,8 @@ classdef zProfileCreator<goggleBoxPlugin
             
             %%
             [f,p]=uiputfile({'*.zpfl', 'Z-Profile (*.zpfl)'; '*.csv', 'CSV-File (*.csv)'; '*.*', 'All Files (*.*)'}, 'Select path to save profile', gbSetting('defaultDirectory'));
-            if isempty(f)|| ~exist(p, 'dir')
+            if isempty(f)||isempty(p)||isnumeric(p)||~exist(p, 'dir')
+                deleteRequest(obj)
             else
             dlmwrite(fullfile(p,f), o);
             end
