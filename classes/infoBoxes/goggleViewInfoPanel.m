@@ -16,6 +16,8 @@ classdef goggleViewInfoPanel<handle
         onDiskIndicator
         onDiskIndicatorLabel
         fileNameLabel
+        detailedLoadSupressionButton
+        hKeyboardListener
         
         parent
         updateListener
@@ -195,8 +197,17 @@ classdef goggleViewInfoPanel<handle
                 'String', '', ...
                 'FontSize', fontSz-1, ...
                 'HorizontalAlignment', 'left');
-     
-            
+            %% Detailed load supression
+            obj.detailedLoadSupressionButton=uicontrol(...
+                'Style', 'checkbox', ...
+                'Parent', obj.mainPanel, ...
+                'Units', 'normalized', ...
+                'Position', [0.05 0.08 0.9 0.08], ...
+                'String', 'Suppress detailed view loading (q)', ...
+                'FontSize', fontSz-1, ...
+                'HorizontalAlignment', 'left', ...
+                'Callback', @dlSuppressValueChange);
+            obj.hKeyboardListener=event.listener(obj.parent, 'KeyPress', @obj.handleMainWindowKeyPress);
             obj.updateDisplay();
             %% Set Colors
             obj.mainPanel.BackgroundColor=gbSetting('viewer.panelBkgdColor');
@@ -254,6 +265,10 @@ classdef goggleViewInfoPanel<handle
                 nm=nm(2:end);
             end
             fn=[nm ext];
+        end
+        %% Methods
+        function handleMainWindowKeyPress(obj, ~,ev)
+            keyPress([], ev.KeyPressData, obj)
         end
         %% Destructor
         function delete(obj)
@@ -322,3 +337,22 @@ function doUpdate(obj)
     
 end
 
+function dlSuppressValueChange(obj, ~)
+if isempty(obj.UserData)
+    obj.UserData=gbSetting('viewerDisplay.minZoomLevelForDetailedLoad');
+    gbSetting('viewerDisplay.minZoomLevelForDetailedLoad', Inf)
+else    
+    gbSetting('viewerDisplay.minZoomLevelForDetailedLoad', obj.UserData)
+    obj.UserData=[];
+end
+end
+
+function keyPress(~, eventdata, obj)
+    key=eventdata.Key;
+    ctrlMod=ismember('control', eventdata.Modifier);
+    
+    if strcmp(key, 'q') && ~ctrlMod
+        obj.detailedLoadSupressionButton.Value=~obj.detailedLoadSupressionButton.Value;
+        dlSuppressValueChange(obj.detailedLoadSupressionButton)
+    end
+end
