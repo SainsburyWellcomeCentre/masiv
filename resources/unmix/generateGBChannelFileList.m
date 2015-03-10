@@ -4,7 +4,7 @@ nFiles=numel(t.stitchedImagePaths.Ch01);
 
 nmList=cell(nFiles, 1);
 for ii=1:nFiles
-    fileName=sprintf('%s_Layer_%04u_StitchedImage_%s.tif', t.sampleName, ii, channelName);
+    fileName=sprintf('%s_Layer_%04u_StitchedImage_%s.tif', t.sampleName, ii-1, channelName);
     nmList{ii}=fullfile(t.baseDirectory,subDir, fileName);
 end
 

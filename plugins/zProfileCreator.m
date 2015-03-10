@@ -9,7 +9,7 @@ classdef zProfileCreator<goggleBoxPlugin
             obj=obj@goggleBoxPlugin(caller);
             mainDisp=obj.goggleViewer.mainDisplay;
             t=obj.mosaicInfo;
-            
+            dss=obj.goggleViewer.overviewDSS;
             %% Default view
             x=num2str(round(mainDisp.viewXLimOriginalCoords(1)));
             y=num2str(round(mainDisp.viewYLimOriginalCoords(1)));
@@ -31,8 +31,8 @@ classdef zProfileCreator<goggleBoxPlugin
                 end
             end
             try
-                chan=obj.goggleViewer.overviewDSS.channel;
-                o=mosaicStackOffset(t, chan, xywh);
+                chan=dss.channel;
+                o=mosaicStackOffset(t, chan, xywh, dss);
             catch err
                  deleteRequest(obj)
                  rethrow(err)
@@ -69,11 +69,13 @@ classdef zProfileCreator<goggleBoxPlugin
     
 end
 
-function offsets=mosaicStackOffset(t, channelToCalculateOn, regionSpec)
+function offsets=mosaicStackOffset(t, channelToCalculateOn, regionSpec, dss)
 
     nLayers=t.metaData.layers;
     
-    f=fullfile(t.baseDirectory, t.stitchedImagePaths.(channelToCalculateOn));
+    fileNames=dss.originalStitchedFileNames;
+    
+    f=fullfile(t.baseDirectory, fileNames);
     
     fSource=f(nLayers+1:nLayers:end);
     fTarget=f(nLayers:nLayers:end-1);
@@ -106,9 +108,11 @@ function offsets=getImageFilesXYOffsets(imageFileListSource, imageFileListTarget
         if ~exist(imageFileListTarget{ii}, 'file')||~exist(imageFileListSource{ii}, 'file')
             offsets(ii, :)=[0 0];
         else
-            regionSpecAdjusted=checkImagesForCropAndAdjustRegionSpecToMach(imageFileListTarget{ii}, imageFileListSource{ii}, regionSpec);
-            targetImageFFT=fft2(openTiff(imageFileListTarget{ii}, regionSpecAdjusted, 1));
-            sourceImageFFT=fft2(openTiff(imageFileListSource{ii}, regionSpecAdjusted, 1));
+            regionSpecAdjustedTarget=checkImagesForCropAndAdjustRegionSpecToMach(imageFileListTarget{ii}, regionSpec);
+            regionSpecAdjustedSource=checkImagesForCropAndAdjustRegionSpecToMach(imageFileListSource{ii}, regionSpec);
+            
+            targetImageFFT=fft2(openTiff(imageFileListTarget{ii}, regionSpecAdjustedTarget, 1));
+            sourceImageFFT=fft2(openTiff(imageFileListSource{ii}, regionSpecAdjustedSource, 1));
             output=dftregistration(targetImageFFT, sourceImageFFT, 1);
             offsets(ii, :)=output(3:4);
         end
@@ -130,31 +134,18 @@ function offsets=getImageFilesXYOffsets(imageFileListSource, imageFileListTarget
     offsets=cumsum(offsets);
 end
 
-function regionSpec=checkImagesForCropAndAdjustRegionSpecToMach(filePath1, filePath2, regionSpec)
-inf1=imfinfo(filePath1);
-inf2=imfinfo(filePath2);
+function regionSpec=checkImagesForCropAndAdjustRegionSpecToMach(filePath, regionSpec)
+inf=imfinfo(filePath);
 
-if isfield(inf1, 'XPosition')
-    xOffset1=inf1.XPosition;
-    yOffset1=inf1.YPosition;
+if isfield(inf, 'XPosition')
+    xOffset=inf.XPosition;
+    yOffset=inf.YPosition;
 else
-    xOffset1=0;
-    yOffset1=0;
-end
-if isfield(inf2, 'XPosition')
-    xOffset2=inf2.XPosition;
-    yOffset2=inf2.YPosition;
-else    
-    xOffset1=0;
-    yOffset1=0;
+    xOffset=0;
+    yOffset=0;
 end
 
-if ~(xOffset1==xOffset2)||~(yOffset1==yOffset2)
-    error('Crop offsets should match')
-end
-
-regionSpec=regionSpec-[xOffset1, yOffset1, 0, 0]';
-
+regionSpec=regionSpec-[xOffset, yOffset, 0, 0]';
 
 end
 
