@@ -272,6 +272,10 @@ classdef goggleViewInfoPanel<handle
         end
         %% Destructor
         function delete(obj)
+            if obj.detailedLoadSupressionButton.Value==1
+                obj.detailedLoadSupressionButton.Value=0;
+                dlSuppressValueChange(obj.detailedLoadSupressionButton)
+            end
             delete(obj.mainPanel)
         end
     end
