@@ -135,7 +135,7 @@ end
 function loadAlphaMap(~,~,obj)
 [f,p]=uigetfile('*.tif', 'Load Map Markings', gbSetting('defaultDirectory'));
 if ~isempty(f)&&~isempty(p)&&~isnumeric(p)&&~isnumeric(f)
-    I=imread(fullfile(p,f));
+    I=im2double(imread(fullfile(p,f)));
     obj.hMarkedOverlay.AlphaData=I;
 end
 end
