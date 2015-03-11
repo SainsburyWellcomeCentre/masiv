@@ -299,10 +299,10 @@ function vIdx=checkForMatchingView(viewSpec, viewsInMemory)
     zMatch=find(viewSpec.Z==viewsInMemory.Z);
     if any(zMatch)
         inMemX=viewsInMemory.X(zMatch);
-        xzMatch=find(cellfun(@min, inMemX)<=viewSpec.X(1))&(cellfun(@max, inMemX)>=viewSpec.X(2));
+        xzMatch=find((cellfun(@min, inMemX)<=viewSpec.X(1))&(cellfun(@max, inMemX)>=viewSpec.X(2)));
         if any(xzMatch)
             inMemY=viewsInMemory.Y(zMatch);
-            yxzMatch=find(cellfun(@min, inMemY)<=viewSpec.Y(1))&(cellfun(@max, inMemY)>=viewSpec.Y(2));
+            yxzMatch=find((cellfun(@min, inMemY)<=viewSpec.Y(1))&(cellfun(@max, inMemY)>=viewSpec.Y(2)));
             if any(yxzMatch)
                 dsyxzMatch=find(viewSpec.DS==viewsInMemory.DS(zMatch));
                 if any(dsyxzMatch)
