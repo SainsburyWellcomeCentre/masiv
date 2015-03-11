@@ -326,7 +326,7 @@ classdef goggleCellCounter<goggleBoxPlugin
             end
             drawMarkers(obj)
             %% Update count
-            obj.updateMarkerCount(obj.currentType);
+            obj.incrementMarkerCount(obj.currentType);
             %% Set change flag
             obj.changeFlag=1;
         end
@@ -349,7 +349,7 @@ classdef goggleCellCounter<goggleBoxPlugin
                 end
             end
             %% Update count
-            obj.updateMarkerCount(obj.currentType);
+            obj.decrementMarkerCount(obj.currentType);
             %% Set change flag
             obj.changeFlag=1;
         end
@@ -440,6 +440,19 @@ classdef goggleCellCounter<goggleBoxPlugin
             obj.hCountIndicatorText(idx).String=sprintf('%u', num);
         end
         
+        function incrementMarkerCount(obj, markerTypeToIncrement)
+            idx=obj.markerTypes==markerTypeToIncrement;
+            prevCount=str2double(obj.hCountIndicatorText(idx).String);
+            newCount=prevCount+1;
+            obj.hCountIndicatorText(idx).String=sprintf('%u', newCount);
+        end
+        
+        function decrementMarkerCount(obj, markerTypeToDecrement)
+            idx=obj.markerTypes==markerTypeToDecrement;
+            prevCount=str2double(obj.hCountIndicatorText(idx).String);
+            newCount=prevCount-1;
+            obj.hCountIndicatorText(idx).String=sprintf('%u', newCount);
+        end
         %% Getters
         function type=get.currentType(obj)
             type=obj.markerTypes(obj.hMarkerButtonGroup.SelectedObject.UserData);
