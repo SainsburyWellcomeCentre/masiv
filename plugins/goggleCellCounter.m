@@ -364,7 +364,9 @@ classdef goggleCellCounter<goggleBoxPlugin
         
         function drawMarkers(obj, ~, ~)
             if ~isempty(obj.markers)
+                goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Beginning',toc,'s')
                 obj.clearMarkers;
+                goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Markers cleared',toc,'s')
                 %% Calculate position and size
                 zRadius=(gbSetting('cellCounter.markerDiameter.z')/2);
                 
@@ -383,7 +385,6 @@ classdef goggleCellCounter<goggleBoxPlugin
                 markerZ=[markersWithinViewOfThisPlane.zVoxel];
                 
                 [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ);
-                
                 markerRelZ=allMarkerZRelativeToCurrentPlaneVoxels(idx);
                 markerSz=(gbSetting('cellCounter.markerDiameter.xy')*(1-markerRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
                 
@@ -394,12 +395,27 @@ classdef goggleCellCounter<goggleBoxPlugin
                 hImgAx=obj.goggleViewer.hImgAx;
                 prevhold=ishold(hImgAx);
                 hold(hImgAx, 'on')
+                %% Eliminate markers not in the current x y view
+                xView=obj.goggleViewer.mainDisplay.viewXLimOriginalCoords;
+                yView=obj.goggleViewer.mainDisplay.viewYLimOriginalCoords;
+                
+                inViewX=(markerX>=xView(1))&(markerX<=xView(2));
+                inViewY=(markerY>=yView(1))&(markerY<=yView(2));
+                
+                inViewIdx=inViewX&inViewY;
+                
+                markerX=markerX(inViewIdx);
+                markerY=markerY(inViewIdx);
+                markerSz=markerSz(inViewIdx);
+                markerCol=markerCol(inViewIdx, :);
                 %% Draw
+                goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Beginning drawing',toc,'s')
                 obj.hDisplayedMarkers=scatter(obj.goggleViewer.hImgAx, markerX , markerY, markerSz, markerCol, 'filled', 'HitTest', 'off', 'Tag', 'CellCounter');
+                goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Drawing complete',toc,'s')
                 %% Draw highlights on this plane if we're not too zoomed out
                 
                 obj.drawMarkerHighlights;
-                
+                goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Complete',toc,'s')
                 %% Restore hold
                 if ~prevhold
                     hold(hImgAx, 'off')
