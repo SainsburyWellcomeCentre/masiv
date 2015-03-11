@@ -300,6 +300,7 @@ classdef goggleCellCounter<goggleBoxPlugin
             obj.goggleViewer.hFig.Pointer='arrow';
         end
         function mouseClickInMainWindowAxes(obj, ~, ~)
+            tic
             if obj.hModeAdd.Value
                 obj.UIaddMarker
             elseif obj.hModeDelete.Value
@@ -318,15 +319,22 @@ classdef goggleCellCounter<goggleBoxPlugin
         
         %% Functions
         function UIaddMarker(obj)
+            goggleDebugTimingInfo(2, 'CellCounter.UIaddMarker: Beginning',toc,'s')
             newMarker=goggleMarker(obj.currentType, obj.deCorrectedCursorX, obj.deCorrectedCursorY, obj.cursorZVoxels);
+            goggleDebugTimingInfo(2, 'CellCounter.UIaddMarker: New marker created',toc,'s')
+
             if isempty(obj.markers)
                 obj.markers=newMarker;
             else
-                obj.markers=[obj.markers newMarker];
+                obj.markers(end+1)=newMarker;
             end
+            goggleDebugTimingInfo(2, 'CellCounter.UIaddMarker: Marker added to collection',toc,'s')
             drawMarkers(obj)
+            goggleDebugTimingInfo(2, 'CellCounter.UIaddMarker: Markers Drawn',toc,'s')
+
             %% Update count
             obj.incrementMarkerCount(obj.currentType);
+            goggleDebugTimingInfo(2, 'CellCounter.UIaddMarker: Count updated',toc,'s')
             %% Set change flag
             obj.changeFlag=1;
         end

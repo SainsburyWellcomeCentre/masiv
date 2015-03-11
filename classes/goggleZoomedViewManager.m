@@ -190,7 +190,9 @@ classdef goggleZoomedViewManager<handle
         end
         
         function moveZVToTopOfCacheStack(obj, idx)
+            goggleDebugTimingInfo(2, sprintf('GZVM.moveZVToTopOfCacheStack: Moving GV to stack top (stack size %u)', numel(obj.zoomedViewArray)),toc,'s')
             obj.zoomedViewArray=obj.zoomedViewArray([idx 1:idx-1 idx+1:end]);
+            goggleDebugTimingInfo(2, 'GZVM.moveZVToTopOfCacheStack: Move completed',toc,'s')
         end
        
     end
@@ -250,7 +252,9 @@ function updateImage(obj, idx)
    %% Update Image
    obj.hImg.XData=zv.x;
    obj.hImg.YData=zv.y;
+   goggleDebugTimingInfo(2, 'GZVM.updateImage: beginning CData change',toc,'s')
    obj.hImg.CData=zv.imageData;
+   goggleDebugTimingInfo(2, 'GZVM.updateImage: CData change complete',toc,'s')
    obj.hImg.Visible='on';
    obj.moveZVToTopOfCacheStack(idx);
 end
