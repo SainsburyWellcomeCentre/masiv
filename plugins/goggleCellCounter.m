@@ -31,6 +31,7 @@ classdef goggleCellCounter<goggleBoxPlugin
         
         scrolledListener
         zoomedListener
+        pannedListener
         gvClosingListener
         
         changeFlag=0
@@ -174,6 +175,7 @@ classdef goggleCellCounter<goggleBoxPlugin
             obj.cursorListenerClick=event.listener(obj.goggleViewer, 'ViewClicked', @obj.mouseClickInMainWindowAxes);
             obj.scrolledListener=event.listener(obj.goggleViewer, 'Scrolled', @obj.drawMarkers);
             obj.zoomedListener=event.listener(obj.goggleViewer, 'Zoomed', @obj.drawMarkers);
+            obj.pannedListener=event.listener(obj.goggleViewer, 'Panned', @obj.drawMarkers);
             obj.keyPressListener=event.listener(obj.goggleViewer, 'KeyPress', @obj.parentKeyPress);
             obj.gvClosingListener=event.listener(obj.goggleViewer, 'ViewerClosing', @obj.parentClosing);
             
