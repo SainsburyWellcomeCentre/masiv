@@ -133,7 +133,7 @@ for ii=1:numel(listFilePaths)
     fclose(fh);
     
     %% strip out absolute path to get relative file paths
-    channelFilePaths=strrep(channelFilePaths{1}, [fileparts(fp),filesep], '');
+    channelFilePaths=strrep(channelFilePaths{1}, [obj.baseDirectory,filesep], '');
     %% Get channel name
     channelName=strrep(strrep(listFilePaths(ii).name, searchPattern, ''), '.txt', '');
     %% Assign
