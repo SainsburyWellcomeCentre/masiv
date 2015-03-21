@@ -22,6 +22,7 @@
 * Run 'goggleViewer'
 
 ### Using goggleViewer ###
+* If data were stitched with tvMat. CD to data directory in MATLAB and run tvMat2goggleList('stitchedImages_100') or whatever the directory name is.
 * Run 'goggleViewer'
 * Select the base path of the stitched experiment you would like to view
 * Select the stack you would like to use as the base
