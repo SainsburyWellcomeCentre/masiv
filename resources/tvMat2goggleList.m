@@ -14,8 +14,12 @@ function tvMat2goggleList(stitchedDir)
 %
 % 
 % Rob Campbell
+%
+% TODO: fails on Windows. The resulting file has no file names
 
-
+if ispc
+	fprintf('Fails on Windows machines. Not fixed yet\n')
+end
 
 if ~exist(stitchedDir,'dir')
 	fprintf('Directory %s not found\n',stitchedDir)
