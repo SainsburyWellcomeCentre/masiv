@@ -11,7 +11,7 @@ if isempty(strfind(filePath, '.yml'))
 end
 fid=fopen(filePath, 'w');
 if fid==-1
-    error('File could not be opened. Perhaps you do not have permission to write to this directory?')
+    error('File could not be opened. Perhaps you do not have permission to write to this directory: %s',filePath)
 end
 
 writeYamlEntry(fid,s)
