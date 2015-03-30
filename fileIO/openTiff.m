@@ -73,7 +73,14 @@ end
 
 %% Exceptions to method selection
 %Do not do methods 2 or 3 if data are compressed
-info=imfinfo(fileName);
+try
+  info=imfinfo(fileName);
+catch
+  fprintf('%s failed with file %s\n\n', mfilename, fileName);
+  rethrow(lasterror)
+  return
+end
+
 if ~strcmp(info.Compression,'Uncompressed') && methodFlag>1
   fprintf('images are %s compressed. Reverting to imread.\n',info.Compression)
 
