@@ -24,6 +24,8 @@ classdef goggleViewer<handle
         mnuMain
         mnuImage
         mnuPlugins
+        mnuTutPlugins
+
         %% Data
         mosaicInfo
         overviewDSS
@@ -99,8 +101,10 @@ classdef goggleViewer<handle
                                 
             
             obj.mnuPlugins=uimenu(obj.hFig, 'Label', 'Plugins');
-                    addPlugins(obj.mnuPlugins, obj)
-            
+                    addPlugins(obj.mnuPlugins, obj,'plugins')
+            obj.mnuTutPlugins=uimenu(obj.mnuPlugins,'label','Tutorials');
+                    addPlugins(obj.mnuTutPlugins, obj,['plugins',filesep,'tutorials'])
+
             %% Contrast adjustment object definitions
             obj.hAxContrastHist=axes(...
                 'Box', 'on', ...
@@ -576,11 +580,14 @@ function zProfile=loadXYAlignmentProfile
 end
 
 %% Plugins menu creation
-function addPlugins(hMenuBase, obj)
-    pluginsDir=fullfile(fileparts(which('goggleViewer')), 'plugins');
+function addPlugins(hMenuBase, obj, pluginsDirName)
+    pluginsDir=fullfile(fileparts(which('goggleViewer')), pluginsDirName);
     
     if ~exist(pluginsDir, 'dir')
         error('plugins directory not found')
+    else
+        fprintf('Adding plugins in directory %s to menu\n',pluginsDirName)
+        
     end
     
     filesInPluginsDirectory=dir(fullfile(pluginsDir, '*.m'));
@@ -591,7 +598,6 @@ function addPlugins(hMenuBase, obj)
             [pluginDisplayString, pluginStartCallback]=getPluginInfo(filesInPluginsDirectory(ii));
                        
             uimenu(hMenuBase, 'Label', pluginDisplayString, 'Callback', pluginStartCallback, 'UserData', obj)
-            
         end
     end
 end
