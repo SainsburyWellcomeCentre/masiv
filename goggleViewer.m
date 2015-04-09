@@ -209,18 +209,30 @@ classdef goggleViewer<handle
             end
         end
         
-        function executeScroll(obj, p)
-            stdout=obj.mainDisplay.seekZ(p);
-            if stdout
-                  
-                obj.changeAxes;
-                notify(obj, 'Scrolled')
+        function executeScroll(obj, nScrolls, scrollAction)
+            %nScroll - scalar defining how many wheel clicks the user has produced (signed)
+            %scrollAction - string defining which action to take. 
 
-                                              
-            else
-                goggleDebugTimingInfo(0, 'GV: Scroll did not cause an axis change',toc, 's')
+            switch scrollAction
+            case 'zAxisScroll'
+                stdout=obj.mainDisplay.seekZ(nScrolls);
+                if stdout
+                    obj.changeAxes;
+                    notify(obj, 'Scrolled')
+                else
+                    goggleDebugTimingInfo(0, 'GV: Scroll did not cause an axis change',toc, 's')
+                end
+            case 'zoomScroll'
+                zoomRate=gbSetting('navigation.zoomRate') %to zoom out
+                if nScrolls<0
+                    zoomRate=1/zoomRate; %to zoom out
+                end
+                for ii=1:abs(nScrolls)
+                    obj.executeZoom(zoomRate) 
+                end
             end
-        end
+        end 
+
         
         %% ---Panning
         function formatKeyPanAndAddToQueue(obj, eventdata)
@@ -448,15 +460,21 @@ function hFigMain_ScrollWheel(~, eventdata, obj)
 
     goggleDebugTimingInfo(0, 'GV: WheelScroll event fired',toc, 's')
     
-    modifiers = get(obj.hFig,'currentModifier');      
-    
+    modifiers = get(obj.hFig,'currentModifier');          
+    %If user ctrl-scrolls we zoom instead of change z-level
+    if ismember('control',modifiers)    
+        fprintf('I am the zoom walrus.\nOr something like that.\n')
+        obj.executeScroll(eventdata.VerticalScrollCount,'zoomScroll');    
+        return
+    end
+
     p=gbSetting('navigation.scrollIncrement');
     if ismember('shift',modifiers);
         p=p(1);
     else
         p=p(2);
     end
-    obj.executeScroll(p*eventdata.VerticalScrollCount);
+    obj.executeScroll(p*eventdata.VerticalScrollCount,'zAxisScroll'); %scroll through z-stack
 
 end
 function adjustContrast(hContrastLim, ~, obj)
