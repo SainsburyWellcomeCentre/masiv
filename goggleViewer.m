@@ -223,7 +223,7 @@ classdef goggleViewer<handle
                     goggleDebugTimingInfo(0, 'GV: Scroll did not cause an axis change',toc, 's')
                 end
             case 'zoomScroll'
-                zoomRate=gbSetting('navigation.zoomRate') %to zoom out
+                zoomRate=gbSetting('navigation.zoomRate'); %to zoom out
                 if nScrolls<0
                     zoomRate=1/zoomRate; %to zoom out
                 end
@@ -463,7 +463,6 @@ function hFigMain_ScrollWheel(~, eventdata, obj)
     modifiers = get(obj.hFig,'currentModifier');          
     %If user ctrl-scrolls we zoom instead of change z-level
     if ismember('control',modifiers)    
-        fprintf('I am the zoom walrus.\nOr something like that.\n')
         obj.executeScroll(eventdata.VerticalScrollCount,'zoomScroll');    
         return
     end
