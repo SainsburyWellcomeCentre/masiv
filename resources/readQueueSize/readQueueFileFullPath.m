@@ -6,9 +6,11 @@ function fName = readQueueFileFullPath
 % at the same time. Thus we append the date and time to the
 % file name to create a unique file each time. 
 
+% TODO % Test on Windows and if it fails, put in a conditional for a Windows alternative to getenv
+
   fName=fullfile(tempdir,...
                  sprintf('goggleViewer_readqueue_%s.txt',...
-                         datestr(now,'yymmdd_HHMMSS')) );
+                         getenv('USER')) );
 
 
 end
