@@ -590,25 +590,6 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 markerCol=nodesWithinViewOfThisPlane(1).color;
                 
 
-
-                %% Eliminate markers not in the current x y view [WILL NOT WORK CURRENTLY]
-                doEliminate=0;
-                if doEliminate
-                    xView=obj.goggleViewer.mainDisplay.viewXLimOriginalCoords;
-                    yView=obj.goggleViewer.mainDisplay.viewYLimOriginalCoords;
-                
-                    inViewX=(markerX>=xView(1))&(markerX<=xView(2));
-                    inViewY=(markerY>=yView(1))&(markerY<=yView(2));
-                
-                    inViewIdx=inViewX&inViewY;
-                
-                    markerX=markerX(inViewIdx);
-                    markerY=markerY(inViewIdx);
-                    markerSz=markerSz(inViewIdx);
-                    markerCol=markerCol(inViewIdx,:);
-                end
-
-
                 %% Draw markers and lines 
                 obj.hDisplayedLines=plot(markerX , markerY, '-','color',markerCol(1,:), 'Tag', 'NeuriteTracer');
                 obj.hDisplayedMarkers=scatter(obj.goggleViewer.hImgAx, markerX , markerY, markerSz, markerCol, 'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracer');
