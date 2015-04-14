@@ -458,9 +458,11 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         
         function UIdeleteMarker(obj)
   
-            idx = findMarkerNearestToCursor(obj);
+            idx = findMarkerNearestToCursor(obj);            
             if ~isempty(idx)
-                obj.neuriteTrees{obj.currentTree} = obj.neuriteTrees{obj.currentTree}.removenode(idxToDelete);
+                obj.lastNode = obj.neuriteTrees{obj.currentTree}.Parent(obj.lastNode);
+
+                obj.neuriteTrees{obj.currentTree} = obj.neuriteTrees{obj.currentTree}.removenode(idx);
                 
                 obj.drawMarkers;
             end
