@@ -457,22 +457,30 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         end
         
         function UIdeleteMarker(obj)
-  
+            goggleDebugTimingInfo(2, 'Entering UIdeleteMarker',toc,'s')
+
             idx = findMarkerNearestToCursor(obj);
-            if length(obj.neuriteTrees{obj.currentTree}.getchildren(idx))>1
-                fprintf('Can Not Delete Branch Points!\n')
+            if isempty(idx)            
+                fprintf('No points in current z-depth.\n')
+                goggleDebugTimingInfo(2, 'Leaving UIdeleteMarker',toc,'s')
                 return
             end
-            if ~isempty(idx)
-                obj.lastNode = obj.neuriteTrees{obj.currentTree}.Parent(obj.lastNode);
-                obj.neuriteTrees{obj.currentTree} = obj.neuriteTrees{obj.currentTree}.removenode(idx);
-                
-                obj.drawMarkers;
+            if length(obj.neuriteTrees{obj.currentTree}.getchildren(idx))>1
+                fprintf('Can Not Delete Branch Points!\n')
+                goggleDebugTimingInfo(2, 'Leaving UIdeleteMarker',toc,'s')
+                return
             end
+
+            obj.lastNode = obj.neuriteTrees{obj.currentTree}.Parent(obj.lastNode);
+            obj.neuriteTrees{obj.currentTree} = obj.neuriteTrees{obj.currentTree}.removenode(idx);
+                
+            obj.drawMarkers;
+
             %% Update count
             obj.decrementMarkerCount(obj.currentType);
             %% Set change flag
             obj.changeFlag=1;
+            goggleDebugTimingInfo(2, 'Leaving UIdeleteMarker',toc,'s')
         end
         
         function drawMarkers(obj, ~, ~)
