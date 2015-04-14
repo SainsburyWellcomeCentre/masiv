@@ -94,9 +94,10 @@ classdef TVDownscaledStack<handle
                 error('File already exists on disk')
             end
             %% Write file locally first to prevent network transport errors
-            saveTiffStack(obj.I, 'tmp.tif', 'g');
+            tempFileName=fullfile(tempdir, 'tmp.tif');
+            saveTiffStack(obj.I, tempFileName, 'g');
             swb=SuperWaitBar(1, strrep(sprintf('Moving file in to place (%s)', obj.fileName), '_', '\_'));
-            movefile('tmp.tif', obj.fileName)
+            movefile(tempFileName, obj.fileName)
             swb.progress();delete(swb);clear swb
             writeObjToMetadataFile(obj)
         end
