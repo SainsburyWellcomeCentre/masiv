@@ -539,7 +539,6 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             hImgAx=obj.goggleViewer.hImgAx;
             prevhold=ishold(hImgAx);
             hold(hImgAx, 'on')
-            axes(hImgAx) %bring focus to main GUI axes
 
             goggleDebugTimingInfo(2, 'NeuriteTracer.drawMarkers: Beginning drawing',toc,'s')
             visibleNodes=nodes(visibleNodeIdx);
@@ -591,15 +590,20 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 
 
                 %% Draw markers and lines 
-                obj.hDisplayedLines=plot(markerX , markerY, '-','color',markerCol(1,:), 'Tag', 'NeuriteTracer');
-                obj.hDisplayedMarkers=scatter(obj.goggleViewer.hImgAx, markerX , markerY, markerSz, markerCol, 'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracer');
+                obj.hDisplayedLines=plot(hImgAx,markerX , markerY, '-','color',markerCol(1,:),...
+                    'Tag', 'NeuriteTracer','HitTest', 'off');
+                obj.hDisplayedMarkers=scatter(hImgAx, markerX , markerY, markerSz, markerCol,...
+                    'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracer');
       
+
                 %The marker that indicates where we will append
                 highlightNode = obj.neuriteTrees{obj.currentTree}.Node{obj.lastNode};  
-                obj.hHighlightedMarker = plot(highlightNode.xVoxel, highlightNode.yVoxel,...
-                'or', 'markersize',10,'linewidth',2,'Tag','LastNode'); %TODO: do not hard-code style here
 
-                %Might be a good idea to highlight the leaves in some way. 
+                lastNodeInd = find(pathIdxWithinViewOfThisPlane==obj.lastNode);%Find last node index so we can size it correctly
+                obj.hHighlightedMarker = plot(hImgAx,highlightNode.xVoxel, highlightNode.yVoxel,...
+                                              'or', 'markersize',markerSz(lastNodeInd)/15,...
+                                              'linewidth',2,...
+                                              'Tag','LastNode','HitTest', 'off'); 
 
                 %% Draw highlights on this plane if we're not too zoomed out                
                 %obj.drawMarkerHighlights; %UNCOMMENT FOR HIGHLIGHTS
@@ -635,11 +639,9 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
 
             if markerSz>=gbSetting('neuriteTracer.minimumSize')
-                axes(obj.goggleViewer.hImgAx) %bring focus to main GUI axes
-
-                obj.hDisplayedLinesHighlight=plot(markerX , markerY, '-',...
-                    'Color',obj.hDisplayedLines.Color,'LineWidth',2,'Tag', 'NeuriteTracer');
-                obj.hDisplayedMarkerHighlights=scatter(obj.goggleViewer.hImgAx, markerX , markerY, markerSz/4, [1 1 1],...
+                obj.hDisplayedLinesHighlight=plot(obj.goggleViewer.hImgAx,markerX , markerY, '-',...
+                    'Color',obj.hDisplayedLines.Color,'LineWidth',2,'Tag', 'NeuriteTracer','HitTest', 'off');
+                obj.hDisplayedMarkerHighlights=scatter(obj.goggleViewer.hImgAx,obj.goggleViewer.hImgAx, markerX , markerY, markerSz/4, [1 1 1],...
                  'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracerHighlights');
             end
         end
@@ -659,12 +661,11 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 hImgAx=obj.goggleViewer.hImgAx;
                 prevhold=ishold(hImgAx);
                 hold(hImgAx, 'on')
-                axes(hImgAx) %bring focus to main GUI axes
 
                 thisMarker = obj.neuriteTrees{obj.currentTree}.Node{idx};
 
-                obj.hHighlightedMarker = plot(thisMarker.xVoxel, thisMarker.yVoxel,...
-                  'or', 'markersize',10,'linewidth',2,'Tag','LastNode');  %TODO: do not hard-code style here
+                obj.hHighlightedMarker = plot(hImgAx,thisMarker.xVoxel, thisMarker.yVoxel,...
+                  'or', 'markersize',10,'linewidth',2,'Tag','LastNode','HitTest', 'off');  %TODO: do not hard-code style here
 
                 %% Restore hold state
                 if ~prevhold
