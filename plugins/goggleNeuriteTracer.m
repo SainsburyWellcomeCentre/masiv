@@ -610,7 +610,13 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 if ~isempty(find(paths{ii}==1))
                     rootNode = obj.neuriteTrees{obj.currentTree}.Node{1};
                     rootNodeInd = pathIdxWithinViewOfThisPlane(find(visibleIndInPath==1));
-                    mSize = markerSz(rootNodeInd)/5;
+                    try
+                        mSize = markerSz(rootNodeInd)/5;
+                    catch
+                        fprintf('INDEXING ERROR: CAN NOT FIND ROOT INDEX. GUESSING SIZE. FIX THIS SHIT.\n')
+                        mSize = max(markerSz)/5;
+                    end
+
                     if mSize<5 %TODO: do not hard-code this. 
                         mSize=5;
                     end
@@ -651,9 +657,14 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 %when stuff enters and leaves the z-plane
                 %obj.neuriteTraceHandles.hDisplayedLinesHighlight=plot(hImgAx,  markerX(f), markerY(f), '-',...
                 %    'Color',obj.neuriteTraceHandles.hDisplayedLines.Color,'LineWidth',2,'Tag', 'NeuriteTracer','HitTest', 'off');
-                
+                try
+
                 obj.neuriteTraceHandles.hDisplayedMarkerHighlights=scatter(hImgAx, markerX(f), markerY(f), markerSz(f)/4, [1,1,1],...
                     'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracerHighlights');
+               catch
+                fprintf('INDEXING ERROR FOR PLOT HIGHLIGHTS. FIX ME\n')
+            end
+
 
                 %TODO: highlight the leaves and root node
 
