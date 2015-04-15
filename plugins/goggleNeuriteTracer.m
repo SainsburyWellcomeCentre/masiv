@@ -4,7 +4,13 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
     % goggleNeuriteTracer
     %
     % Purpose 
-    % Implements a trakEM-style neurite tracer within goggleViewer. 
+    % goggleNeuriteTracer is a plugin for goggleViewer that implements 
+    % a trakEM-style neurite tracer. 
+    % The first point is the "root" node. It can have more than one child
+    % node but can not have a parent node. The point from which we will 
+    % "grow" is highlighted in red. This point can be moved by holding 
+    % down "ALT" and mousing over other points in the current depth 
+    % (highlighted by white dots). 
     %
     % 
     % REQUIRES:
@@ -381,8 +387,6 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             %a new branch is drawn 
             if ismember('alt',get(obj.goggleViewer.hFig,'currentModifier'))
                 highlightMarker(obj)
-            else
-                %delete(obj.hHighlightedMarker) %TODO: decide if we want to do this. For now we won't delete it as it marks the new branch point.
             end
         end    
 
@@ -407,6 +411,9 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             deleteRequest([],[], obj,1) %force quit
         end
         
+
+
+        %------------------------------------------------------------------------------------------
         %% Functions
         function UIaddMarker(obj)
             goggleDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Beginning',toc,'s')
@@ -489,55 +496,66 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             goggleDebugTimingInfo(2, 'Leaving UIdeleteMarker',toc,'s')
         end
         
-        function drawMarkers(obj, ~, ~)
-            
-            % delete(obj.hHighlightedMarker)  %TODO: maybe better location for this
 
-            if isempty(obj.neuriteTrees)
+
+        function drawMarkers(obj, ~, ~)
+        %The main marker-drawing function 
+
+            if isempty(obj.neuriteTrees) %If no neurite trees exist we do not attempt to draw
                 return
             end
 
+            %Clear markers from any previous draws
             goggleDebugTimingInfo(2, 'NeuriteTracer.drawMarkers: Beginning',toc,'s')
             obj.clearMarkers;
             goggleDebugTimingInfo(2, 'NeuriteTracer.drawMarkers: Markers cleared',toc,'s')
 
 
+
             %% Calculate position and size
+            nodes=[obj.neuriteTrees{obj.currentTree}.Node{:}]; %Get all nodes from the current tree (current neuron)
+            allMarkerZVoxel=[nodes.zVoxel]; %z depth of all points from this tree
+            allMarkerZRelativeToCurrentPlaneVoxels=abs(allMarkerZVoxel-obj.cursorZVoxels); %Difference between current depth and marker depth
+
+
+            %Check how many markers are visible from this depth. Remember that not in the current plane are likely 
+            %also visible. This will depend on the Z marker diameter setting. 
             zRadius=(gbSetting('neuriteTracer.markerDiameter.z')/2); 
+            idx=allMarkerZRelativeToCurrentPlaneVoxels<zRadius; %1s indicate visible and 0s not visible 
 
-            nodes=[obj.neuriteTrees{obj.currentTree}.Node{:}];
-
-            allMarkerZVoxel=[nodes.zVoxel];
-            
-            allMarkerZRelativeToCurrentPlaneVoxels=(abs(allMarkerZVoxel-obj.cursorZVoxels));
-
-
-            idx=allMarkerZRelativeToCurrentPlaneVoxels<zRadius; %1 if visible 
-            if ~any(idx)
+            if ~any(idx) %If no markers are visible from the current z-plane we leave the function 
                 return
             end
-            fprintf('Found %d markers within view of this z-plane. %d are in this z-plane.\n',...
-                length(idx), sum(allMarkerZRelativeToCurrentPlaneVoxels==0))
-            visibleNodeIdx = 1:length(nodes); 
-            visibleNodeIdx = visibleNodeIdx(idx); %index of visible nodes in all branches
 
-            goggleDebugTimingInfo(2, 'Found points in plane',toc,'s')
 
-            %Now keep only branches that have these marker indexes
-            leaves = obj.neuriteTrees{obj.currentTree}.findleaves;
+
+            msg=sprintf('Found %d markers within view of this z-plane. %d are in this z-plane.',...
+                            length(idx), sum(allMarkerZRelativeToCurrentPlaneVoxels==0));
+            goggleDebugTimingInfo(2, msg,toc,'s')
+
+
+            %Search all branches of the tree for nodes that cross the plane. 
+            %Note that the following search (tree.findpath method) traces back 
+            %each leaf to the root node. So there will be be many redundant points
+            %in each branch. Fixing this may speed up performance slightly for trees
+            %with many branches. 
+            leaves = obj.neuriteTrees{obj.currentTree}.findleaves; %all the leaves of the tree
             paths ={};
             n=1;
-            fprintf('Found %d leaves\n',length(leaves))
+            goggleDebugTimingInfo(2, sprintf('Found %d leaves',length(leaves)),toc,'s')
 
-            for ii=1:(length(leaves))
+            visibleNodeIdx = find(idx); %index of visible nodes in all branches 
+            for ii=1:length(leaves)
                 thisPath =  obj.neuriteTrees{obj.currentTree}.findpath(leaves(ii),1);
           
-                if ~isempty(mFind(thisPath,visibleNodeIdx))
-                    paths{n}=thisPath;
+                if ~isempty(mFind(thisPath,visibleNodeIdx)) %Does this branch contain indexes that are in this z-plane?
+                    paths{n}=thisPath; 
                     n=n+1;
                 end
             end
 
+            %Paths contains the indexes of all nodes in each branch that crosses this plane.
+            %Some nodes from a given branch may be out of plane and so not all should be plotted.
             if isempty(paths)
                 goggleDebugTimingInfo(2, 'No neurite paths cross this plane',toc,'s')
                 return
@@ -546,38 +564,35 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
 
 
-            % We now loop through and plot each branch
+            % The following loop goes through each candidate branch and finds and plots the points 
+            % visible to the current z-plane. 
             hImgAx=obj.goggleViewer.hImgAx;
             prevhold=ishold(hImgAx);
             hold(hImgAx, 'on')
 
             goggleDebugTimingInfo(2, 'NeuriteTracer.drawMarkers: Beginning drawing',toc,'s')
-            visibleNodes=nodes(visibleNodeIdx);
-            for ii=1:length(paths)
-                fprintf('Plotting path %d\n',ii)
 
+            for ii=1:length(paths)
+
+                goggleDebugTimingInfo(2, sprintf('Plotting path %d',ii),toc,'s')
                 %fprintf('All indexes in path: '), disp(paths{ii})
             
 
                 %node indexes from the *current* branch (path) that are visible in this z-plane
-                %This is flipped backward (high to low) because we'll likely be operating near 
-                %the tree's leaves not near the root
-                pathIdxWithinViewOfThisPlane=mFind(paths{ii},visibleNodeIdx);
+                visiblePathIdx=mFind(paths{ii},visibleNodeIdx) %Index values of points in the current path which are also visible nodes
+                visibleNodesInPathIdx=paths{ii}(visiblePathIdx) %Index values of nodes in the full tree which are also visible nodes
 
-                %The the actual node values so we can index the nodes from the full list of all nodes
-                visibleIndInPath=paths{ii}(pathIdxWithinViewOfThisPlane);
-                fprintf('Found visible %d nodes in current branch\n',length(visibleIndInPath))
+                visibleNodesInPath=nodes(visibleNodesInPathIdx); %Extract the visible nodes from the list of all nodes
+                visibleNodesInPathRelZ=allMarkerZRelativeToCurrentPlaneVoxels(visibleNodesInPathIdx); %The relative z-depths of these visible nodes
 
 
-                %Extract the visible nodes from the list of all nodes
-                nodesWithinViewOfThisPlane=nodes(visibleIndInPath);
+                goggleDebugTimingInfo(2, sprintf('Found visible %d nodes in current branch',length(visibleNodesInPathIdx)), toc, 's')
 
-                %TODO: check that we're not doing something silly with the indexes. I think I'm going around in circles in 
-                %      in the code below and indexing some things one way and other things another way. 
 
                 %embed into a nan vector to handle lines that leave and re-enter the plane
                 %this approach replaces points not to be plotted with nans.
-                markerInd = pathIdxWithinViewOfThisPlane-min(pathIdxWithinViewOfThisPlane)+1; %needed for when the root isn't visible
+                markerInd = (visiblePathIdx-min(visiblePathIdx)+1) %needed for when the root isn't visible
+                %markerInd = visibleNodesInPathIdx - min(visibleNodesInPathIdx)+1 %doing this stops the branches from linking with the parent
                 plotVectorLength=range(markerInd);
 
                 markerX=nan(1,plotVectorLength);
@@ -585,18 +600,18 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 markerZ=markerX;
                 markerSz=markerX;
 
-                markerX(markerInd)=[nodesWithinViewOfThisPlane.xVoxel];
-                markerY(markerInd)=[nodesWithinViewOfThisPlane.yVoxel];
-                markerZ(markerInd)=[nodesWithinViewOfThisPlane.zVoxel];                
+                markerX(markerInd)=[visibleNodesInPath.xVoxel];
+                markerY(markerInd)=[visibleNodesInPath.yVoxel];
+                markerZ(markerInd)=[visibleNodesInPath.zVoxel];                
 
                 
                 [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ);
-                markerRelZ=allMarkerZRelativeToCurrentPlaneVoxels(visibleIndInPath); 
 
-                markerSz(markerInd)=(gbSetting('neuriteTracer.markerDiameter.xy')*(1-markerRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
+
+                markerSz(markerInd)=(gbSetting('neuriteTracer.markerDiameter.xy')*(1-visibleNodesInPathRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
                 markerSz=max(markerSz, gbSetting('neuriteTracer.minimumSize'));
 
-                markerCol=nodesWithinViewOfThisPlane(1).color;
+                markerCol=visibleNodesInPath(1).color;
                 
 
                 %% Draw markers and lines 
@@ -609,11 +624,12 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 %Overlay a larger, different, symbol over the root node if it's visible
                 if ~isempty(find(paths{ii}==1))
                     rootNode = obj.neuriteTrees{obj.currentTree}.Node{1};
-                    rootNodeInd = pathIdxWithinViewOfThisPlane(find(visibleIndInPath==1));
+                    rootNodeInd = visiblePathIdx(find(visibleNodesInPathIdx==1));
                     try
                         mSize = markerSz(rootNodeInd)/5;
                     catch
-                        fprintf('INDEXING ERROR: CAN NOT FIND ROOT INDEX. GUESSING SIZE. FIX THIS SHIT.\n')
+                        msg=sprintf('INDEXING ERROR: CAN NOT FIND ROOT INDEX. GUESSING SIZE. FIX THIS SHIT.')
+                        goggleDebugTimingInfo(2, msg,toc,'s')
                         mSize = max(markerSz)/5;
                     end
 
@@ -633,25 +649,26 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     highlightNode = obj.neuriteTrees{obj.currentTree}.Node{obj.lastNode};
                     %Find last node index so we can size it correctly
                     %also check the indexing (see above) as it looks overly complicated. 
-                    lastNodeInd = pathIdxWithinViewOfThisPlane(find(visibleIndInPath==obj.lastNode));
+                    lastNodeInd = visiblePathIdx(find(visibleNodesInPathIdx==obj.lastNode));
                     if ~isempty(lastNodeInd)
                         obj.neuriteTraceHandles.hHighlightedMarker = plot(hImgAx, highlightNode.xVoxel, highlightNode.yVoxel,...
                                                   'or', 'markersize', markerSz(lastNodeInd)/15,...
                                                   'LineWidth', 2,...
                                                   'Tag','LastNode','HitTest', 'off'); 
                     else
-                        fprintf('Not plotting node append highlight for node %d.\n',obj.lastNode)
+                        msg=sprintf('Not plotting node append highlight for node %d.',obj.lastNode);
+                        goggleDebugTimingInfo(2, msg,toc,'s')
                     end
                 end
 
 
 
                 %% Draw highlights over points in the plane
-                if ~any(markerRelZ==0)
+                if ~any(visibleNodesInPathRelZ==0)
                     continue
                 end
 
-                f=pathIdxWithinViewOfThisPlane(find(markerRelZ==0));
+                f=visiblePathIdx(find(visibleNodesInPathRelZ==0));
 
                 %The following currently draws lines between points the shouldn't be joined
                 %when stuff enters and leaves the z-plane
@@ -662,7 +679,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 obj.neuriteTraceHandles.hDisplayedMarkerHighlights=scatter(hImgAx, markerX(f), markerY(f), markerSz(f)/4, [1,1,1],...
                     'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracerHighlights');
                catch
-                fprintf('INDEXING ERROR FOR PLOT HIGHLIGHTS. FIX ME\n')
+                msg=sprintf('INDEXING ERROR FOR PLOT HIGHLIGHTS. FIX ME');
+                goggleDebugTimingInfo(2, msg,toc,'s')
             end
 
 
@@ -750,6 +768,10 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             newCount=prevCount-1;
             obj.hCountIndicatorText(idx).String=sprintf('%u', newCount);
         end
+
+
+
+        %--------------------------------------------------------------------------------------
         %% Getters
         function type=get.currentType(obj)
             type=obj.markerTypes(obj.hMarkerButtonGroup.SelectedObject.UserData);
@@ -800,6 +822,9 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
     end
 end
 
+
+
+%------------------------------------------------------------------------------------------------------------------------
 %% Callbacks
 
 function deleteRequest(~, ~, obj, forceQuit)
