@@ -495,19 +495,23 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             obj.clearMarkers;
             goggleDebugTimingInfo(2, 'NeuriteTracer.drawMarkers: Markers cleared',toc,'s')
 
+
             %% Calculate position and size
             zRadius=(gbSetting('neuriteTracer.markerDiameter.z')/2); 
 
             nodes=[obj.neuriteTrees{obj.currentTree}.Node{:}];
 
             allMarkerZVoxel=[nodes.zVoxel];
-                
+            
             allMarkerZRelativeToCurrentPlaneVoxels=(abs(allMarkerZVoxel-obj.cursorZVoxels));
-                
+
+
             idx=allMarkerZRelativeToCurrentPlaneVoxels<zRadius; %1 if visible 
             if ~any(idx)
                 return
             end
+            fprintf('Found %d markers within view of this z-plane. %d are in this z-plane.\n',...
+                length(idx), sum(allMarkerZRelativeToCurrentPlaneVoxels==0))
             visibleNodeIdx = 1:length(nodes); 
             visibleNodeIdx = visibleNodeIdx(idx); %index of visible nodes in all branches
 
@@ -527,6 +531,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     n=n+1;
                 end
             end
+
             if isempty(paths)
                 goggleDebugTimingInfo(2, 'No neurite paths cross this plane',toc,'s')
                 return
@@ -613,6 +618,25 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     end
                 end
 
+
+
+                %% Draw highlights over points in the plane
+                if ~any(markerRelZ==0)
+                    continue
+                end
+
+                f=pathIdxWithinViewOfThisPlane(find(markerRelZ==0));
+
+                %The following currently draws lines between points the shouldn't be joined
+                %when stuff enters and leaves the z-plane
+                %obj.hDisplayedLinesHighlight=plot(hImgAx,  markerX(f), markerY(f), '-',...
+                %    'Color',obj.hDisplayedLines.Color,'LineWidth',2,'Tag', 'NeuriteTracer','HitTest', 'off');
+                
+                obj.hDisplayedMarkerHighlights=scatter(hImgAx, markerX(f), markerY(f), markerSz(f)/4, [1,1,1],...
+                    'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracerHighlights');
+
+                %TODO: highlight the leaves and root node
+
             end
 
 
@@ -624,32 +648,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
         end %function drawMarkers(obj, ~, ~)
         
-        function drawMarkerHighlights(obj) %TODO: tidy or move into main drawing function. 
-
-            allMarkerZVoxel=[obj.neuriteTrees.zVoxel];
-            allMarkerZRelativeToCurrentPlaneUnits=(abs(allMarkerZVoxel-obj.cursorZVoxels));
-
-            %% Draw spots within markers in this plane
-            markerInThisPlaneIdx=allMarkerZRelativeToCurrentPlaneUnits==0;
-            markersInThisPlane=obj.neuriteTrees(markerInThisPlaneIdx);
-            
-            markerX=[markersInThisPlane.xVoxel];
-            markerY=[markersInThisPlane.yVoxel];
-            markerZ=[markersInThisPlane.zVoxel];
-
-            if~isempty(markerX)
-                [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ);
-            end
-            markerSz=(gbSetting('neuriteTracer.markerDiameter.xy')*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels)^2;
 
 
-            if markerSz>=gbSetting('neuriteTracer.minimumSize')
-                obj.hDisplayedLinesHighlight=plot(obj.goggleViewer.hImgAx,markerX , markerY, '-',...
-                    'Color',obj.hDisplayedLines.Color,'LineWidth',2,'Tag', 'NeuriteTracer','HitTest', 'off');
-                obj.hDisplayedMarkerHighlights=scatter(obj.goggleViewer.hImgAx,obj.goggleViewer.hImgAx, markerX , markerY, markerSz/4, [1 1 1],...
-                 'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracerHighlights');
-            end
-        end
 
         
         function highlightMarker(obj)       
