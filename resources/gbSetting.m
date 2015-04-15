@@ -1,12 +1,22 @@
 function valOut=gbSetting(nm, val) %#ok<INUSD>
 %GBSETTING Gets or sets settings from a YAML prefs file
-persistent r fName
+persistent r fName fileInfo
+
 if isempty(r)
     fName=getPrefsFilePath();
     r=readSimpleYAML(fName);
+    fileInfo=dir(fName);
 end
     if nargin<2
         %% Read mode
+        %% Check the file hasn't been modified
+        newFileInfo=dir(fName);
+        if (numel(newFileInfo.date)~=numel(fileInfo.date)) || any(newFileInfo.date~=fileInfo.date)
+            %% And reload it if it has
+            r=readSimpleYAML(fName);
+            fileInfo=dir(fName);
+        end
+        %%
         if nargin<1||isempty(nm) % return all
             valOut=r;
         else
