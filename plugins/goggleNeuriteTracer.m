@@ -554,6 +554,26 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 end
             end
 
+            %sort the paths by length
+            [~,ind]=sort(cellfun(@length,paths),'descend');
+            paths=paths(ind);
+
+            %remove points from shorter paths that intersect with the longest path
+            %this should help reduce the number of plotted points somewhat.
+            for ii=2:length(paths)
+                [~,pathInd]=intersect(paths{ii},paths{1});
+
+                if length(pathInd)>1
+                    pathInd(end)=[];
+                end
+                if isempty(pathInd)
+                    continue
+                end
+                initialSize=length(paths{ii});
+                paths{ii}(pathInd)=[]; %trim
+                goggleDebugTimingInfo(2, sprintf('Trimmed path %d from %d to %d points',ii,initialSize,length(paths{ii})),toc,'s')
+            end
+
             %Paths contains the indexes of all nodes in each branch that crosses this plane.
             %Some nodes from a given branch may be out of plane and so not all should be plotted.
             if isempty(paths)
@@ -574,45 +594,49 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
             for ii=1:length(paths)
 
-                goggleDebugTimingInfo(2, sprintf('Plotting path %d',ii),toc,'s')
-                %fprintf('All indexes in path: '), disp(paths{ii})
-            
-
                 %node indexes from the *current* branch (path) that are visible in this z-plane
-                visiblePathIdx=mFind(paths{ii},visibleNodeIdx) %Index values of points in the current path which are also visible nodes
-                visibleNodesInPathIdx=paths{ii}(visiblePathIdx) %Index values of nodes in the full tree which are also visible nodes
+                %Note: any jumps in the indexing of visiblePathIdx indicate nodes that are not visible from the current plane.
+                visiblePathIdx=mFind(paths{ii},visibleNodeIdx);
+                if isempty(visiblePathIdx)
+                    continue %Do not proceed if no nodes are visible from this path
+                end
 
+                goggleDebugTimingInfo(2, sprintf('===> Plotting path %d',ii),toc,'s')
+
+                visibleNodesInPathIdx=paths{ii}(visiblePathIdx); %Index values of nodes in the full tree which are also visible nodes
+
+                %Now we can extract the visible nodes and their corresponding relative z positions
                 visibleNodesInPath=nodes(visibleNodesInPathIdx); %Extract the visible nodes from the list of all nodes
-                visibleNodesInPathRelZ=allMarkerZRelativeToCurrentPlaneVoxels(visibleNodesInPathIdx); %The relative z-depths of these visible nodes
-
+               
 
                 goggleDebugTimingInfo(2, sprintf('Found visible %d nodes in current branch',length(visibleNodesInPathIdx)), toc, 's')
 
 
                 %embed into a nan vector to handle lines that leave and re-enter the plane
                 %this approach replaces points not to be plotted with nans.
-                markerInd = (visiblePathIdx-min(visiblePathIdx)+1) %needed for when the root isn't visible
-                %markerInd = visibleNodesInPathIdx - min(visibleNodesInPathIdx)+1 %doing this stops the branches from linking with the parent
-                plotVectorLength=range(markerInd);
+                markerX = nan(1,length(paths{ii}));
+                markerY = nan(1,length(paths{ii}));
+                markerZ = nan(1,length(paths{ii}));
+                markerSz = nan(1,length(paths{ii}));
 
-                markerX=nan(1,plotVectorLength);
-                markerY=markerX;
-                markerZ=markerX;
-                markerSz=markerX;
+                %Make a vector that includes all numbers in the range of visiblePathIdx. e.g. if visiblePathIdx
+                %is [2,3,9,10] then markerInd will be [1,2,8,9] so that the middle 5 values remain as NaNs. 
+                markerInd = visiblePathIdx-min(visiblePathIdx)+1 ;
 
-                markerX(markerInd)=[visibleNodesInPath.xVoxel];
-                markerY(markerInd)=[visibleNodesInPath.yVoxel];
-                markerZ(markerInd)=[visibleNodesInPath.zVoxel];                
+                %Populate points that are visible with the correct values
+                markerX(markerInd) = [nodes(visibleNodesInPathIdx).xVoxel];
+                markerY(markerInd) = [nodes(visibleNodesInPathIdx).yVoxel];
+                markerZ(markerInd) = [nodes(visibleNodesInPathIdx).zVoxel];
 
-                
-                [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ);
+                [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ); %Shift coords in the event of a section being translation corrected
 
-
-                markerSz(markerInd)=(gbSetting('neuriteTracer.markerDiameter.xy')*(1-visibleNodesInPathRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
+                visibleNodesInPathRelZ=abs(markerZ-obj.cursorZVoxels);%relative z position of each node
+                markerSz=(gbSetting('neuriteTracer.markerDiameter.xy')*(1-visibleNodesInPathRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
                 markerSz=max(markerSz, gbSetting('neuriteTracer.minimumSize'));
 
-                markerCol=visibleNodesInPath(1).color;
-                
+                markerCol=nodes(1).color; %Get the tree's colour from the root node.
+
+
 
                 %% Draw markers and lines 
                 obj.neuriteTraceHandles.hDisplayedLines=plot(hImgAx,markerX , markerY, '-','color',markerCol(1,:),...
@@ -622,71 +646,54 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
       
 
                 %Overlay a larger, different, symbol over the root node if it's visible
-                if ~isempty(find(paths{ii}==1))
+                if ~isempty(find(visibleNodesInPathIdx==1))
                     rootNode = obj.neuriteTrees{obj.currentTree}.Node{1};
-                    rootNodeInd = visiblePathIdx(find(visibleNodesInPathIdx==1));
-                    try
-                        mSize = markerSz(rootNodeInd)/5;
-                    catch
-                        msg=sprintf('INDEXING ERROR: CAN NOT FIND ROOT INDEX. GUESSING SIZE. FIX THIS SHIT.')
-                        goggleDebugTimingInfo(2, msg,toc,'s')
-                        mSize = max(markerSz)/5;
-                    end
+                    rootNodeInd = find(visibleNodesInPathIdx==1);
 
+                    mSize = markerSz(rootNodeInd)/5;
                     if mSize<5 %TODO: do not hard-code this. 
                         mSize=5;
                     end
-                    if ~isempty(rootNodeInd)
-                        obj.neuriteTraceHandles.hRootNode = plot(hImgAx, rootNode.xVoxel, rootNode.yVoxel, 'd',...
+
+                    obj.neuriteTraceHandles.hRootNode = plot(hImgAx, rootNode.xVoxel, rootNode.yVoxel, 'd',...
                         'markersize', mSize, 'color', 'w', 'markerfacecolor',rootNode.color,...
                         'Tag', 'NeuriteTracer','HitTest', 'off', 'LineWidth', median(markerSz)/75);
-                    end
-                end
+                 end
+
+ 
 
                 %If the node append highlight is on the current branch, we attempt to plot it
-                if ~isempty(find(paths{ii}==obj.lastNode))
-                    %The marker that indicates where we will append. 
-                    highlightNode = obj.neuriteTrees{obj.currentTree}.Node{obj.lastNode};
-                    %Find last node index so we can size it correctly
-                    %also check the indexing (see above) as it looks overly complicated. 
-                    lastNodeInd = visiblePathIdx(find(visibleNodesInPathIdx==obj.lastNode));
-                    if ~isempty(lastNodeInd)
-                        obj.neuriteTraceHandles.hHighlightedMarker = plot(hImgAx, highlightNode.xVoxel, highlightNode.yVoxel,...
-                                                  'or', 'markersize', markerSz(lastNodeInd)/15,...
-                                                  'LineWidth', 2,...
-                                                  'Tag','LastNode','HitTest', 'off'); 
-                    else
-                        msg=sprintf('Not plotting node append highlight for node %d.',obj.lastNode);
-                        goggleDebugTimingInfo(2, msg,toc,'s')
-                    end
-                end
+                if ~isempty(find(visibleNodesInPathIdx==obj.lastNode))
+                    highlightNode = obj.neuriteTrees{obj.currentTree}.Node{obj.lastNode}; %The highlighted node
 
+                    %Get the size of the node 
+                    lastNodeInd = find(visibleNodesInPathIdx==obj.lastNode);
+
+                    mSize = markerSz(lastNodeInd)/10;
+                    if mSize<5
+                        mSize=5;
+                    end
+
+                    obj.neuriteTraceHandles.hHighlightedMarker = plot(hImgAx, highlightNode.xVoxel, highlightNode.yVoxel,...
+                                                  'or', 'markersize', mSize, 'LineWidth', 2,...
+                                                  'Tag','LastNode','HitTest', 'off'); 
+                end
 
 
                 %% Draw highlights over points in the plane
-                if ~any(visibleNodesInPathRelZ==0)
-                    continue
+                if any(visibleNodesInPathRelZ==0)
+                    f=find(visibleNodesInPathRelZ==0);
+
+                    %The following currently draws lines between points the shouldn't be joined
+                    %when stuff enters and leaves the z-plane
+                    %obj.neuriteTraceHandles.hDisplayedLinesHighlight=plot(hImgAx,  markerX(f), markerY(f), '-',...
+                    %    'Color',obj.neuriteTraceHandles.hDisplayedLines.Color,'LineWidth',2,'Tag', 'NeuriteTracer','HitTest', 'off');
+                    obj.neuriteTraceHandles.hDisplayedMarkerHighlights=scatter(hImgAx, markerX(f), markerY(f), markerSz(f)/4, [1,1,1],...
+                            'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracerHighlights');
+
                 end
 
-                f=visiblePathIdx(find(visibleNodesInPathRelZ==0));
-
-                %The following currently draws lines between points the shouldn't be joined
-                %when stuff enters and leaves the z-plane
-                %obj.neuriteTraceHandles.hDisplayedLinesHighlight=plot(hImgAx,  markerX(f), markerY(f), '-',...
-                %    'Color',obj.neuriteTraceHandles.hDisplayedLines.Color,'LineWidth',2,'Tag', 'NeuriteTracer','HitTest', 'off');
-                try
-
-                obj.neuriteTraceHandles.hDisplayedMarkerHighlights=scatter(hImgAx, markerX(f), markerY(f), markerSz(f)/4, [1,1,1],...
-                    'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracerHighlights');
-               catch
-                msg=sprintf('INDEXING ERROR FOR PLOT HIGHLIGHTS. FIX ME');
-                goggleDebugTimingInfo(2, msg,toc,'s')
-            end
-
-
-                %TODO: highlight the leaves and root node
-
-            end
+            end %close paths{ii} loop
 
 
             goggleDebugTimingInfo(2, 'NeuriteTracer.drawMarkers: Drawing complete',toc,'s')
