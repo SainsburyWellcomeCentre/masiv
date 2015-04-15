@@ -484,8 +484,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         end
         
         function drawMarkers(obj, ~, ~)
-            disp('hello')
-           % delete(obj.hHighlightedMarker)  %TODO: maybe better location for this
+            
+            % delete(obj.hHighlightedMarker)  %TODO: maybe better location for this
 
             if isempty(obj.neuriteTrees)
                 return
@@ -596,17 +596,22 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracer');
       
 
-                %The marker that indicates where we will append
-                highlightNode = obj.neuriteTrees{obj.currentTree}.Node{obj.lastNode};  
-
-                lastNodeInd = find(pathIdxWithinViewOfThisPlane==obj.lastNode);%Find last node index so we can size it correctly
-                obj.hHighlightedMarker = plot(hImgAx,highlightNode.xVoxel, highlightNode.yVoxel,...
-                                              'or', 'markersize',markerSz(lastNodeInd)/15,...
-                                              'linewidth',2,...
-                                              'Tag','LastNode','HitTest', 'off'); 
-
-                %% Draw highlights on this plane if we're not too zoomed out                
-                %obj.drawMarkerHighlights; %UNCOMMENT FOR HIGHLIGHTS
+                %If the node append highlight is on the current branch, we attempt to plot it
+                if ~isempty(find(paths{ii}==obj.lastNode))
+                    %The marker that indicates where we will append. 
+                    highlightNode = obj.neuriteTrees{obj.currentTree}.Node{obj.lastNode};
+                    %Find last node index so we can size it correctly
+                    %also check the indexing (see above) as it looks overly complicated. 
+                    lastNodeInd = pathIdxWithinViewOfThisPlane(find(visibleIndInPath==obj.lastNode));
+                    if ~isempty(lastNodeInd)
+                        obj.hHighlightedMarker = plot(hImgAx,highlightNode.xVoxel, highlightNode.yVoxel,...
+                                                  'or', 'markersize',markerSz(lastNodeInd)/15,...
+                                                  'linewidth',2,...
+                                                  'Tag','LastNode','HitTest', 'off'); 
+                    else
+                        fprintf('Not plotting node append highlight for node %d.\n',obj.lastNode)
+                    end
+                end
 
             end
 
