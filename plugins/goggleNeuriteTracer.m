@@ -588,15 +588,14 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 markerRelZ=allMarkerZRelativeToCurrentPlaneVoxels(visibleIndInPath); 
 
                 markerSz(markerInd)=(gbSetting('neuriteTracer.markerDiameter.xy')*(1-markerRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
-                markerSz=max(markerSz, gbSetting('neuriteTracer.minimumSize')); 
-                
+                markerSz=max(markerSz, gbSetting('neuriteTracer.minimumSize'));
 
                 markerCol=nodesWithinViewOfThisPlane(1).color;
                 
 
                 %% Draw markers and lines 
                 obj.hDisplayedLines=plot(hImgAx,markerX , markerY, '-','color',markerCol(1,:),...
-                    'Tag', 'NeuriteTracer','HitTest', 'off');
+                    'Tag', 'NeuriteTracer','HitTest', 'off', 'LineWidth', median(markerSz)/75);
                 obj.hDisplayedMarkers=scatter(hImgAx, markerX , markerY, markerSz, markerCol,...
                     'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracer');
       
