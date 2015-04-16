@@ -559,18 +559,40 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
             %remove points from shorter paths that intersect with the longest path
             %this should help reduce the number of plotted points somewhat.
-            for ii=2:length(paths)
-                [~,pathInd]=intersect(paths{ii},paths{1});
 
-                if length(pathInd)>1
-                    pathInd(end)=[];
+            xView=obj.goggleViewer.mainDisplay.viewXLimOriginalCoords;
+            yView=obj.goggleViewer.mainDisplay.viewYLimOriginalCoords;
+            for ii=length(paths):-1:1
+
+                if ii>1
+                    [~,pathInd]=intersect(paths{ii},paths{1});
+
+                    if length(pathInd)>1
+                        pathInd(end)=[];
+                    end
+                    
+                    initialSize=length(paths{ii});
+                    paths{ii}(pathInd)=[]; %trim
                 end
-                if isempty(pathInd)
-                    continue
+
+                %remove points not in view. 
+                if 1 %keep in if statement for now to thoroughly test it
+                    x=[nodes(paths{ii}).xVoxel];
+                    y=[nodes(paths{ii}).yVoxel];
+                    
+                    inViewX=(x>=xView(1))&(x<=xView(2));
+                    inViewY=(y>=yView(1))&(y<=yView(2));
+
+                    notInView = ~(inViewY & inViewX);
+                    paths{ii}(notInView)=[];
+
                 end
-                initialSize=length(paths{ii});
-                paths{ii}(pathInd)=[]; %trim
+
                 goggleDebugTimingInfo(2, sprintf('Trimmed path %d from %d to %d points',ii,initialSize,length(paths{ii})),toc,'s')
+                if isempty(paths{ii})
+                    paths(ii)=[];
+                end
+
             end
 
             %Paths contains the indexes of all nodes in each branch that crosses this plane.
@@ -670,11 +692,13 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                             lineType='--';
                         elseif z<nodes(childNodes(c)).zVoxel;
                             lineType=':';
-                        elseif z==nodes(childNodes(c)).zVoxel; %I believe this should be impossible. But of course it still happens... [16/04/15 - RAAC]
-                            lineType='-.';
+                        elseif z==nodes(childNodes(c)).zVoxel; %may be a point outside of the plot area and on the same layer
+                            lineType='-';
                         end
                         plot(hImgAx, x,y,lineType,'Tag', 'NeuriteTracer','HitTest', 'off','Color',markerCol); %note, these are cleared by virtue of the tag. No handle is needed.
-                        text(x(2),y(2),['Z:',num2str(nodes(childNodes(c)).zVoxel)],'Color',markerCol,'tag','NeuriteTracer','HitTest', 'off') %TODO: target to axes?
+                        if ~strcmp(lineType,'-')
+                            text(x(2),y(2),['Z:',num2str(nodes(childNodes(c)).zVoxel)],'Color',markerCol,'tag','NeuriteTracer','HitTest', 'off') %TODO: target to axes?
+                        end
                     end
                 end
 
@@ -696,13 +720,13 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
                 %Now we add the line leading into the first point from a different layer, if this point is not the root node
                 if 0 %Doesn't work yet!
-                firstInd=find(~isnan(markerX));
-                firstInd=firstInd(end);
-                L=visibleNodesInPathIdx(end)
-                parentNode=obj.neuriteTrees{obj.currentTree}.getparent(L);
-                nodes(parentNode).zVoxel %hmmm... seems wrong
-                plot(hImgAx, markerX(firstInd),markerY(firstInd),'xw','markerfacecolor',markerCol,'linewidth',lWidth,'HitTest', 'off','Tag','NeuriteTracer','MarkerSize',mSize) 
-            end
+                    firstInd=find(~isnan(markerX));
+                    firstInd=firstInd(end);
+                    L=visibleNodesInPathIdx(end)
+                    parentNode=obj.neuriteTrees{obj.currentTree}.getparent(L);
+                    nodes(parentNode).zVoxel %hmmm... seems wrong
+                    plot(hImgAx, markerX(firstInd),markerY(firstInd),'xw','markerfacecolor',markerCol,'linewidth',lWidth,'HitTest', 'off','Tag','NeuriteTracer','MarkerSize',mSize) 
+                end
             
 
                 %Overlay a larger, different, symbol over the root node if it's visible
