@@ -586,10 +586,16 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             % The following loop goes through each candidate branch and finds and plots the points 
             % visible to the current z-plane. 
             hImgAx=obj.goggleViewer.hImgAx;
+
             prevhold=ishold(hImgAx);
             hold(hImgAx, 'on')
 
             goggleDebugTimingInfo(2, 'NeuriteTracer.drawMarkers: Beginning drawing',toc,'s')
+
+            %Extract some constants here that we don't need to recalculate each time time in the loop
+            markerDimXY=gbSetting('neuriteTracer.markerDiameter.xy');
+            markerMinSize=gbSetting('neuriteTracer.minimumSize');
+            markerCol=nodes(1).color; %Get the tree's colour from the root node.
 
             for ii=1:length(paths)
 
@@ -630,10 +636,10 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ); %Shift coords in the event of a section being translation corrected
 
                 visibleNodesInPathRelZ=abs(markerZ-obj.cursorZVoxels);%relative z position of each node
-                markerSz=(gbSetting('neuriteTracer.markerDiameter.xy')*(1-visibleNodesInPathRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
-                markerSz=max(markerSz, gbSetting('neuriteTracer.minimumSize'));
+                markerSz=(markerDimXY*(1-visibleNodesInPathRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
+                markerSz=max(markerSz, markerMinSize);
 
-                markerCol=nodes(1).color; %Get the tree's colour from the root node.
+
 
 
 
@@ -676,7 +682,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 %Make leaves have a triangle
                 if ~isempty(find(leaves==visibleNodesInPathIdx(end)))   
                     leafNode=visibleNodesInPathIdx(end);
-                    mSize = markerSz(1)/8;
+                    mSize = markerSz(1)/10;
                     if mSize<5 %TODO: do not hard-code this. 
                         mSize=5;
                     end
@@ -729,6 +735,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
                 end
 
+
                 %If the node append highlight is on the current branch, we attempt to plot it
                 if ~isempty(find(visibleNodesInPathIdx==obj.lastNode))
                     goggleDebugTimingInfo(2, sprintf('Plotting node highlighter on path %d',ii), toc, 's')
@@ -740,7 +747,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
                     %Calculate marker size. (WE NEED A BETTER WAY OF DOING THIS. TOO CONFUSING NOW)
                     lastNodeRelZ=abs(highlightNode.zVoxel-obj.cursorZVoxels);
-                    mSize=(gbSetting('neuriteTracer.markerDiameter.xy')*(1-lastNodeRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
+                    mSize=(markerDimXY*(1-lastNodeRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
                     mSize = mSize/10;
                     if mSize<5
                         mSize=7;
@@ -762,7 +769,6 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             if ~prevhold
                 hold(hImgAx, 'off')
             end
-
         end %function drawMarkers(obj, ~, ~)
         
 
@@ -770,29 +776,23 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
         
         function highlightMarker(obj)       
-            delete(obj.neuriteTraceHandles.hHighlightedMarker)
+            tic
+
             idx = findMarkerNearestToCursor(obj);
             if isempty(idx)
                 return
             else
-                %Now we set the last node to be the highlighted node. This will allow simple branching. 
+                %Now we set the last node to be the highlighted node. Allows for branching.
                 obj.lastNode=idx;
             end
 
-            if 0 %Temporary for debugging
-                hImgAx=obj.goggleViewer.hImgAx;
-                prevhold=ishold(hImgAx);
-                hold(hImgAx, 'on')
 
+            lastNodeObj = findobj(obj.goggleViewer.hImgAx, 'Tag', 'LastNode') ;
+            verbose=0;
+            if ~isempty(lastNodeObj)
                 thisMarker = obj.neuriteTrees{obj.currentTree}.Node{idx};
-
-                obj.neuriteTraceHandles.hHighlightedMarker = plot(hImgAx,thisMarker.xVoxel, thisMarker.yVoxel,...
-                  'or', 'markersize',10,'linewidth',2,'Tag','LastNode','HitTest', 'off');  %TODO: do not hard-code style here
-
-                %% Restore hold state
-                if ~prevhold
-                    hold(hImgAx, 'off')
-                end
+                set(obj.neuriteTraceHandles.hHighlightedMarker, 'XData', thisMarker.xVoxel, 'YData', thisMarker.yVoxel);
+                if verbose, goggleDebugTimingInfo(2, 'Moved lastnode marker',toc,'s'), end
             else
                 drawMarkers(obj)
             end
