@@ -205,7 +205,7 @@ classdef goggleViewer<handle
             if obj.numScrolls~=0
                 p=obj.numScrolls;
                 obj.numScrolls=0;
-                obj.executeScroll(p)
+                obj.executeScroll(p,'zAxisScroll')
             end
         end
         
