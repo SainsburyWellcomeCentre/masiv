@@ -262,8 +262,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 'hDisplayedMarkerHighlights',[],...
                 'hDisplayedLinesHighlight',[],...
                 'hHighlightedMarker',[],...
-                'hRootNode',[],...
-                'hLeaves',[]);
+                'hRootNode',[]);
         end
         
         %% Set up markers
@@ -638,12 +637,64 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
 
 
-                %% Draw markers and lines 
-                obj.neuriteTraceHandles.hDisplayedLines=plot(hImgAx,markerX , markerY, '-','color',markerCol(1,:),...
+                %% Draw basic markers and lines 
+                obj.neuriteTraceHandles.hDisplayedLines=plot(hImgAx,markerX , markerY, '-','color',markerCol,...
                     'Tag', 'NeuriteTracer','HitTest', 'off', 'LineWidth', median(markerSz)/75);
                 obj.neuriteTraceHandles.hDisplayedMarkers=scatter(hImgAx, markerX , markerY, markerSz, markerCol,...
                     'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracer');
-      
+
+
+                %Points that are not the root or leaves should all have at least one parent and child. 
+                %These may not be be drawn, however, if a parent or child is very far away from the current
+                %Z-plane. It would be helpful for the user to know where these out of plane connections are 
+                %and to indicate if they are above or below. 
+
+                %Let's start by appending an extra line to all terminal nodes in the current layer that are not leaves
+                if isempty(find(leaves==visibleNodesInPathIdx(end)))
+                    lastNode=visibleNodesInPathIdx(end);
+                    x=nodes(lastNode).xVoxel;
+                    y=nodes(lastNode).yVoxel;
+                    z=nodes(lastNode).zVoxel;
+                    childNodes=obj.neuriteTrees{obj.currentTree}.getchildren(lastNode);
+                    for c=1:length(childNodes)
+                        x(2)=nodes(childNodes(c)).xVoxel;
+                        y(2)=nodes(childNodes(c)).yVoxel;
+                        if z>nodes(childNodes(c)).zVoxel;
+                            lineType='--';
+                        elseif z<nodes(childNodes(c)).zVoxel;
+                            lineType=':';
+                        end
+                        plot(x,y,lineType,'Tag', 'NeuriteTracer','HitTest', 'off','Color',markerCol); %note, these are cleared by virtue of the tag. No handle is needed.
+                        text(x(2),y(2),['Z:',num2str(nodes(childNodes(c)).zVoxel)],'Color',markerCol,'tag','NeuriteTracer','HitTest', 'off')
+                    end
+                end
+
+
+                %Make leaves have a triangle
+                if ~isempty(find(leaves==visibleNodesInPathIdx(end)))   
+                    leafNode=visibleNodesInPathIdx(end);
+                    mSize = markerSz(1)/8;
+                    if mSize<5 %TODO: do not hard-code this. 
+                        mSize=5;
+                    end
+                    if mSize>10 %TODO: hard-coded horribleness
+                        lWidth=2;
+                    else
+                        lWidth=1;
+                    end
+                    plot(markerX(1),markerY(1),'^w','markerfacecolor',markerCol,'linewidth',lWidth,'HitTest', 'off','Tag','NeuriteTracer','MarkerSize',mSize) 
+                end
+
+                %Now we add the line leading into the first point from a different layer, if this point is not the root node
+                if 0 %Doesn't work yet!
+                firstInd=find(~isnan(markerX));
+                firstInd=firstInd(end);
+                L=visibleNodesInPathIdx(end)
+                parentNode=obj.neuriteTrees{obj.currentTree}.getparent(L);
+                nodes(parentNode).zVoxel %hmmm... seems wrong
+                plot(markerX(firstInd),markerY(firstInd),'xw','markerfacecolor',markerCol,'linewidth',lWidth,'HitTest', 'off','Tag','NeuriteTracer','MarkerSize',mSize) 
+            end
+            
 
                 %Overlay a larger, different, symbol over the root node if it's visible
                 if ~isempty(find(visibleNodesInPathIdx==1))
@@ -656,7 +707,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     end
 
                     obj.neuriteTraceHandles.hRootNode = plot(hImgAx, rootNode.xVoxel, rootNode.yVoxel, 'd',...
-                        'markersize', mSize, 'color', 'w', 'markerfacecolor',rootNode.color,...
+                        'MarkerSize', mSize, 'color', 'w', 'MarkerFaceColor',rootNode.color,...
                         'Tag', 'NeuriteTracer','HitTest', 'off', 'LineWidth', median(markerSz)/75);
                  end
 
@@ -692,6 +743,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                             'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracerHighlights');
 
                 end
+
 
             end %close paths{ii} loop
 
