@@ -558,14 +558,20 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             paths=paths(ind);
 
             %remove points from shorter paths that intersect with the longest path
-            %this should help reduce the number of plotted points somewhat.
-
+            %and points outside of the frame. 
             xView=obj.goggleViewer.mainDisplay.viewXLimOriginalCoords;
             yView=obj.goggleViewer.mainDisplay.viewYLimOriginalCoords;
             for ii=length(paths):-1:1
 
                 if ii>1
                     [~,pathInd]=intersect(paths{ii},paths{1});
+
+                    %Do not remove if it's the root node only. This would
+                    %indicate a branch off the root node and it won't be
+                    %joined to the root node if remove it
+                    if length(pathInd)==1 & paths{ii}(pathInd)==1
+                        pathInd=[];
+                    end
 
                     if length(pathInd)>1
                         pathInd(end)=[];
@@ -583,8 +589,9 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     inViewX=(x>=xView(1))&(x<=xView(2));
                     inViewY=(y>=yView(1))&(y<=yView(2));
 
-                    notInView = ~(inViewY & inViewX);
-                    paths{ii}(notInView)=[];
+                    if all(~(inViewY & inViewX))
+                        paths{ii}=[]; %remove branch if none of its nodes are visible
+                    end
 
                 end
 
@@ -619,7 +626,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             markerMinSize=gbSetting('neuriteTracer.minimumSize');
             markerCol=nodes(1).color; %Get the tree's colour from the root node.
 
-            for ii=1:length(paths)
+            for ii=1:length(paths) %Main drawing loop
 
                 %node indexes from the *current* branch (path) that are visible in this z-plane
                 %Note: any jumps in the indexing of visiblePathIdx indicate nodes that are not visible from the current plane.
@@ -687,20 +694,70 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     for c=1:length(childNodes)
                         x(2)=nodes(childNodes(c)).xVoxel;
                         y(2)=nodes(childNodes(c)).yVoxel;
+                        cZ=nodes(childNodes(c)).zVoxel;
 
-                        if z>nodes(childNodes(c)).zVoxel;
+                        if z>cZ
                             lineType='--';
-                        elseif z<nodes(childNodes(c)).zVoxel;
+                        elseif z<cZ
                             lineType=':';
-                        elseif z==nodes(childNodes(c)).zVoxel; %may be a point outside of the plot area and on the same layer
+                        elseif z==cZ %Just in case there is a point outside of the plot area and on the same layer
                             lineType='-';
                         end
                         plot(hImgAx, x,y,lineType,'Tag', 'NeuriteTracer','HitTest', 'off','Color',markerCol); %note, these are cleared by virtue of the tag. No handle is needed.
                         if ~strcmp(lineType,'-')
-                            text(x(2),y(2),['Z:',num2str(nodes(childNodes(c)).zVoxel)],'Color',markerCol,'tag','NeuriteTracer','HitTest', 'off') %TODO: target to axes?
+                            %TODO block plotting if outside of the view
+                            text(x(2),y(2),['Z:',num2str(nodes(childNodes(c)).zVoxel)],...
+                            'Color',markerCol,'tag','NeuriteTracer','HitTest', 'off') %TODO: target to axes?
                         end
                     end
                 end
+                %Now we do the corresponding thing for points that are drawn without parents and are not the root node
+                %The following fails if a dips out of the plane then comes back in. 
+                %Only the first node has the dotted or dashed line. The middle one gets nothing.
+                if 1 %so we can disable until it has been tested thoughoughly
+
+                    f=find(~isnan(markerX));
+                    firstInd=f(end);
+
+                    x=markerX(firstInd);
+                    y=markerY(firstInd);
+                    z=markerZ(firstInd);
+
+                    L=visibleNodesInPathIdx(1); %first node %TODO: this simple indexing really always works?? 
+                    parentNode=obj.neuriteTrees{obj.currentTree}.getparent(L);
+                    pZ=nodes(parentNode).zVoxel;
+
+                    %firstInd is the correct index in markerX/Y but we should only draw the line if
+                    %the parent point is in a different depth or out of the field. The reason we need
+                    %this test here and didn't for non-leaf terminal nodes because we've trimmed the 
+                    %early part of some branches. 
+                    %text(x, y, num2str(ii),'Color','r','HitTest', 'off','Tag','NeuriteTracer')
+
+                    if abs(pZ - obj.cursorZVoxels)>zRadius
+                        x(2)=nodes(parentNode).xVoxel;
+                        y(2)=nodes(parentNode).yVoxel;
+                        
+                        if z>pZ
+                            lineType='--';
+                        elseif z<pZ
+                            lineType=':';
+                        elseif z==pZ
+                            lineType='-';
+                        end
+                        mSize=10;
+                        plot(hImgAx, x, y, lineType,'Color',markerCol,...
+                                'HitTest', 'off','Tag','NeuriteTracer')
+                        if ~strcmp(lineType,'-')
+                            %TODO block plotting if outside of the view
+                            text(x(2),y(2),['Z:',num2str(nodes(parentNode).zVoxel)],'Color',markerCol,'tag','NeuriteTracer','HitTest', 'off') %TODO: target to axes?
+                        end
+                    end
+
+                   
+                   
+                end
+            
+
 
 
                 %Make leaves have a triangle
@@ -718,16 +775,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     plot(hImgAx, markerX(1),markerY(1),'^w','markerfacecolor',markerCol,'linewidth',lWidth,'HitTest', 'off','Tag','NeuriteTracer','MarkerSize',mSize) 
                 end
 
-                %Now we add the line leading into the first point from a different layer, if this point is not the root node
-                if 0 %Doesn't work yet!
-                    firstInd=find(~isnan(markerX));
-                    firstInd=firstInd(end);
-                    L=visibleNodesInPathIdx(end)
-                    parentNode=obj.neuriteTrees{obj.currentTree}.getparent(L);
-                    nodes(parentNode).zVoxel %hmmm... seems wrong
-                    plot(hImgAx, markerX(firstInd),markerY(firstInd),'xw','markerfacecolor',markerCol,'linewidth',lWidth,'HitTest', 'off','Tag','NeuriteTracer','MarkerSize',mSize) 
-                end
-            
+                
 
                 %Overlay a larger, different, symbol over the root node if it's visible
                 if ~isempty(find(visibleNodesInPathIdx==1))
