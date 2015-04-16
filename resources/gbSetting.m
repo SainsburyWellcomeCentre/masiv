@@ -89,6 +89,7 @@ end
 
 function [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo)
  %% Check the file hasn't been modified
+        fName=getPrefsFilePath();
         newFileInfo=dir(fName);
         if (numel(newFileInfo.date)~=numel(fileInfo.date)) || any(newFileInfo.date~=fileInfo.date)
             %% And reload it if it has
