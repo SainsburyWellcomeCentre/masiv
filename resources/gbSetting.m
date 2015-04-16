@@ -3,20 +3,14 @@ function valOut=gbSetting(nm, val) %#ok<INUSD>
 persistent r fName fileInfo
 
 if isempty(r)
-    fName=getPrefsFilePath();
-    r=readSimpleYAML(fName);
-    fileInfo=dir(fName);
+    [r, fName, fileInfo]=doInitialReadOfSettingsFile();
 end
+    
     if nargin<2
         %% Read mode
-        %% Check the file hasn't been modified
-        newFileInfo=dir(fName);
-        if (numel(newFileInfo.date)~=numel(fileInfo.date)) || any(newFileInfo.date~=fileInfo.date)
-            %% And reload it if it has
-            r=readSimpleYAML(fName);
-            fileInfo=dir(fName);
-        end
-        %%
+       
+        [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo);
+
         if nargin<1||isempty(nm) % return all
             valOut=r;
         else
@@ -24,6 +18,9 @@ end
         end
     else
         %% Write mode
+        
+        [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo);
+        
         eval(sprintf('r.%s=val;', nm));
         writeSimpleYAML(r, fName);
        
@@ -31,6 +28,13 @@ end
     
     
 end
+
+function [r, fName, fileInfo]=doInitialReadOfSettingsFile()
+    fName=getPrefsFilePath();
+    r=readSimpleYAML(fName);
+    fileInfo=dir(fName);
+end
+
 function fName=getPrefsFilePath()
     fName=which('gogglePrefs.yml');
     if isempty(fName)
@@ -81,4 +85,14 @@ function createDefaultPrefsFile()
     
     writeSimpleYAML(s, fullfile(baseDir, 'gogglePrefs.yml'));
     
+end
+
+function [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo)
+ %% Check the file hasn't been modified
+        newFileInfo=dir(fName);
+        if (numel(newFileInfo.date)~=numel(fileInfo.date)) || any(newFileInfo.date~=fileInfo.date)
+            %% And reload it if it has
+            r=readSimpleYAML(fName);
+            fileInfo=dir(fName);
+        end
 end
