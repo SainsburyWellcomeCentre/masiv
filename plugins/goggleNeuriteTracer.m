@@ -639,7 +639,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
                 %% Draw basic markers and lines 
                 obj.neuriteTraceHandles.hDisplayedLines=plot(hImgAx, markerX , markerY, '-','color',markerCol,...
-                    'Tag', 'NeuriteTracer','HitTest', 'off', 'LineWidth', median(markerSz)/75);
+                    'Tag', 'NeuriteTracer','HitTest', 'off');% 'LineWidth', median(markerSz)/75); %COMMENT OUT TEMPORARILY [16/04/15 - RAAC]
                 obj.neuriteTraceHandles.hDisplayedMarkers=scatter(hImgAx, markerX , markerY, markerSz, markerCol,...
                     'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracer');
 
@@ -659,13 +659,16 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     for c=1:length(childNodes)
                         x(2)=nodes(childNodes(c)).xVoxel;
                         y(2)=nodes(childNodes(c)).yVoxel;
+
                         if z>nodes(childNodes(c)).zVoxel;
                             lineType='--';
                         elseif z<nodes(childNodes(c)).zVoxel;
                             lineType=':';
+                        elseif z==nodes(childNodes(c)).zVoxel; %I believe this should be impossible. But of course it still happens... [16/04/15 - RAAC]
+                            lineType='-.';
                         end
                         plot(hImgAx, x,y,lineType,'Tag', 'NeuriteTracer','HitTest', 'off','Color',markerCol); %note, these are cleared by virtue of the tag. No handle is needed.
-                        text(hImgAx, x(2),y(2),['Z:',num2str(nodes(childNodes(c)).zVoxel)],'Color',markerCol,'tag','NeuriteTracer','HitTest', 'off')
+                        text(x(2),y(2),['Z:',num2str(nodes(childNodes(c)).zVoxel)],'Color',markerCol,'tag','NeuriteTracer','HitTest', 'off') %TODO: target to axes?
                     end
                 end
 
@@ -712,25 +715,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                  end
 
  
-
-                %If the node append highlight is on the current branch, we attempt to plot it
-                if ~isempty(find(visibleNodesInPathIdx==obj.lastNode))
-                    highlightNode = obj.neuriteTrees{obj.currentTree}.Node{obj.lastNode}; %The highlighted node
-
-                    %Get the size of the node 
-                    lastNodeInd = find(visibleNodesInPathIdx==obj.lastNode);
-
-                    mSize = markerSz(lastNodeInd)/10;
-                    if mSize<5
-                        mSize=5;
-                    end
-
-                    obj.neuriteTraceHandles.hHighlightedMarker = plot(hImgAx, highlightNode.xVoxel, highlightNode.yVoxel,...
-                                                  'or', 'markersize', mSize, 'LineWidth', 2,...
-                                                  'Tag','LastNode','HitTest', 'off'); 
-                end
-
-
+ 
                 %% Draw highlights over points in the plane
                 if any(visibleNodesInPathRelZ==0)
                     f=find(visibleNodesInPathRelZ==0);
@@ -743,6 +728,27 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                             'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracerHighlights');
 
                 end
+
+                %If the node append highlight is on the current branch, we attempt to plot it
+                if ~isempty(find(visibleNodesInPathIdx==obj.lastNode))
+                    goggleDebugTimingInfo(2, sprintf('Plotting node highlighter on path %d',ii), toc, 's')
+
+                    highlightNode = obj.neuriteTrees{obj.currentTree}.Node{obj.lastNode}; %The highlighted node
+
+                    %Get the size of the node 
+                    lastNodeInd = find(visibleNodesInPathIdx==obj.lastNode);
+
+                    mSize = markerSz(lastNodeInd)/10;
+                    if mSize<5
+                        mSize=7;
+                    end
+
+                    obj.neuriteTraceHandles.hHighlightedMarker = plot(hImgAx, highlightNode.xVoxel, highlightNode.yVoxel,...
+                                                  'or', 'markersize', mSize, 'LineWidth', 2,...
+                                                  'Tag','LastNode','HitTest', 'off'); 
+                end
+
+
 
 
             end %close paths{ii} loop
