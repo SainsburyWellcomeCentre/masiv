@@ -638,7 +638,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
 
                 %% Draw basic markers and lines 
-                obj.neuriteTraceHandles.hDisplayedLines=plot(hImgAx,markerX , markerY, '-','color',markerCol,...
+                obj.neuriteTraceHandles.hDisplayedLines=plot(hImgAx, markerX , markerY, '-','color',markerCol,...
                     'Tag', 'NeuriteTracer','HitTest', 'off', 'LineWidth', median(markerSz)/75);
                 obj.neuriteTraceHandles.hDisplayedMarkers=scatter(hImgAx, markerX , markerY, markerSz, markerCol,...
                     'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracer');
@@ -664,8 +664,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                         elseif z<nodes(childNodes(c)).zVoxel;
                             lineType=':';
                         end
-                        plot(x,y,lineType,'Tag', 'NeuriteTracer','HitTest', 'off','Color',markerCol); %note, these are cleared by virtue of the tag. No handle is needed.
-                        text(x(2),y(2),['Z:',num2str(nodes(childNodes(c)).zVoxel)],'Color',markerCol,'tag','NeuriteTracer','HitTest', 'off')
+                        plot(hImgAx, x,y,lineType,'Tag', 'NeuriteTracer','HitTest', 'off','Color',markerCol); %note, these are cleared by virtue of the tag. No handle is needed.
+                        text(hImgAx, x(2),y(2),['Z:',num2str(nodes(childNodes(c)).zVoxel)],'Color',markerCol,'tag','NeuriteTracer','HitTest', 'off')
                     end
                 end
 
@@ -682,7 +682,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     else
                         lWidth=1;
                     end
-                    plot(markerX(1),markerY(1),'^w','markerfacecolor',markerCol,'linewidth',lWidth,'HitTest', 'off','Tag','NeuriteTracer','MarkerSize',mSize) 
+                    plot(hImgAx, markerX(1),markerY(1),'^w','markerfacecolor',markerCol,'linewidth',lWidth,'HitTest', 'off','Tag','NeuriteTracer','MarkerSize',mSize) 
                 end
 
                 %Now we add the line leading into the first point from a different layer, if this point is not the root node
@@ -692,7 +692,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 L=visibleNodesInPathIdx(end)
                 parentNode=obj.neuriteTrees{obj.currentTree}.getparent(L);
                 nodes(parentNode).zVoxel %hmmm... seems wrong
-                plot(markerX(firstInd),markerY(firstInd),'xw','markerfacecolor',markerCol,'linewidth',lWidth,'HitTest', 'off','Tag','NeuriteTracer','MarkerSize',mSize) 
+                plot(hImgAx, markerX(firstInd),markerY(firstInd),'xw','markerfacecolor',markerCol,'linewidth',lWidth,'HitTest', 'off','Tag','NeuriteTracer','MarkerSize',mSize) 
             end
             
 
