@@ -639,7 +639,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
                 %% Draw basic markers and lines 
                 obj.neuriteTraceHandles.hDisplayedLines=plot(hImgAx, markerX , markerY, '-','color',markerCol,...
-                    'Tag', 'NeuriteTracer','HitTest', 'off');% 'LineWidth', median(markerSz)/75); %COMMENT OUT TEMPORARILY [16/04/15 - RAAC]
+                    'Tag', 'NeuriteTracer','HitTest', 'off');
                 obj.neuriteTraceHandles.hDisplayedMarkers=scatter(hImgAx, markerX , markerY, markerSz, markerCol,...
                     'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracer');
 
@@ -715,7 +715,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                  end
 
  
- 
+
                 %% Draw highlights over points in the plane
                 if any(visibleNodesInPathRelZ==0)
                     f=find(visibleNodesInPathRelZ==0);
@@ -738,7 +738,10 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     %Get the size of the node 
                     lastNodeInd = find(visibleNodesInPathIdx==obj.lastNode);
 
-                    mSize = markerSz(lastNodeInd)/10;
+                    %Calculate marker size. (WE NEED A BETTER WAY OF DOING THIS. TOO CONFUSING NOW)
+                    lastNodeRelZ=abs(highlightNode.zVoxel-obj.cursorZVoxels);
+                    mSize=(gbSetting('neuriteTracer.markerDiameter.xy')*(1-lastNodeRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
+                    mSize = mSize/10;
                     if mSize<5
                         mSize=7;
                     end
