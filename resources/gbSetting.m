@@ -9,7 +9,7 @@ end
     if nargin<2
         %% Read mode
        
-        [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo);
+        [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo, fName);
 
         if nargin<1||isempty(nm) % return all
             valOut=r;
@@ -19,7 +19,7 @@ end
     else
         %% Write mode
         
-        [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo);
+        [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo, fName);
         
         eval(sprintf('r.%s=val;', nm));
         writeSimpleYAML(r, fName);
@@ -87,9 +87,8 @@ function createDefaultPrefsFile()
     
 end
 
-function [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo)
+function [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo, fName)
  %% Check the file hasn't been modified
-        fName=getPrefsFilePath();
         newFileInfo=dir(fName);
         if (numel(newFileInfo.date)~=numel(fileInfo.date)) || any(newFileInfo.date~=fileInfo.date)
             %% And reload it if it has
