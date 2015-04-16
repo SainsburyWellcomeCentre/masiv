@@ -411,9 +411,14 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         end
         
 
+        %------------------------------------------------------------------------------------------
+        %------------------------------------------------------------------------------------------
+        %%  FUNCTIONS
+
+
 
         %------------------------------------------------------------------------------------------
-        %% Functions
+        %Marker addition and deletion
         function UIaddMarker(obj)
             goggleDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Beginning',toc,'s')
             newMarker=goggleMarker(obj.currentType, obj.deCorrectedCursorX, obj.deCorrectedCursorY, obj.cursorZVoxels);
@@ -496,6 +501,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         end
         
 
+        %------------------------------------------------------------------------------------------
+        % Drawing functions
 
         function drawMarkers(obj, ~, ~)
         %The main marker-drawing function 
@@ -521,11 +528,6 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             %also visible. This will depend on the Z marker diameter setting. 
             zRadius=(gbSetting('neuriteTracer.markerDiameter.z')/2); 
             idx=allMarkerZRelativeToCurrentPlaneVoxels<zRadius; %1s indicate visible and 0s not visible 
-
-            if ~any(idx) %If no markers are visible from the current z-plane we leave the function 
-                return
-            end
-
 
 
             msg=sprintf('Found %d markers within view of this z-plane. %d are in this z-plane.',...
@@ -596,6 +598,13 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     paths(ii)=[];
                 end
 
+            end
+
+            %If no markers are visible from the current z-plane AND in the current view we will not attempt to draw.
+            %TODO: This is because we want to draw "shadows" of points not in view if NO points are in the current z-plane.
+            if ~any(idx) 
+                goggleDebugTimingInfo(2, 'No visible neurites',toc,'s')
+                return
             end
 
             %Paths contains the indexes of all nodes in each branch that crosses this plane.
@@ -889,6 +898,10 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             end
         end
         
+
+
+        %------------------------------------------------------------------------------------------
+        %Marker count functions
         function updateMarkerCount(obj, markerTypeToUpdate)
             if isempty(obj.neuriteTrees)
                 num=0;
