@@ -652,6 +652,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 markerY = nan(1,length(paths{ii}));
                 markerZ = nan(1,length(paths{ii}));
                 markerSz = nan(1,length(paths{ii}));
+                markerNodeIdx = nan(1,length(paths{ii})); %So we know which node each marker is
+
 
                 %Make a vector that includes all numbers in the range of visiblePathIdx. e.g. if visiblePathIdx
                 %is [2,3,9,10] then markerInd will be [1,2,8,9] so that the middle 5 values remain as NaNs. 
@@ -661,6 +663,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 markerX(markerInd) = [nodes(visibleNodesInPathIdx).xVoxel];
                 markerY(markerInd) = [nodes(visibleNodesInPathIdx).yVoxel];
                 markerZ(markerInd) = [nodes(visibleNodesInPathIdx).zVoxel];
+                markerNodeIdx(markerInd) = visibleNodesInPathIdx;
 
                 [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ); %Shift coords in the event of a section being translation corrected
 
@@ -704,8 +707,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                             lineType='-';
                         end
                         plot(hImgAx, x,y,lineType,'Tag', 'NeuriteTracer','HitTest', 'off','Color',markerCol); %note, these are cleared by virtue of the tag. No handle is needed.
-                        if ~strcmp(lineType,'-')
-                            %TODO block plotting if outside of the view
+                        %Only plot text if the child node is out of plane and within the view area
+                        if ~strcmp(lineType,'-') & (x(2)>=xView(1)) & (x(2)<=xView(2)) & (y(2)>=yView(1)) & (y(2)<=yView(2))
                             text(x(2),y(2),['Z:',num2str(nodes(childNodes(c)).zVoxel)],...
                             'Color',markerCol,'tag','NeuriteTracer','HitTest', 'off') %TODO: target to axes?
                         end
@@ -716,22 +719,28 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 %Only the first node has the dotted or dashed line. The middle one gets nothing.
                 if 1 %so we can disable until it has been tested thoughoughly
 
-                    f=find(~isnan(markerX));
-                    firstInd=f(end);
+                firstNodes=diff(isnan(markerX));
+                firstNodes(end+1)=~isnan(markerX(end));
+                firstNodes=find(firstNodes>0); %These are the visible nodes on the branch with no plotted parents
 
-                    x=markerX(firstInd);
-                    y=markerY(firstInd);
-                    z=markerZ(firstInd);
+                for fN = firstNodes
 
-                    L=visibleNodesInPathIdx(1); %first node %TODO: this simple indexing really always works?? 
+                    x=markerX(fN);
+                    y=markerY(fN);
+                    z=markerZ(fN);
+                    L=markerNodeIdx(fN);
+                    
                     parentNode=obj.neuriteTrees{obj.currentTree}.getparent(L);
+                    if parentNode==0 %this is the root node. 
+                        continue
+                    end
                     pZ=nodes(parentNode).zVoxel;
 
                     %firstInd is the correct index in markerX/Y but we should only draw the line if
                     %the parent point is in a different depth or out of the field. The reason we need
                     %this test here and didn't for non-leaf terminal nodes because we've trimmed the 
                     %early part of some branches. 
-                    %text(x, y, num2str(ii),'Color','r','HitTest', 'off','Tag','NeuriteTracer')
+
 
                     if abs(pZ - obj.cursorZVoxels)>zRadius
                         x(2)=nodes(parentNode).xVoxel;
@@ -746,16 +755,15 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                         end
                         mSize=10;
                         plot(hImgAx, x, y, lineType,'Color',markerCol,...
-                                'HitTest', 'off','Tag','NeuriteTracer')
-                        if ~strcmp(lineType,'-')
+                                'HitTest', 'off','Tag','NeuriteTracer')                        
+                        %Only plot text if the child node is out of plane and within the view area
+                        if ~strcmp(lineType,'-') & (x(2)>=xView(1)) & (x(2)<=xView(2)) & (y(2)>=yView(1)) & (y(2)<=yView(2))
                             %TODO block plotting if outside of the view
                             text(x(2),y(2),['Z:',num2str(nodes(parentNode).zVoxel)],'Color',markerCol,'tag','NeuriteTracer','HitTest', 'off') %TODO: target to axes?
                         end
                     end
-
-                   
-                   
-                end
+                end %fN = 1:length(firstNode)                   
+                end %TODO: DELETE WHEN WORKS
             
 
 
