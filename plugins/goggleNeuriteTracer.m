@@ -562,7 +562,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             xView=obj.goggleViewer.mainDisplay.viewXLimOriginalCoords;
             yView=obj.goggleViewer.mainDisplay.viewYLimOriginalCoords;
             for ii=length(paths):-1:1
-
+                initialSize=length(paths{ii});
                 if ii>1
                     [~,pathInd]=intersect(paths{ii},paths{1});
 
@@ -577,7 +577,6 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                         pathInd(end)=[];
                     end
                     
-                    initialSize=length(paths{ii});
                     paths{ii}(pathInd)=[]; %trim
                 end
 
@@ -586,10 +585,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     x=[nodes(paths{ii}).xVoxel];
                     y=[nodes(paths{ii}).yVoxel];
                     
-                    inViewX=(x>=xView(1))&(x<=xView(2));
-                    inViewY=(y>=yView(1))&(y<=yView(2));
-
-                    if all(~(inViewY & inViewX))
+                   if all(~pointsInView(xView,yView,x,y))
                         paths{ii}=[]; %remove branch if none of its nodes are visible
                     end
 
@@ -707,8 +703,9 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                             lineType='-';
                         end
                         plot(hImgAx, x,y,lineType,'Tag', 'NeuriteTracer','HitTest', 'off','Color',markerCol); %note, these are cleared by virtue of the tag. No handle is needed.
+
                         %Only plot text if the child node is out of plane and within the view area
-                        if ~strcmp(lineType,'-') & (x(2)>=xView(1)) & (x(2)<=xView(2)) & (y(2)>=yView(1)) & (y(2)<=yView(2))
+                        if ~strcmp(lineType,'-') & pointsInView(xView,yView,x(2),y(2))
                             text(x(2),y(2),['Z:',num2str(nodes(childNodes(c)).zVoxel)],...
                             'Color',markerCol,'tag','NeuriteTracer','HitTest', 'off') %TODO: target to axes?
                         end
@@ -757,8 +754,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                         plot(hImgAx, x, y, lineType,'Color',markerCol,...
                                 'HitTest', 'off','Tag','NeuriteTracer')                        
                         %Only plot text if the child node is out of plane and within the view area
-                        if ~strcmp(lineType,'-') & (x(2)>=xView(1)) & (x(2)<=xView(2)) & (y(2)>=yView(1)) & (y(2)<=yView(2))
-                            %TODO block plotting if outside of the view
+                        if ~strcmp(lineType,'-') & pointsInView(xView,yView,x(2),y(2))
                             text(x(2),y(2),['Z:',num2str(nodes(parentNode).zVoxel)],'Color',markerCol,'tag','NeuriteTracer','HitTest', 'off') %TODO: target to axes?
                         end
                     end
@@ -825,7 +821,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     %Get the size of the node 
                     lastNodeInd = find(visibleNodesInPathIdx==obj.lastNode);
 
-                    %Calculate marker size. (WE NEED A BETTER WAY OF DOING THIS. TOO CONFUSING NOW)
+                    %Calculate marker size. 
+                    %TODO: use the markerNodeIdx vector to neaten the size calculation 
                     lastNodeRelZ=abs(highlightNode.zVoxel-obj.cursorZVoxels);
                     mSize=(markerDimXY*(1-lastNodeRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
                     mSize = mSize/10;
@@ -1055,6 +1052,28 @@ for ii=1:nTypes
     ms(ii).color=cols(ii, :);
 end
 end
+
+
+%which points are in the x/y view (may still be in a different z plane)
+function varargout = pointsInView(xView,yView,xPoints,yPoints)
+    %Inputs
+    %xView and yView are the limits of the view. Each is a vector of length 2.
+    %xPoints and yPoints are scalars or vectors of points to be tested WRT to the first 2 args
+    %Outputs
+    %If two outputs: inViewX and inViewY vectors 
+    %If 0 or 1 arguments, we return which points are in view in both dims
+    inViewX = xPoints>=xView(1) & xPoints<=xView(2);
+    inViewY = yPoints>=yView(1) & yPoints<=yView(2);
+
+    if nargout<=1
+        varargout{1} = (inViewX & inViewY);
+    end
+    if nargout==2
+        varargout{1} = inViewX;
+        varargout{2} = inViewY;
+    end
+end
+
 
 function [dist, idx]=minEucDist2DToMarker(markerCollection, obj)            
 
