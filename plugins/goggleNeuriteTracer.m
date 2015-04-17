@@ -47,6 +47,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         cursorX
         cursorY
         
+        maxNeuriteTrees %maximum number of trees that can be drawn
         markerTypes
         neuriteTrees %Stores the neurite traces in a tree structure
         currentTree %The current neuron
@@ -128,10 +129,10 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize);
             %Set up empty tree structure and associated variables
-            numTrees=3; %TODO: eventually make this dynamic
-            obj.neuriteTrees = cell(1,numTrees);
-            obj.lastNode=zeros(1,numTrees);
-            obj.markerTypes=defaultMarkerTypes(numTrees); %Set this to the number of neurons
+            obj.maxNeuriteTrees=6; 
+            obj.neuriteTrees = cell(1,obj.maxNeuriteTrees);
+            obj.lastNode=zeros(1,obj.maxNeuriteTrees);
+            obj.markerTypes=defaultMarkerTypes(obj.maxNeuriteTrees); %Set this to the number of neurons
             updateMarkerTypeUISelections(obj);
             
 
@@ -467,7 +468,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             goggleDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: New marker created',toc,'s')
 
             thisT = obj.selectedTreeIdx;
-            if isempty(obj.neuriteTrees{thisT}) %Currently we handle just one cell per brain
+
+            if isempty(obj.neuriteTrees{thisT})
                 obj.neuriteTrees{thisT} = tree(newMarker); %Add first point to tree root
                 obj.lastNode(thisT)=1;
             else
@@ -1011,8 +1013,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             mType=obj.markerTypes(obj.hMarkerButtonGroup.SelectedObject.UserData);
         end
         function idx=get.selectedTreeIdx(obj) %The index of the currently selected tree
-            cType = obj.currentType;
-            idx = strmatch(cType.name, {obj.markerTypes(:).name});
+            idx=obj.hMarkerButtonGroup.SelectedObject.UserData;
         end
         function z=get.cursorZVoxels(obj)
             z=obj.goggleViewer.mainDisplay.currentZPlaneOriginalVoxels;
@@ -1099,6 +1100,7 @@ function exportData(~, ~, obj)
 end
 
 function importData(~, ~, obj)
+
      if obj.changeFlag
         agree=questdlg(sprintf('There are unsaved changes that will be lost.\nAre you sure you want to import markers?'), obj.pluginName, 'Yes', 'No', 'Yes');
         if strcmp(agree, 'No')
@@ -1123,18 +1125,35 @@ function importData(~, ~, obj)
     obj.neuriteTrees=m;
     for ii=1:length(obj.neuriteTrees)
         obj.lastNode(ii)=length(obj.neuriteTrees{ii}.Node); %set highlight (append) node to last point in tree
+        obj.lastNode(ii)=1;
     end
 
-    deltaZ=obj.neuriteTrees{obj.selectedTreeIdx}.Node{obj.lastNode(obj.selectedTreeIdx)}.zVoxel-obj.goggleViewer.mainDisplay.currentIndex;
-    stdout=obj.goggleViewer.mainDisplay.seekZ(deltaZ)
+    if length(obj.neuriteTrees)<obj.maxNeuriteTrees
+        obj.neuriteTrees{obj.maxNeuriteTrees}=[];
+    elseif length(obj.neuriteTrees)>obj.maxNeuriteTrees
+        obj.maxNeuriteTrees=length(obj.neuriteTrees); 
+    end
 
-    obj.updateMarkerTypeUISelections(); %add the correct number of marker types
+    %Go to cell body of first available trace
+    presentTraces = find(~isempty(obj.neuriteTrees));
+    if isempty(presentTraces)
+        fprintf('NO DATA PRESENT?!\n')
+        return
+    end
+    ind = presentTraces(1);
+    obj.hTreeSelection(ind).Value=1; %Set radio button to match what is selected
+    deltaZ=obj.neuriteTrees{ind}.Node{1}.zVoxel-obj.goggleViewer.mainDisplay.currentIndex;
+    stdout=obj.goggleViewer.mainDisplay.seekZ(deltaZ); %Seek to this z-depth TODO: is this the best way?
+    %TODO: Now ensure we are zoom out to zoom of 1 [how?]
+
+    updateMarkerTypeUISelections(obj); %Confirm that we need this. 
 
     if stdout
         obj.goggleViewer.mainDisplay.updateZoomedView;
     end
 
     obj.drawAllTrees();
+
 end
 function treeRadioSelectCallback(~, ~, obj)
     tic
