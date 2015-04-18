@@ -565,8 +565,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             prevhold=ishold(hImgAx);
             hold(hImgAx, 'on')
 
-            %Set focus to main axes. The UI interaction works better this way and text 
-            %plot elements are drawn as expected. 
+            %Set focus to main axes whenever a draw event happens.
             axes(obj.goggleViewer.hImgAx); 
             
             %Loop through all trees and plot

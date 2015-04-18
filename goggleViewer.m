@@ -202,7 +202,6 @@ classdef goggleViewer<handle
         function keyScrollQueue(obj, dir)
             
             obj.numScrolls=obj.numScrolls+dir;
-            
             pause(gbSetting('navigation.keyboardUpdatePeriod'))
             if obj.numScrolls~=0
                 p=obj.numScrolls;
@@ -215,6 +214,10 @@ classdef goggleViewer<handle
             %nScroll - scalar defining how many wheel clicks the user has produced (signed)
             %scrollAction - string defining which action to take. 
 
+            %Set focus to main axes after a scroll. The UI interaction works better this way.
+            %i.e. you can pan without having click on the figure window.
+            axes(obj.hImgAx); 
+            
             switch scrollAction
             case 'zAxisScroll'
                 stdout=obj.mainDisplay.seekZ(nScrolls);
