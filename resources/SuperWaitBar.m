@@ -11,6 +11,11 @@ classdef SuperWaitBar<handle
     methods
         function obj=SuperWaitBar(N, msg)
             obj.N=N;
+            %replace forward slashes which are not escape characters for "_"
+            %with back-slash on Windows to avoid a storm of error messages.
+            if ispc
+                msg = regexprep(msg,'\\([^_])','/$1');
+            end
             obj.h=waitbar(0, msg);
             obj.x=0;
             obj.msg=msg;
