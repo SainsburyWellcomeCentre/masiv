@@ -176,7 +176,9 @@ classdef goggleSystemMemoryUsageInfoPanel<handle
            
         end
         function delete(obj)
-            stop(obj.tmr)
+            if ~isempty(obj.tmr)
+                stop(obj.tmr)
+            end
         end
     end
 end
