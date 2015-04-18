@@ -15,7 +15,10 @@ function tvMat2goggleList(stitchedDir)
 % 
 % Rob Campbell
 %
-% TODO: fails on Windows. The resulting file has no file names
+% Notes: 
+% Produces file with unix file seps on all platforms. Windows
+% MATLAB seems OK about using these paths. Windows fileseps 
+% mess up the fprintf.
 
 if ispc
 	fprintf('Fails on Windows machines. Not fixed yet\n')
@@ -41,9 +44,9 @@ for ii=1:length(chans)
 
 	if regexp(chans(ii).name,'\d+')
 
-		fprintf('Making channel %s file\n',chans(ii).name)
-		tifDir=[stitchedDir,filesep,chans(ii).name];
-		tifs=dir([tifDir,filesep,'*.tif']);
+        fprintf('Making channel %s file\n',chans(ii).name)
+        tifDir=[stitchedDir,'/',chans(ii).name];
+		tifs=dir([tifDir,'/','*.tif']);
 
 		if isempty(tifs)
 			fprintf('No tiffs in %s. Skipping\n',tifDir)
@@ -53,8 +56,9 @@ for ii=1:length(chans)
 		thisChan = str2num(chans(ii).name);
         
 		fid=fopen(sprintf('%sCh%02d.txt',stitchedFileListName,thisChan),'w+');
-		for thisTif = 1:length(tifs)
-			fprintf(fid,[tifDir,filesep,tifs(thisTif).name,'\n']);
+		for thisTif = 1:length(tifs)         
+                fprintf(fid,[tifDir,'/',tifs(thisTif).name,'\n']);
+            
 		end
 		fclose(fid);
 
