@@ -22,7 +22,10 @@ end
         [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo, fName);
         
         eval(sprintf('r.%s=val;', nm));
-        writeSimpleYAML(r, fName);
+        %% write first to a new file, then rename. Should prevent corruption. 
+        tmpFname=strrep(fName, '.yml', 'tmp.yml');
+        writeSimpleYAML(r, tmpFname);
+        movefile(tmpFname, fName);
        
     end
     
