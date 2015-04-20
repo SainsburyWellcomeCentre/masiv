@@ -30,7 +30,9 @@
 * Run 'goggleViewer'
 * Select the base path of the stitched experiment you would like to view
 * Select the stack you would like to use as the base
-    * New stacks can be generated in the selection GUI:
+
+ * New stacks can be generated in the selection GUI:
+
             * Select 'New'
             * Select the channel
             * Specify which slices to use. For example, to use every 3rd slice (in an experiment with 3000 slices), the correct settings would be 1, 3, 3000
