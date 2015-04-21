@@ -41,7 +41,7 @@ The purpose of this is to produce a text file containing a list of all of the st
 
 ** A note on the preferences file **
 
-If you are working on a multi-user analysis machine you will want to have a copy of the goggleViewer preferences in your home directory. If you use the version in the goggleViewer source directory then you risk running into permissions issues or having your preferences overwritten by another user. Simply copy the gogglePrefs.yml file to a directory in your path that you have write access to and that is higher up the path hierarchy then the goggleViewer  directories. Type "path" into the prompt. You may find that your user directory is already at the top of the list, in which case you can create a copy there. goggleViewer will then automatically use this copy.
+If you are working on a multi-user analysis machine you will want to have a copy of the goggleViewer preferences in your home directory. If you use the version in the goggleViewer source directory then you risk running into permissions issues or having your preferences overwritten by another user. Simply copy the gogglePrefs.yml file to a directory in your path that you have write access to and that is higher up the path hierarchy then the goggleViewer  directories. Type "path" into the prompt. You may find that your user directory is already at the top of the list, in which case you can create a copy there. goggleViewer will then automatically use this copy. 
 
 
 ### This is crap, it doesn't work ###
