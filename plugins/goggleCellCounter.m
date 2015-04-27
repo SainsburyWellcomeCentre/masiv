@@ -394,9 +394,9 @@ classdef goggleCellCounter<goggleBoxPlugin
                 
                 markerCol=cat(1, markersWithinViewOfThisPlane.color);
                 
-                hImgAx=obj.goggleViewer.hImgAx;
-                prevhold=ishold(hImgAx);
-                hold(hImgAx, 'on')
+                hMainImgAx=obj.goggleViewer.hMainImgAx;
+                prevhold=ishold(hMainImgAx);
+                hold(hMainImgAx, 'on')
                 %% Eliminate markers not in the current x y view
                 xView=obj.goggleViewer.mainDisplay.viewXLimOriginalCoords;
                 yView=obj.goggleViewer.mainDisplay.viewYLimOriginalCoords;
@@ -412,7 +412,7 @@ classdef goggleCellCounter<goggleBoxPlugin
                 markerCol=markerCol(inViewIdx, :);
                 %% Draw
                 goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Beginning drawing',toc,'s')
-                obj.hDisplayedMarkers=scatter(obj.goggleViewer.hImgAx, markerX , markerY, markerSz, markerCol, 'filled', 'HitTest', 'off', 'Tag', 'CellCounter');
+                obj.hDisplayedMarkers=scatter(obj.goggleViewer.hMainImgAx, markerX , markerY, markerSz, markerCol, 'filled', 'HitTest', 'off', 'Tag', 'CellCounter');
                 goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Drawing complete',toc,'s')
                 %% Draw highlights on this plane if we're not too zoomed out
                 
@@ -420,7 +420,7 @@ classdef goggleCellCounter<goggleBoxPlugin
                 goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Complete',toc,'s')
                 %% Restore hold
                 if ~prevhold
-                    hold(hImgAx, 'off')
+                    hold(hMainImgAx, 'off')
                 end
             end
         end
@@ -442,16 +442,16 @@ classdef goggleCellCounter<goggleBoxPlugin
             markerSz=(gbSetting('cellCounter.markerDiameter.xy')*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels)^2;
             
             if markerSz>=gbSetting('cellCounter.minimumSize')
-                obj.hDisplayedMarkerHighlights=scatter(obj.goggleViewer.hImgAx, markerX , markerY, markerSz/4, [1 1 1], 'filled', 'HitTest', 'off', 'Tag', 'CellCounterHighlights');
+                obj.hDisplayedMarkerHighlights=scatter(obj.goggleViewer.hMainImgAx, markerX , markerY, markerSz/4, [1 1 1], 'filled', 'HitTest', 'off', 'Tag', 'CellCounterHighlights');
             end
         end
         
         function clearMarkers(obj)
             if ~isempty(obj.hDisplayedMarkers)
-                delete(findobj(obj.goggleViewer.hImgAx, 'Tag', 'CellCounter'))
+                delete(findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'CellCounter'))
             end
             if ~isempty(obj.hDisplayedMarkerHighlights)
-                delete(findobj(obj.goggleViewer.hImgAx, 'Tag', 'CellCounterHighlights'))
+                delete(findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'CellCounterHighlights'))
             end
         end
         

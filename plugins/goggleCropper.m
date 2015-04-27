@@ -220,7 +220,7 @@ classdef goggleCropper<goggleBoxPlugin
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize);
             %% Selection Rectangle
-            obj.hSelectionRectangle=imrect(obj.goggleViewer.hImgAx, getRectangleInitialPosition(obj));
+            obj.hSelectionRectangle=imrect(obj.goggleViewer.hMainImgAx, getRectangleInitialPosition(obj));
             obj.updatePosition(getRectangleInitialPosition(obj))
             obj.hSelectionRectangle.Deletable=0;
             setRectangleConstraints(obj)
@@ -429,8 +429,8 @@ end
 
 %% Functions
 function initPos=getRectangleInitialPosition(obj)
-    xl=obj.goggleViewer.hImgAx.XLim;
-    yl=obj.goggleViewer.hImgAx.YLim;
+    xl=obj.goggleViewer.hMainImgAx.XLim;
+    yl=obj.goggleViewer.hMainImgAx.YLim;
     
     initPos=round([xl(1)+range(xl)/5 yl(1)+range(yl)/5 range(xl)*3/5 range(yl)*3/5]);
 end

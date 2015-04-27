@@ -560,13 +560,13 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             obj.clearMarkers; %Clear markers from any previous draws
             goggleDebugTimingInfo(2, 'NeuriteTracer.drawTree: Markers cleared',toc,'s')
 
-            hImgAx=obj.goggleViewer.hImgAx;
+            hMainImgAx=obj.goggleViewer.hMainImgAx;
 
-            prevhold=ishold(hImgAx);
-            hold(hImgAx, 'on')
+            prevhold=ishold(hMainImgAx);
+            hold(hMainImgAx, 'on')
 
             %Set focus to main axes whenever a draw event happens.
-            axes(obj.goggleViewer.hImgAx); 
+            axes(obj.goggleViewer.hMainImgAx); 
             
             %Loop through all trees and plot
             for thisTreeIdx=1:length(obj.neuriteTrees)
@@ -583,7 +583,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
             %% Restore hold state
             if ~prevhold
-                hold(hImgAx, 'off')
+                hold(hMainImgAx, 'off')
             end
 
         end
@@ -691,7 +691,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
             % The following loop goes through each candidate branch and finds and plots the points 
             % visible to the current z-plane. 
-            hImgAx=obj.goggleViewer.hImgAx;
+            hMainImgAx=obj.goggleViewer.hMainImgAx;
 
  
             goggleDebugTimingInfo(2, 'NeuriteTracer.drawTree: Beginning drawing',toc,'s')
@@ -752,10 +752,10 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
                 %% Draw basic markers and lines 
                 obj.neuriteTraceHandles(obj.currentTree).hDisplayedLines = ...
-                     plot(hImgAx, markerX , markerY, '-','color',markerCol,...
+                     plot(hMainImgAx, markerX , markerY, '-','color',markerCol,...
                     'Tag', 'NeuriteTracer','HitTest', 'off');
                 obj.neuriteTraceHandles(obj.currentTree).hDisplayedMarkers =  ...
-                    scatter(hImgAx, markerX , markerY, markerSz, markerCol,...
+                    scatter(hMainImgAx, markerX , markerY, markerSz, markerCol,...
                     'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracer');
 
 
@@ -783,7 +783,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                         elseif z==cZ %Just in case there is a point outside of the plot area and on the same layer
                             lineType='-';
                         end
-                        plot(hImgAx, x,y,lineType,'Tag', 'NeuriteTracer','HitTest', 'off','Color',markerCol); %note, these are cleared by virtue of the tag. No handle is needed.
+                        plot(hMainImgAx, x,y,lineType,'Tag', 'NeuriteTracer','HitTest', 'off','Color',markerCol); %note, these are cleared by virtue of the tag. No handle is needed.
 
                         %Only plot text if the child node is out of plane and within the view area
                         if ~strcmp(lineType,'-') & pointsInView(obj,x(2),y(2))
@@ -831,7 +831,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                             lineType='-';
                         end
                         mSize=10;
-                        plot(hImgAx, x, y, lineType,'Color',markerCol,...
+                        plot(hMainImgAx, x, y, lineType,'Color',markerCol,...
                                 'HitTest', 'off','Tag','NeuriteTracer')                        
                         %Only plot text if the child node is out of plane and within the view area
                         if ~strcmp(lineType,'-') & pointsInView(obj,x(2),y(2))
@@ -853,7 +853,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     else
                         lWidth=1;
                     end
-                    plot(hImgAx, markerX(1),markerY(1),'^w','markerfacecolor',markerCol,'linewidth',lWidth,'HitTest', 'off','Tag','NeuriteTracer','MarkerSize',mSize) 
+                    plot(hMainImgAx, markerX(1),markerY(1),'^w','markerfacecolor',markerCol,'linewidth',lWidth,'HitTest', 'off','Tag','NeuriteTracer','MarkerSize',mSize) 
                 end
 
                 
@@ -868,7 +868,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                         mSize=5;
                     end
 
-                    obj.neuriteTraceHandles(obj.currentTree).hRootNode = plot(hImgAx, rootNode.xVoxel, rootNode.yVoxel, 'd',...
+                    obj.neuriteTraceHandles(obj.currentTree).hRootNode = plot(hMainImgAx, rootNode.xVoxel, rootNode.yVoxel, 'd',...
                         'MarkerSize', mSize, 'color', 'w', 'MarkerFaceColor',rootNode.color,...
                         'Tag', 'NeuriteTracer','HitTest', 'off', 'LineWidth', median(markerSz)/75);
                  end
@@ -880,9 +880,9 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
                     %The following currently draws lines between points the shouldn't be joined
                     %when stuff enters and leaves the z-plane
-                    %obj.neuriteTraceHandles(obj.currentTree).hDisplayedLinesHighlight=plot(hImgAx,  markerX(f), markerY(f), '-',...
+                    %obj.neuriteTraceHandles(obj.currentTree).hDisplayedLinesHighlight=plot(hMainImgAx,  markerX(f), markerY(f), '-',...
                     %    'Color',obj.neuriteTraceHandles(obj.currentTree).hDisplayedLines.Color,'LineWidth',2,'Tag', 'NeuriteTracer','HitTest', 'off');
-                    obj.neuriteTraceHandles(obj.currentTree).hDisplayedMarkerHighlights=scatter(hImgAx, markerX(f), markerY(f), markerSz(f)/4, [1,1,1],...
+                    obj.neuriteTraceHandles(obj.currentTree).hDisplayedMarkerHighlights=scatter(hMainImgAx, markerX(f), markerY(f), markerSz(f)/4, [1,1,1],...
                             'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracerHighlights');
 
                 end
@@ -908,7 +908,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     end
 
                     obj.neuriteTraceHandles(obj.selectedTreeIdx).hHighlightedMarker = ...
-                        plot(hImgAx, highlightNode.xVoxel, highlightNode.yVoxel,...
+                        plot(hMainImgAx, highlightNode.xVoxel, highlightNode.yVoxel,...
                         'or', 'markersize', mSize, 'LineWidth', 2,...
                         'Tag','LastNode','HitTest', 'off'); 
                 end
@@ -936,7 +936,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             end
 
 
-            lastNodeObj = findobj(obj.goggleViewer.hImgAx, 'Tag', 'LastNode') ;
+            lastNodeObj = findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'LastNode') ;
             verbose=0;
             if ~isempty(lastNodeObj)
                 thisMarker = obj.neuriteTrees{obj.selectedTreeIdx}.Node{idx};
@@ -958,13 +958,13 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             end
 
             if any(~isempty([obj.neuriteTraceHandles.hDisplayedMarkers]))
-                delete(findobj(obj.goggleViewer.hImgAx, 'Tag', 'NeuriteTracer'))
+                delete(findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'NeuriteTracer'))
             end
             if any(~isempty([obj.neuriteTraceHandles.hDisplayedMarkerHighlights]))
-                delete(findobj(obj.goggleViewer.hImgAx, 'Tag', 'NeuriteTracerHighlights'))
+                delete(findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'NeuriteTracerHighlights'))
             end
             if  any(~isempty([obj.neuriteTraceHandles.hHighlightedMarker]))
-                 delete(findobj(obj.goggleViewer.hImgAx, 'Tag', 'LastNode'))
+                 delete(findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'LastNode'))
             end
         end
         

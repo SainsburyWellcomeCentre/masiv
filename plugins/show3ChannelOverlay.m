@@ -11,8 +11,8 @@ classdef show3ChannelOverlay<goggleBoxPlugin
             gvObj=caller.UserData;
             mosaicInfo=gvObj.mosaicInfo;
             
-            xView=round(gvObj.hImgAx.XLim);xView(xView<1)=1;
-            yView=round(gvObj.hImgAx.YLim);yView(yView<1)=1;
+            xView=round(gvObj.hMainImgAx.XLim);xView(xView<1)=1;
+            yView=round(gvObj.hMainImgAx.YLim);yView(yView<1)=1;
             
             sliceNum=gvObj.mainDisplay.currentZPlaneOriginalVoxels;
             baseDir=mosaicInfo.baseDirectory;
