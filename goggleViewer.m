@@ -12,7 +12,7 @@ classdef goggleViewer<handle
     properties
         %% Handles to visible objects
         hFig
-        hImgAx
+        hMainImgAx
         hAxContrastHist
         hAxContrastMin
         hAxContrastMax
@@ -79,7 +79,7 @@ classdef goggleViewer<handle
                 'WindowScrollWheelFcn', {@hFigMain_ScrollWheel, obj}, ...
                 'CloseRequestFcn', {@closeRequest, obj}, ...
                 'BusyAction', 'cancel', 'Visible', 'off');
-            obj.hImgAx=axes(...
+            obj.hMainImgAx=axes(...
                 'Box', 'on', ...
                 'YDir', 'reverse', ...
                 'Color', [0 0 0], ...
@@ -154,10 +154,10 @@ classdef goggleViewer<handle
                 obj.overviewDSS=obj.mosaicInfo.downscaledStacks(idx);
             end
             startDebugOutput;
-            obj.mainDisplay=goggleViewerDisplay(obj);
+            obj.mainDisplay=goggleViewerDisplay(obj, obj.overviewDSS, obj.hMainImgAx);
             obj.mainDisplay.drawNewZ();
             adjustContrast([], [], obj);
-            axis(obj.hImgAx, 'equal')
+            axis(obj.hMainImgAx, 'equal')
             
             %% Info boxes
             obj.addInfoPanel(goggleViewInfoPanel(obj, obj.hFig, [0.83 0.49 0.16 0.31], obj.mainDisplay));
@@ -216,7 +216,7 @@ classdef goggleViewer<handle
 
             %Set focus to main axes after a scroll. The UI interaction works better this way.
             %i.e. you can pan without having click on the figure window.
-            axes(obj.hImgAx); 
+            axes(obj.hMainImgAx); 
             
             switch scrollAction
             case 'zAxisScroll'
@@ -250,13 +250,13 @@ classdef goggleViewer<handle
             end
             switch eventdata.Key
                 case 'w'
-                    obj.keyPanQueue(0, +range(ylim(obj.hImgAx))/p)
+                    obj.keyPanQueue(0, +range(ylim(obj.hMainImgAx))/p)
                 case 'a'
-                    obj.keyPanQueue(+range(xlim(obj.hImgAx))/p, 0)
+                    obj.keyPanQueue(+range(xlim(obj.hMainImgAx))/p, 0)
                 case 's'
-                    obj.keyPanQueue(0, -range(ylim(obj.hImgAx))/p)
+                    obj.keyPanQueue(0, -range(ylim(obj.hMainImgAx))/p)
                 case 'd'
-                    obj.keyPanQueue(-range(xlim(obj.hImgAx))/p, 0)
+                    obj.keyPanQueue(-range(xlim(obj.hMainImgAx))/p, 0)
             end
         end
         
@@ -285,11 +285,11 @@ classdef goggleViewer<handle
             movedFlag=0;
             
             if xMove~=0
-                xlim(obj.hImgAx,xlim(obj.hImgAx)+xMove);
+                xlim(obj.hMainImgAx,xlim(obj.hMainImgAx)+xMove);
                 movedFlag=1;
             end
             if yMove~=0
-                ylim(obj.hImgAx,ylim(obj.hImgAx)+yMove);
+                ylim(obj.hMainImgAx,ylim(obj.hMainImgAx)+yMove);
                 movedFlag=1;
             end
             
@@ -302,8 +302,8 @@ classdef goggleViewer<handle
         end
         
         function [xMove,yMove]=checkPanWithinLimits(obj, xMove,yMove)
-            xl=xlim(obj.hImgAx);
-            yl=ylim(obj.hImgAx);
+            xl=xlim(obj.hMainImgAx);
+            yl=ylim(obj.hMainImgAx);
             
             if xl(1) + xMove < 0
                 xMove = -xl(1);
@@ -321,16 +321,16 @@ classdef goggleViewer<handle
         
         %% --- Zooming
         function executeZoom(obj, zoomfactor)
-            C = get (obj.hImgAx, 'CurrentPoint');
-            zoom(obj.hImgAx,zoomfactor)
+            C = get (obj.hMainImgAx, 'CurrentPoint');
+            zoom(obj.hMainImgAx,zoomfactor)
             obj.centreView(C);
             obj.changeAxes
             notify(obj, 'Zoomed')
 
         end
         function centreView(obj, pointToCenterUpon)
-            xl=xlim(obj.hImgAx);
-            yl=ylim(obj.hImgAx);
+            xl=xlim(obj.hMainImgAx);
+            yl=ylim(obj.hMainImgAx);
             x=pointToCenterUpon(1, 1);
             y=pointToCenterUpon(2, 2);
             
@@ -343,8 +343,8 @@ classdef goggleViewer<handle
             %% Check move is within limits
             [xMove, yMove]=checkPanWithinLimits(obj, xMove, yMove);
             %% Do the move
-            xlim(obj.hImgAx, xl+xMove);
-            ylim(obj.hImgAx, yl+yMove);
+            xlim(obj.hMainImgAx, xl+xMove);
+            ylim(obj.hMainImgAx, yl+yMove);
             
         end
         
@@ -449,9 +449,9 @@ function hFigMain_KeyPress (~, eventdata, obj)
     end
 end
 function mouseMove (~, ~, obj)
-    C = get (obj.hImgAx, 'CurrentPoint');
-    xl=xlim(obj.hImgAx);
-    yl=ylim(obj.hImgAx);
+    C = get (obj.hMainImgAx, 'CurrentPoint');
+    xl=xlim(obj.hMainImgAx);
+    yl=ylim(obj.hMainImgAx);
     x=C(1, 1);
     y=C(2, 2);
     if x>=xl(1) && x<=xl(2) && y>=yl(1) && y<=yl(2)
@@ -561,8 +561,8 @@ function exportViewToWorkspace(~,~,obj)
     else
         I=obj.mainDisplay.currentImageViewData;
     end
-    xView=round(obj.hImgAx.XLim);xView(xView<1)=1;
-    yView=round(obj.hImgAx.YLim);yView(yView<1)=1;
+    xView=round(obj.hMainImgAx.XLim);xView(xView<1)=1;
+    yView=round(obj.hMainImgAx.YLim);yView(yView<1)=1;
     proposedImageName=sprintf('%s_%s_x%u_%u_y%u_%u_layer%04u',...
         obj.overviewDSS.experimentName, ...
         obj.overviewDSS.channel, ...

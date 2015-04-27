@@ -42,13 +42,13 @@ classdef goggleViewerDisplay<handle
     
     methods
         %% Constructor
-        function obj=goggleViewerDisplay(parent)
+        function obj=goggleViewerDisplay(parent, overviewDSS, imageDisplayAxes)
             obj.parentViewer=parent;
-            obj.overviewStack=parent.overviewDSS;
+            obj.overviewStack=overviewDSS;
             if ~obj.overviewStack.imageInMemory
                 obj.overviewStack.loadStackFromDisk;
             end
-            obj.axes=parent.hImgAx;
+            obj.axes=imageDisplayAxes;
             obj.currentIndex=1;
             obj.hImg=image('Visible', 'on', ...
                 'XData', obj.overviewStack.xCoordsUnits, ...
