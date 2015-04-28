@@ -64,8 +64,8 @@ classdef goggleZoomedViewManager<handle
             end
                         
                 goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view creation starting',toc,'s')
-            basedir=obj.parentViewerDisplay.parentViewer.overviewDSS.baseDirectory;
-            f=obj.parentViewerDisplay.parentViewer.overviewDSS.originalStitchedFileNames{z};            
+            basedir=obj.parentViewerDisplay.overviewStack.baseDirectory;
+            f=obj.parentViewerDisplay.overviewStack.originalStitchedFileNames{z};            
             fp=fullfile(basedir, f);  
             
             if ~isempty(obj.xyPositionAdjustProfile)
@@ -247,7 +247,7 @@ function updateImage(obj, idx)
            'Visible', 'off', ...
            'CDataMapping', 'Scaled', ...
            'Tag', 'zoomedView', ...
-           'HitTest', 'off');
+           'HitTest', 'off', 'AlphaData', obj.parentViewerDisplay.hImg.AlphaData);
    end
    %% Update Image
    obj.hImg.XData=zv.x;

@@ -49,6 +49,9 @@ classdef goggleViewerDisplay<handle
                 obj.overviewStack.loadStackFromDisk;
             end
             obj.axes=imageDisplayAxes;
+            if ~isempty(obj.axes.Children)  %Clear if necesssary
+                delete(obj.axes.Children)
+            end
             obj.currentIndex=1;
             obj.hImg=image('Visible', 'on', ...
                 'XData', obj.overviewStack.xCoordsUnits, ...
