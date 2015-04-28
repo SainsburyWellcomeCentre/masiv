@@ -30,6 +30,7 @@ classdef goggleViewer<handle
         mosaicInfo
         overviewDSS
         mainDisplay
+        additionalDisplays
         
     end
     
@@ -222,6 +223,9 @@ classdef goggleViewer<handle
             case 'zAxisScroll'
                 stdout=obj.mainDisplay.seekZ(nScrolls);
                 if stdout
+                    for ii=obj.additionalDisplays
+                        ii.seekZ(nScrolls);
+                    end
                     obj.changeAxes;
                     notify(obj, 'Scrolled')
                 else
@@ -285,11 +289,19 @@ classdef goggleViewer<handle
             movedFlag=0;
             
             if xMove~=0
-                xlim(obj.hMainImgAx,xlim(obj.hMainImgAx)+xMove);
+                newLim=xlim(obj.hMainImgAx)+xMove;
+                xlim(obj.hMainImgAx,newLim);
+                for ii=obj.additionalDisplays
+                    xlim(ii.axes, newLim);
+                end
                 movedFlag=1;
             end
             if yMove~=0
-                ylim(obj.hMainImgAx,ylim(obj.hMainImgAx)+yMove);
+                newLim=ylim(obj.hMainImgAx)+yMove;
+                ylim(obj.hMainImgAx,newLim);
+                for ii=obj.additionalDisplays
+                    ylim(ii.axes, newLim);
+                end
                 movedFlag=1;
             end
             
@@ -323,6 +335,9 @@ classdef goggleViewer<handle
         function executeZoom(obj, zoomfactor)
             C = get (obj.hMainImgAx, 'CurrentPoint');
             zoom(obj.hMainImgAx,zoomfactor)
+            for ii=obj.additionalDisplays
+                zoom(ii.axes, zoomfactor);
+            end
             obj.centreView(C);
             obj.changeAxes
             notify(obj, 'Zoomed')
@@ -345,7 +360,10 @@ classdef goggleViewer<handle
             %% Do the move
             xlim(obj.hMainImgAx, xl+xMove);
             ylim(obj.hMainImgAx, yl+yMove);
-            
+            for ii=obj.additionalDisplays
+                xlim(ii.axes, xl+xMove);
+                ylim(ii.axes, yl+yMove);
+            end
         end
         
         %% ---Update axes
@@ -353,6 +371,11 @@ classdef goggleViewer<handle
             goggleDebugTimingInfo(0, 'GV: Calling mainDisplay updateZoomedView...',toc, 's')
             obj.mainDisplay.updateZoomedView
             goggleDebugTimingInfo(0, 'GV: mainDisplay updateZoomedView complete',toc, 's')
+            for ii=obj.additionalDisplays
+                goggleDebugTimingInfo(0, 'GV: Calling additional display updateZoomedView...',toc, 's')
+                ii.updateZoomedView
+                goggleDebugTimingInfo(0, 'GV: additional display updateZoomedView complete',toc, 's')
+            end
             goggleDebugTimingInfo(0, 'GV: Firing ViewChanged Event',toc, 's')
             notify(obj, 'ViewChanged')
         end
@@ -657,11 +680,6 @@ function [pluginDisplayString, pluginStartCallback]=getPluginInfo(pluginFile)
 pluginDisplayString=eval(strrep(pluginFile.name, '.m', '.displayString;'));
 pluginStartCallback={eval(['@', strrep(pluginFile.name, '.m', '')])};
 end
-
-
-
-
-
 
 
 
