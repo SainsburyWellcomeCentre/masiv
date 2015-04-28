@@ -18,7 +18,16 @@ classdef show3ChannelOverlay<goggleBoxPlugin
             baseDir=mosaicInfo.baseDirectory;
 
             %% Adjust for crop
+            try
             info=imfinfo(fullfile(baseDir,mosaicInfo.stitchedImagePaths.Ch01{sliceNum}));
+            catch err
+               deleteRequest(obj)
+                if ~exist(fullfile(baseDir,mosaicInfo.stitchedImagePaths.Ch01{sliceNum}), 'file')
+                    error('original image file not found')
+                else
+                    rethrow(err)
+                end
+            end
             [xoffset, yoffset]=checkTiffFileForOffset(info);
             xView=xView-xoffset;
             yView=yView-yoffset;
