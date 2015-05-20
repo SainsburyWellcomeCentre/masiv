@@ -122,9 +122,9 @@ classdef goggleViewerDisplay<handle
             czpofn=obj.overviewStack.zCoordsUnits(obj.currentIndex);
         end
         function ps=get.viewPixelSizeOriginalVoxels(obj)
-            obj.parentViewer.hImgAx.Units='pixels';
-            nPixelsWidthInAxesWidth=obj.parentViewer.hImgAx.Position(3);
-            obj.parentViewer.hImgAx.Units='normalized';
+            obj.parentViewer.hMainImgAx.Units='pixels';
+            nPixelsWidthInAxesWidth=obj.parentViewer.hMainImgAx.Position(3);
+            obj.parentViewer.hMainImgAx.Units='normalized';
             
             ps=nPixelsWidthInAxesWidth./range(obj.viewXLimOriginalCoords);
         end
