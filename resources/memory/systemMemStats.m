@@ -4,11 +4,17 @@ switch computer
     case 'GLNXA64'
         s=strsplit(evalc('system(''free'');'), '\n');
         
-        secondLine=strsplit(s{2});
-        totalMem=str2double(secondLine{2});
-        
-        thirdLine=strsplit(s{3});
-        freeMem=str2double(thirdLine{4});
+        lineToScrape= find(~cellfun(@isempty, (strfind( s, 'Mem:'))));
+        if isempty(lineToScrape)
+            freeMem=0;
+            totalMem=0;
+        else
+            secondLine=strsplit(s{lineToScrape});
+            totalMem=str2double(secondLine{2});
+            
+            thirdLine=strsplit(s{lineToScrape+1});
+            freeMem=str2double(thirdLine{4});
+        end
     case 'MACI64'
         f=str2num(evalc('system(''vm_stat | grep free | awk ''''{ print $3 }'''' | sed ''''s/\.//'''''');')); %#ok<*ST2NM>
         spec=str2num(evalc('system(''vm_stat | grep speculative | awk ''''{ print $3 }'''' | sed ''''s/\.//'''''');'));
