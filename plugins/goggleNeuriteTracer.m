@@ -1121,9 +1121,11 @@ function importData(~, ~, obj)
         rethrow(lasterror)
     end
 
+    updateMarkerTypeUISelections(obj); %Confirm that we need this. 
+
     obj.neuriteTrees=m;
     for ii=1:length(obj.neuriteTrees)
-        if ~isempty(obj.neuriteTrees{ii})
+        if ~isempty(obj.neuriteTrees{ii}) %if neurite tree is present
             obj.lastNode(ii)=length(obj.neuriteTrees{ii}.Node); %set highlight (append) node to last point in tree
             obj.lastNode(ii)=1;
         end
@@ -1147,7 +1149,7 @@ function importData(~, ~, obj)
     stdout=obj.goggleViewer.mainDisplay.seekZ(deltaZ); %Seek to this z-depth TODO: is this the best way?
     %TODO: Now ensure we are zoom out to zoom of 1 [how?]
 
-    updateMarkerTypeUISelections(obj); %Confirm that we need this. 
+
 
     if stdout
         obj.goggleViewer.mainDisplay.updateZoomedView;
