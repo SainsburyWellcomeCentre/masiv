@@ -1123,8 +1123,10 @@ function importData(~, ~, obj)
 
     obj.neuriteTrees=m;
     for ii=1:length(obj.neuriteTrees)
-        obj.lastNode(ii)=length(obj.neuriteTrees{ii}.Node); %set highlight (append) node to last point in tree
-        obj.lastNode(ii)=1;
+        if ~isempty(obj.neuriteTrees{ii})
+            obj.lastNode(ii)=length(obj.neuriteTrees{ii}.Node); %set highlight (append) node to last point in tree
+            obj.lastNode(ii)=1;
+        end
     end
 
     if length(obj.neuriteTrees)<obj.maxNeuriteTrees
