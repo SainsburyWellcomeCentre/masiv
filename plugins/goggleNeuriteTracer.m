@@ -978,7 +978,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         %------------------------------------------------------------------------------------------
         %Marker count functions
         function updateMarkerCount(obj, markerTypeToUpdate)
-            fprintf('\nTODO: make marker counts work\n\n')
+            %TODO: make marker counts work
             return
             if isempty(obj.neuriteTrees)
                 num=0;
