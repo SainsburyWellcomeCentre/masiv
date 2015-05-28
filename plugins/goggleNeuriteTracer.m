@@ -1128,6 +1128,10 @@ function importData(~, ~, obj)
         if ~isempty(obj.neuriteTrees{ii}) %if neurite tree is present
             obj.lastNode(ii)=length(obj.neuriteTrees{ii}.Node); %set highlight (append) node to last point in tree
             obj.lastNode(ii)=1;
+            %enable check box
+            obj.hTreeCheckBox(ii).Value=1;
+        else
+            obj.hTreeCheckBox(ii).Value=0;
         end
     end
 
@@ -1138,11 +1142,12 @@ function importData(~, ~, obj)
     end
 
     %Go to cell body of first available trace
-    presentTraces = find(~isempty(obj.neuriteTrees));
+    presentTraces=find(~cellfun(@isempty,obj.neuriteTrees));
     if isempty(presentTraces)
         fprintf('NO DATA PRESENT?!\n')
         return
     end
+
     ind = presentTraces(1);
     obj.hTreeSelection(ind).Value=1; %Set radio button to match what is selected
     deltaZ=obj.neuriteTrees{ind}.Node{1}.zVoxel-obj.goggleViewer.mainDisplay.currentIndex;
