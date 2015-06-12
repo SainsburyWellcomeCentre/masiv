@@ -478,7 +478,8 @@ function mouseMove (~, ~, obj)
     x=C(1, 1);
     y=C(2, 2);
     if x>=xl(1) && x<=xl(2) && y>=yl(1) && y<=yl(2)
-        notify(obj, 'CursorPositionChangedWithinImageAxes', CursorPositionData(C));
+        v=getPixelValueAtCoordinate(obj, x, y);
+        notify(obj, 'CursorPositionChangedWithinImageAxes', CursorPositionData(C, v));
     else
         notify(obj, 'CursorPositionChangedOutsideImageAxes')
     end        
@@ -622,6 +623,19 @@ function zProfile=loadXYAlignmentProfile
     else
         zProfile=[];
     end
+end
+
+function v=getPixelValueAtCoordinate(obj, x, y)
+zoomedViewStatus=obj.mainDisplay.zoomedViewNeeded&&obj.mainDisplay.zoomedViewManager.currentSliceFileExistsOnDisk;
+if zoomedViewStatus
+    [~, xIdx]=min(abs(x-obj.mainDisplay.zoomedViewManager.hImg.XData));
+    [~, yIdx]=min(abs(y-obj.mainDisplay.zoomedViewManager.hImg.YData));
+    v=obj.mainDisplay.zoomedViewManager.hImg.CData(yIdx, xIdx);
+else
+    [~, xIdx]=min(abs(x-obj.mainDisplay.overviewStack.xCoordsVoxels));
+    [~, yIdx]=min(abs(y-obj.mainDisplay.overviewStack.yCoordsVoxels));
+    v=obj.mainDisplay.hImg.CData(yIdx, xIdx);
+end
 end
 
 %% Plugins menu creation
