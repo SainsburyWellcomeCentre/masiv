@@ -55,6 +55,16 @@ classdef TVStitchedMosaicInfo
             end
             dsl=dsl(:);
         end
+        function obj=changeImagePaths(obj, strToReplace, newStr)
+                % Allows batch editing of the image paths. This can be
+                % needed if the base directory is changed
+                
+                s=fieldnames(obj.stitchedImagePaths);
+                for ii=1:numel(s)
+                    obj.stitchedImagePaths.(s{ii})=strrep(obj.stitchedImagePaths.(s{ii}), strToReplace, newStr);
+                end
+            
+        end
     end
     
 end
