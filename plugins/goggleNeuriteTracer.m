@@ -1144,7 +1144,7 @@ function importData(~, ~, obj)
     %Go to cell body of first available trace
     presentTraces=find(~cellfun(@isempty,obj.neuriteTrees));
     if isempty(presentTraces)
-        fprintf('NO DATA PRESENT?!\n')
+        fprintf('NO DATA PRESENT. Quitting import function!\n')
         return
     end
 
