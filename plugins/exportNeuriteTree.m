@@ -32,7 +32,7 @@ function varargout = exportNeuriteTree(neuriteTree,fname,downSample)
 % Output format
 % The returned matrix and the dumped file are in following format:
 %  * One row per node
-%  * Each row is: [nodeId,parentID,x position,y position,z position]
+%  * Each row is: [z position,nodeId,parentID,x position,y position]
 %  * The node with a parent ID of zero is the root node
 %
 %
@@ -63,7 +63,7 @@ end
 
 
 %Dump tree to a string using the dumptree method in matlab-tree
-treeAsTextDump = neuriteTree.dumptree(@(n) sprintf('%0.3f,%0.3f,%0.3f',n.xVoxel/downSample(1),n.yVoxel/downSample(1),n.zVoxel/downSample(2)));
+treeAsTextDump = neuriteTree.dumptree(@(n) sprintf('%0.3f,%0.3f,%0.3f',n.zVoxel/downSample(2),n.xVoxel/downSample(1),n.yVoxel/downSample(1)));
 
 if length(treeAsTextDump)==0
 	fprintf('Something went wrong with the tree dump: no data were returned\n')
