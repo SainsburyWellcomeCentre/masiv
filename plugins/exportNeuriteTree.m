@@ -5,12 +5,12 @@ function varargout = exportNeuriteTree(neuriteTree,fname,downSample)
 %
 %
 % Purpose
-%  Then neurite trees are stored in a tree structure defined by the matlab-tree class
+%   The neurite trees are stored in a tree structure defined by the matlab-tree class
 % (see: https://github.com/raacampbell13/matlab-tree). This function allows the tree
 % to be exported to a text file in a way that maintains the information describing 
 % the relationships between nodes. So the tree can be re-built in another programming 
 % language of the user's choice. 
-%  This function also provides the option of down-sampling the exported data. This 
+%   This function also provides the option of down-sampling the exported data. This 
 % is useful in case the user wishes to plot the exported tree over a down-sampled
 % brain, such as one in the Allen Reference Atlas space.
 %
