@@ -1,4 +1,12 @@
 function T=convertMarkerStructToTable(yml) %#ok<*AGROW>
+% Convert gogglemarker structure into a table. 
+%
+% function T=convertMarkerStructToTable(yml) 
+%
+% e.g.
+%  Y=readSimpleYAML('my_points.yml')
+%  T=convertMarkerStructToTable(T)
+
 x=[];
 y=[];
 z=[];
