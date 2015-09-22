@@ -871,7 +871,6 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
                 %Make leaves have a triangle
                 if ~isempty(find(leaves==visibleNodesInPathIdx(end)))
-                    leafNode=visibleNodesInPathIdx(end);
                     mSize = markerSz(1)/10;
                     if mSize<5 %TODO: do not hard-code this. 
                         mSize=5;
@@ -880,8 +879,11 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                         lWidth=2;
                     else
                         lWidth=1;
-                    end
-                    plot(hMainImgAx, markerX(1),markerY(1),'^w','markerfacecolor',markerCol,'linewidth',lWidth,'HitTest', 'off','Tag','NeuriteTracer','MarkerSize',mSize) 
+                    end 
+                    leafNode = obj.neuriteTrees{obj.currentTree}.Node{visibleNodesInPathIdx(end)};
+
+                    plot(hMainImgAx, leafNode.xVoxel, leafNode.yVoxel,'^w','markerfacecolor',...
+                        markerCol,'linewidth',lWidth,'HitTest', 'off','Tag','NeuriteTracer','MarkerSize',mSize) 
                 end
 
                 
