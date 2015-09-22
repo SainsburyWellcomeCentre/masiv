@@ -32,7 +32,7 @@ function varargout = exportNeuriteTree(neuriteTree,fname,downSample)
 % Output format
 % The returned matrix and the dumped file are in following format:
 %  * One row per node
-%  * Each row is: [z position,nodeId,parentID,x position,y position]
+%  * Each row is: [nodeId,parentID,z position,x position,y position]
 %  * The node with a parent ID of zero is the root node
 %
 %
