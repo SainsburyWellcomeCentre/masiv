@@ -615,8 +615,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             goggleDebugTimingInfo(2, sprintf('Found %d leaves',length(leaves)),toc,'s')
 
             pathToRoot=0; %If 1 we use the brute-force path to root. 
+            paths ={};
             if pathToRoot
-                paths ={};
                 for thisLeaf=1:length(leaves)
                     thisPath =  obj.neuriteTrees{obj.currentTree}.findpath(leaves(thisLeaf),1);
           
@@ -627,8 +627,9 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 end
 
             else
-                paths = obj.neuriteTrees{obj.currentTree}.getsegments;
-                for thisPath=1:length(paths)
+                segments = obj.neuriteTrees{obj.currentTree}.getsegments;
+                for ii=1:length(segments)
+                    thisPath = segments{ii};
                     if ~isempty(mFind(thisPath,visibleNodeIdx)) %Does this branch contain indices that are in this z-plane?
                         paths{n}=thisPath; 
                         n=n+1;
@@ -637,9 +638,11 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             end
             
 
-            %sort the paths by length
-            [~,ind]=sort(cellfun(@length,paths),'descend');
-            paths=paths(ind);
+            if pathToRoot
+                %sort the paths by length
+                [~,ind]=sort(cellfun(@length,paths),'descend');
+                paths=paths(ind)
+            end
 
             %remove points from shorter paths that intersect with the longest path
             %and points outside of the frame. 
@@ -647,6 +650,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             showRemovalDetails=0;
             nRemoved=0;
             for thisPath=length(paths):-1:1
+
                 if pathToRoot
                     initialSize=length(paths{thisPath});
                     if thisPath>1
