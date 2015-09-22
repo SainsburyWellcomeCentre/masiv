@@ -600,33 +600,42 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             %Check how many markers are visible from this depth. Remember that not in the current plane are likely 
             %also visible. This will depend on the Z marker diameter setting. 
             zRadius=(gbSetting('neuriteTracer.markerDiameter.z')/2); 
-            idx=allMarkerZRelativeToCurrentPlaneVoxels<zRadius; %1s indicate visible and 0s not visible 
+            idx=allMarkerZRelativeToCurrentPlaneVoxels<zRadius; %ones indicate visible and zeros not visible 
 
 
-            msg=sprintf('Found %d markers within view of this z-plane. %d are in this z-plane.',...
-                            length(idx), sum(allMarkerZRelativeToCurrentPlaneVoxels==0));
+            msg=sprintf('Found %d markers within %d planes of this z-plane. %d are in this z-plane.',...
+                            length(idx), zRadius, sum(allMarkerZRelativeToCurrentPlaneVoxels==0));
             goggleDebugTimingInfo(2, msg,toc,'s')
 
 
             %Search all branches of the tree for nodes that cross the plane. 
-            %Note that the following search (tree.findpath method) traces back 
-            %each leaf to the root node. So there will be be many redundant points
-            %in each branch. Fixing this may speed up performance slightly for trees
-            %with many branches. 
-            leaves = obj.neuriteTrees{obj.currentTree}.findleaves; %all the leaves of the tree
-            paths ={};
+            visibleNodeIdx = find(idx); %index of visible nodes in all branches 
             n=1;
+            leaves = obj.neuriteTrees{obj.currentTree}.findleaves; %all the leaves of the tree
             goggleDebugTimingInfo(2, sprintf('Found %d leaves',length(leaves)),toc,'s')
 
-            visibleNodeIdx = find(idx); %index of visible nodes in all branches 
-            for thisLeaf=1:length(leaves)
-                thisPath =  obj.neuriteTrees{obj.currentTree}.findpath(leaves(thisLeaf),1);
+            pathToRoot=0; %If 1 we use the brute-force path to root. 
+            if pathToRoot
+                paths ={};
+                for thisLeaf=1:length(leaves)
+                    thisPath =  obj.neuriteTrees{obj.currentTree}.findpath(leaves(thisLeaf),1);
           
-                if ~isempty(mFind(thisPath,visibleNodeIdx)) %Does this branch contain indices that are in this z-plane?
-                    paths{n}=thisPath; 
-                    n=n+1;
+                    if ~isempty(mFind(thisPath,visibleNodeIdx)) %Does this branch contain indices that are in this z-plane?
+                        paths{n}=thisPath; 
+                        n=n+1;
+                    end
+                end
+
+            else
+                paths = obj.neuriteTrees{obj.currentTree}.getsegments;
+                for thisPath=1:length(paths)
+                    if ~isempty(mFind(thisPath,visibleNodeIdx)) %Does this branch contain indices that are in this z-plane?
+                        paths{n}=thisPath; 
+                        n=n+1;
+                    end
                 end
             end
+            
 
             %sort the paths by length
             [~,ind]=sort(cellfun(@length,paths),'descend');
@@ -635,42 +644,56 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             %remove points from shorter paths that intersect with the longest path
             %and points outside of the frame. 
    
-
+            showRemovalDetails=0;
+            nRemoved=0;
             for thisPath=length(paths):-1:1
-                initialSize=length(paths{thisPath});
-                if thisPath>1
-                    [~,pathInd]=intersect(paths{thisPath},paths{1});
+                if pathToRoot
+                    initialSize=length(paths{thisPath});
+                    if thisPath>1
+                        [~,pathInd]=intersect(paths{thisPath},paths{1});
 
-                    %Do not remove if it's the root node only. This would
-                    %indicate a branch off the root node and it won't be
-                    %joined to the root node if remove it
-                    if length(pathInd)==1 & paths{thisPath}(pathInd)==1
-                        pathInd=[];
-                    end
+                        %Do not remove if it's the root node only. This would
+                        %indicate a branch off the root node and it won't be
+                        %joined to the root node if remove it
+                        if length(pathInd)==1 & paths{thisPath}(pathInd)==1
+                            pathInd=[];
+                        end
 
-                    if length(pathInd)>1
-                        pathInd(end)=[];
-                    end
+                        if length(pathInd)>1
+                            pathInd(end)=[];
+                        end
                     
-                    paths{thisPath}(pathInd)=[]; %trim
+                        paths{thisPath}(pathInd)=[]; %trim
+                    end
                 end
 
-                %remove branches that are not in view
+                %remove branches or segments that are not in view
                 x=[nodes(paths{thisPath}).xVoxel];
                 y=[nodes(paths{thisPath}).yVoxel];
                     
                 if all(~pointsInView(obj,x,y))
                     paths{thisPath}=[]; %remove branch if none of its nodes are visible
+                    nRemoved=nRemoved+1;
+                    if ~pathToRoot & showRemovalDetails
+                        goggleDebugTimingInfo(2, sprintf('Removed segment %d - out of x/y range',...
+                                            thisPath),toc,'s')
+                    end
                 end
 
-
-                goggleDebugTimingInfo(2, sprintf('Trimmed path %d from %d to %d points',...
-                    thisPath,initialSize,length(paths{thisPath})),toc,'s')
-                if isempty(paths{thisPath})
-                    paths(thisPath)=[];
+                if pathToRoot
+                    if showRemovalDetails
+                        goggleDebugTimingInfo(2, sprintf('Trimmed path %d from %d to %d points',...
+                            thisPath,initialSize,length(paths{thisPath})),toc,'s')
+                    end
+                    if isempty(paths{thisPath})
+                        paths(thisPath)=[];
+                    end
                 end
 
             end % for ii=length(paths):-1:1
+            if ~showRemovalDetails & ~pathToRoot
+                goggleDebugTimingInfo(2, sprintf('Removed %d segments out of x/y range paths',nRemoved),toc,'s')
+            end
 
             %If no markers are visible from the current z-plane AND in the current view we will not attempt to draw.
             %TODO: This is because we want to draw "shadows" of points not in view if NO points are in the current z-plane.
@@ -712,13 +735,14 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
                 goggleDebugTimingInfo(2, sprintf('===> Plotting path %d',ii),toc,'s')
 
+
                 visibleNodesInPathIdx=paths{ii}(visiblePathIdx); %Index values of nodes in the full tree which are also visible nodes
 
                 %Now we can extract the visible nodes and their corresponding relative z positions
                 visibleNodesInPath=nodes(visibleNodesInPathIdx); %Extract the visible nodes from the list of all nodes
                
 
-                goggleDebugTimingInfo(2, sprintf('Found visible %d nodes in current branch',length(visibleNodesInPathIdx)), toc, 's')
+                goggleDebugTimingInfo(2, sprintf('     Found visible %d nodes in current branch',length(visibleNodesInPathIdx)), toc, 's')
 
 
                 %embed into a nan vector to handle lines that leave and re-enter the plane
@@ -746,17 +770,17 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 markerSz=(markerDimXY*(1-visibleNodesInPathRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
                 markerSz=max(markerSz, markerMinSize);
 
-
-
-
-
                 %% Draw basic markers and lines 
                 obj.neuriteTraceHandles(obj.currentTree).hDisplayedLines = ...
                      plot(hMainImgAx, markerX , markerY, '-','color',markerCol,...
                     'Tag', 'NeuriteTracer','HitTest', 'off');
+                %goggleDebugTimingInfo(2, '     Plotted trace', toc, 's')
+
                 obj.neuriteTraceHandles(obj.currentTree).hDisplayedMarkers =  ...
                     scatter(hMainImgAx, markerX , markerY, markerSz, markerCol,...
                     'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracer');
+
+                goggleDebugTimingInfo(2, '     Plotted points and lines', toc, 's')
 
 
                 %Points that are not the root or leaves should all have at least one parent and child. 
@@ -842,7 +866,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
 
                 %Make leaves have a triangle
-                if ~isempty(find(leaves==visibleNodesInPathIdx(end)))   
+                if ~isempty(find(leaves==visibleNodesInPathIdx(end)))
                     leafNode=visibleNodesInPathIdx(end);
                     mSize = markerSz(1)/10;
                     if mSize<5 %TODO: do not hard-code this. 
