@@ -967,13 +967,13 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
 
             lastNodeObj = findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'LastNode') ;
-            verbose=0;
+            verbose=1;
             if ~isempty(lastNodeObj)
                 thisMarker = obj.neuriteTrees{obj.selectedTreeIdx}.Node{idx};
                 set(obj.neuriteTraceHandles(obj.selectedTreeIdx).hHighlightedMarker,...
                  'XData', thisMarker.xVoxel,...
                  'YData', thisMarker.yVoxel);
-                if verbose, goggleDebugTimingInfo(2, 'Moved lastnode marker',toc,'s'), end
+                if verbose, goggleDebugTimingInfo(2, sprintf('Moved lastnode marker to node %d',idx),toc,'s'), end
             else
                 drawAllTrees(obj)
             end
