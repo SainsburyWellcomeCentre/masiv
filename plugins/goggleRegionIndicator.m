@@ -73,8 +73,9 @@ classdef goggleRegionIndicator<goggleBoxPlugin
             obj.mnuSetUnset=uicontextmenu;
             uimenu(obj.mnuSetUnset, 'Label', 'Set current region as marked', 'Callback', {@setCurrentViewAsMarked, obj})
             uimenu(obj.mnuSetUnset, 'Label', 'Set current region as unmarked', 'Callback', {@resetCurrentViewMarked, obj})
-            uimenu(obj.mnuSetUnset, 'Label', 'Save region marking', 'Callback', {@saveAlphaMap, obj})
+            uimenu(obj.mnuSetUnset, 'Label', 'Save region marking', 'Separator', 'on', 'Callback', {@saveAlphaMap, obj})
             uimenu(obj.mnuSetUnset, 'Label', 'Load region marking', 'Callback', {@loadAlphaMap, obj})
+            uimenu(obj.mnuSetUnset, 'Label', 'Adjust Levels', 'Separator', 'on', 'Callback', {@adjustLevels, obj})
             obj.hImg.UIContextMenu=obj.mnuSetUnset;
             obj.hViewOutlineRect.UIContextMenu=obj.mnuSetUnset;
             obj.hMarkedOverlay.UIContextMenu=obj.mnuSetUnset;
@@ -143,4 +144,92 @@ end
 function setParentFigureFocus(~,~,obj)
 figure(obj.goggleViewer.hFig)
 end
+function adjustLevels(~, ~, obj)
+    w=380;
+    h=150;
+    p=obj.hFig.Position;
+    pos=[p(1)+(p(3)-w)./2 p(2)+(p(4)-h)./2, w, h];
+    
+    d = dialog('Position', pos,'Name','Adjust Overview Image Levels');
+%% Set up input controls    
+    
+    axLims=caxis(obj.hAx);
+
+    hMin = uicontrol('Parent',d,...
+        'Style','edit',...
+        'Position',[65 90 80 20],...
+        'String',num2str(axLims(1)), ...
+        'Callback', @validateNumericInput);
+    hMin.Tag=hMin.String;
+    
+    uicontrol('Parent',d,...
+        'Style','text',...
+        'Position',[5 88 55 20],...
+        'String','Min:', ...
+        'HorizontalAlignment', 'right');
+    
+    hMax = uicontrol('Parent',d,...
+        'Style','edit',...
+        'Position',[65 60 80 20],...
+        'String',num2str(axLims(2)), ...
+        'Callback', @validateNumericInput);
+    hMax.Tag=hMax.String;
+    
+    uicontrol('Parent',d,...
+        'Style','text',...
+        'Position',[5 58 55 20],...
+        'String','Max:', ...
+        'HorizontalAlignment', 'right');
+    
+    uicontrol('Parent',d,...
+        'Position',[65 10 70 25],...
+        'String','Cancel',...
+        'Callback','delete(gcf)');
+    
+    uicontrol('Parent',d,...
+        'Position',[140 10 70 25],...
+        'String','Apply',...
+        'Callback', @updateLevel);
+    
+    uicontrol('Parent',d,...
+        'Position',[215 10 70 25],...
+        'String','Auto', ...
+        'Callback', @setAutoLevel);
+    
+    uicontrol('Parent',d,...
+        'Position',[290 10 70 25],...
+        'String','OK', ...
+        'Callback', {@updateLevel, 1});
+    
+    %% Callbacks
+    function updateLevel(~, ~, doClose)
+        if nargin <3 || isempty(doClose)
+            doClose=0;
+        end
+        caxis(obj.hAx, [str2num(hMin.String), str2num(hMax.String)]); %#ok<ST2NM>
+        
+        if doClose
+            close(d)
+        end
+    end
+
+    function validateNumericInput(src,~)  
+        str=src.String;
+        if isempty(str2num(str)) %#ok<ST2NM>
+            src.String=src.Tag;
+        else
+            src.Tag=src.String;
+        end
+    end
+
+    function setAutoLevel(~,~)
+        hMin.String=num2str(prctile(obj.hImg.CData(:), 1));
+        hMax.String=num2str(prctile(obj.hImg.CData(:), 99));
+        updateLevel();
+    end
+end
+    
+   
+
+
 
