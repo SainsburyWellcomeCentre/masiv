@@ -3,9 +3,16 @@ classdef goggleRegionIndicator<goggleBoxPlugin
         hFig
         hAx
         hBackgroundRect
-        hMarkedOverlay
         hViewOutlineRect
         hImg
+        
+        %Editting these colors will change the displayed higlight colors.
+        %Up to 8 separate colors can be used. This is 3 colors (r, g, b):
+        overlayColors=hsv2rgb([0    0.3 0.6; 
+                               0.8  0.8 0.8; 
+                               0.8 0.8 0.8]'); 
+        hMarkedOverlay
+
         
         mnuSetUnset
         
@@ -40,7 +47,9 @@ classdef goggleRegionIndicator<goggleBoxPlugin
                 'NumberTitle', 'off', ...
                 'Name', ['Overview: ' obj.goggleViewer.mosaicInfo.experimentName], ...
                 'Color', gbSetting('viewer.panelBkgdColor'), ...
-                'KeyPressFcn', {@setParentFigureFocus, obj});
+                'KeyPressFcn', {@setParentFigureFocus, obj}, ...
+                'Visible', 'off', ...
+                'AlphaMap', [0 0.3 1]);
             obj.hAx=axes(...
                 'Parent', obj.hFig, ...
                 'Position', [0 0 1 1], ...
@@ -59,32 +68,47 @@ classdef goggleRegionIndicator<goggleBoxPlugin
             obj.hAx.Visible='off';
             colormap(obj.hFig, gray);
             caxis(obj.hAx,obj.goggleViewer.mainDisplay.contrastLims);
-            %% Draw highlighter image and outline rectangle
+            %% Draw highlighter image and outline rectangles
             hold on
-            redBox=cat(3, ones(bkgdRectPos(4), bkgdRectPos(3)), zeros(bkgdRectPos(4), bkgdRectPos(3)),zeros(bkgdRectPos(4), bkgdRectPos(3)));
-            obj.hMarkedOverlay=image(bkgdRectPos(1):bkgdRectPos(3), bkgdRectPos(2):bkgdRectPos(4), redBox);
-            obj.hMarkedOverlay.AlphaData=zeros(bkgdRectPos(4), bkgdRectPos(3));
-            
+            for ii=1:size(obj.overlayColors, 1)
+                blank=ones(bkgdRectPos(4), bkgdRectPos(3), 'uint16');
+                highlightImage=uint16(65535*cat(3, blank*obj.overlayColors(ii, 1), ...
+                                            blank*obj.overlayColors(ii, 2), ...
+                                            blank*obj.overlayColors(ii, 3)));
+                                  
+                obj.hMarkedOverlay{ii}=image(bkgdRectPos(1):bkgdRectPos(3), bkgdRectPos(2):bkgdRectPos(4), highlightImage, 'AlphaDataMapping', 'Direct');
+                obj.hMarkedOverlay{ii}.AlphaData=false(bkgdRectPos(4), bkgdRectPos(3));
+            end
             obj.hViewOutlineRect=rectangle('Parent', obj.hAx, 'Position', bkgdRectPos, 'EdgeColor', 'y');
             obj.setOutlineRectPosition
             hold off
             
             %% Menu initialisation
             obj.mnuSetUnset=uicontextmenu;
-            uimenu(obj.mnuSetUnset, 'Label', 'Set current region as marked', 'Callback', {@setCurrentViewAsMarked, obj})
-            uimenu(obj.mnuSetUnset, 'Label', 'Set current region as unmarked', 'Callback', {@resetCurrentViewMarked, obj})
+            setMnu=uimenu(obj.mnuSetUnset, 'Label', 'Add current region marking');
+                for ii=1:size(obj.overlayColors, 1)
+                    uimenu(setMnu, 'Label', 'Mark', 'ForegroundColor', obj.overlayColors(ii, :), 'Callback', {@setCurrentViewAsMarked, obj, ii});
+                end
+            unsetMnu=uimenu(obj.mnuSetUnset, 'Label', 'Remove current region marking');
+                for ii=1:size(obj.overlayColors, 1)
+                    uimenu(unsetMnu, 'Label', 'Unmark', 'ForegroundColor', obj.overlayColors(ii, :), 'Callback', {@resetCurrentViewAsMarked, obj, ii});
+                end
+                uimenu(unsetMnu, 'Label', 'Remove All Marks', 'Separator', 'on', 'Callback', {@resetCurrentViewAsMarked, obj, 0});
             uimenu(obj.mnuSetUnset, 'Label', 'Save region marking', 'Separator', 'on', 'Callback', {@saveAlphaMap, obj})
             uimenu(obj.mnuSetUnset, 'Label', 'Load region marking', 'Callback', {@loadAlphaMap, obj})
             uimenu(obj.mnuSetUnset, 'Label', 'Adjust Levels', 'Separator', 'on', 'Callback', {@adjustLevels, obj})
             obj.hImg.UIContextMenu=obj.mnuSetUnset;
             obj.hViewOutlineRect.UIContextMenu=obj.mnuSetUnset;
-            obj.hMarkedOverlay.UIContextMenu=obj.mnuSetUnset;
+            for ii=1:numel(obj.hMarkedOverlay)
+            obj.hMarkedOverlay{ii}.UIContextMenu=obj.mnuSetUnset;
+            end
             %% Set listeners
             obj.panListener=event.listener(obj.goggleViewer, 'Panned', @obj.setOutlineRectPosition);
             obj.zoomedListener=event.listener(obj.goggleViewer, 'Zoomed', @obj.setOutlineRectPosition);
             obj.scrollListener=event.listener(obj.goggleViewer, 'Scrolled', @obj.updateOverviewImage);
 
-            
+            %% Ready to roll: Display!
+            obj.hFig.Visible='on';
         end
         %% Callbacks
         function setOutlineRectPosition(obj, ~, ~)
@@ -117,30 +141,53 @@ function deleteRequest(~, ~, obj)
     delete(obj);
 end
 
-function setCurrentViewAsMarked(~, ~, obj)
+function setCurrentViewAsMarked(~, ~, obj, n)
     [xPos, yPos]=obj.getCurrentPos;
     xPos=round(xPos);yPos=round(yPos);
-    obj.hMarkedOverlay.AlphaData(yPos(1):yPos(2), xPos(1):xPos(2))=0.3;
+    obj.hMarkedOverlay{n}.AlphaData(yPos(1):yPos(2), xPos(1):xPos(2))=true;
 end
-function resetCurrentViewMarked(~, ~,obj)
+function resetCurrentViewAsMarked(~, ~,obj, n)
     [xPos, yPos]=obj.getCurrentPos;
     xPos=round(xPos);yPos=round(yPos);
-    obj.hMarkedOverlay.AlphaData(yPos(1):yPos(2), xPos(1):xPos(2))=0;
+    if n>0
+        obj.hMarkedOverlay{n}.AlphaData(yPos(1):yPos(2), xPos(1):xPos(2))=false;
+    else
+        for ii=1:numel(obj.hMarkedOverlay)
+            obj.hMarkedOverlay{ii}.AlphaData(yPos(1):yPos(2), xPos(1):xPos(2))=false;
+        end
+    end
 end
+
 function saveAlphaMap(~,~,obj)
-I=obj.hMarkedOverlay.AlphaData;
-[f,p]=uiputfile('*.tif', 'Save Mark Map as...', gbSetting('defaultDirectory'));
-if ~isempty(f)&&~isempty(p)&&~isnumeric(p)&&~isnumeric(f)
-    imwrite(I,fullfile(p,f))
+    I=convertAlphaMapsToSingleImage(obj.hMarkedOverlay);
+    [f,p]=uiputfile('*.tif', 'Save Mark Map as...', gbSetting('defaultDirectory'));
+    if ~isempty(f)&&~isempty(p)&&~isnumeric(p)&&~isnumeric(f)
+        imwrite(I,fullfile(p,f))
+        msgbox('Image Saved')
+    end
 end
+function outputImage=convertAlphaMapsToSingleImage(imageArray)
+set(gcf, 'pointer', 'watch');drawnow
+outputImage=zeros(size(imageArray{1}.CData, 1), size(imageArray{1}.CData, 2), 'uint8');
+for ii=1:numel(imageArray);
+    outputImage=outputImage+uint8(2^(ii-1)*imageArray{ii}.AlphaData);
 end
+set(gcf, 'pointer', 'arrow');drawnow
+end
+
 function loadAlphaMap(~,~,obj)
-[f,p]=uigetfile('*.tif', 'Load Map Markings', gbSetting('defaultDirectory'));
-if ~isempty(f)&&~isempty(p)&&~isnumeric(p)&&~isnumeric(f)
-    I=im2double(imread(fullfile(p,f)));
-    obj.hMarkedOverlay.AlphaData=I;
+    [f,p]=uigetfile('*.tif', 'Load Map Markings', gbSetting('defaultDirectory'));
+    if ~isempty(f)&&~isempty(p)&&~isnumeric(p)&&~isnumeric(f)
+        I=imread(fullfile(p,f));
+        convertSingleImageToAlphaMapsAndSet(I, obj);
+    end
 end
+function convertSingleImageToAlphaMapsAndSet(I, obj)
+    for ii=1:numel(obj.hMarkedOverlay)
+        obj.hMarkedOverlay{ii}.AlphaData=logical(bitget(I, ii));    
+    end
 end
+
 function setParentFigureFocus(~,~,obj)
 figure(obj.goggleViewer.hFig)
 end
