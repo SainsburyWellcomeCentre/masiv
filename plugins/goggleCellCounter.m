@@ -17,6 +17,7 @@ classdef goggleCellCounter<goggleBoxPlugin
         hModeButtonGroup
         hModeAdd
         hModeDelete
+        hSuspendDrawing
         
         cursorX
         cursorY
@@ -141,6 +142,18 @@ classdef goggleCellCounter<goggleBoxPlugin
             setUpSettingBox('Z Size', 'cellCounter.markerDiameter.z', 0.7, hSettingPanel, obj)
             setUpSettingBox('Min. Size', 'cellCounter.minimumSize', 0.6, hSettingPanel, obj)
             setUpSettingBox('Delete Prox.', 'cellCounter.maximumDistanceVoxelsForDeletion', 0.48, hSettingPanel, obj)
+            
+            obj.hSuspendDrawing=uicontrol(...
+                'Parent', hSettingPanel, ...
+                'Style', 'checkbox', ...
+                'Units', 'Normalized', ...
+                'Position', [0.05 0.38 0.9 0.08], ...
+                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'FontName', obj.fontName, ...
+                'FontSize', obj.fontSize - 1, ...
+                'String', 'Hide (h)', ...
+                'Callback', @(h,e) obj.drawMarkers(h,e));
 
             %% Import / Export data
            
@@ -366,61 +379,66 @@ classdef goggleCellCounter<goggleBoxPlugin
         
         function drawMarkers(obj, ~, ~)
             if ~isempty(obj.markers)
-                goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Beginning',toc,'s')
-                obj.clearMarkers;
-                goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Markers cleared',toc,'s')
-                %% Calculate position and size
-                zRadius=(gbSetting('cellCounter.markerDiameter.z')/2);
-                
-                allMarkerZVoxel=[obj.markers.zVoxel];
-                
-                allMarkerZRelativeToCurrentPlaneVoxels=(abs(allMarkerZVoxel-obj.cursorZVoxels));
-                
-                idx=allMarkerZRelativeToCurrentPlaneVoxels<zRadius;
-                if ~any(idx)
+                if obj.hSuspendDrawing.Value
+                    obj.clearMarkers();
                     return
-                end
-                markersWithinViewOfThisPlane=obj.markers(idx);
-                
-                markerX=[markersWithinViewOfThisPlane.xVoxel];
-                markerY=[markersWithinViewOfThisPlane.yVoxel];
-                markerZ=[markersWithinViewOfThisPlane.zVoxel];
-                
-                [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ);
-                markerRelZ=allMarkerZRelativeToCurrentPlaneVoxels(idx);
-                markerSz=(gbSetting('cellCounter.markerDiameter.xy')*(1-markerRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
-                
-                markerSz=max(markerSz, gbSetting('cellCounter.minimumSize'));
-                
-                markerCol=cat(1, markersWithinViewOfThisPlane.color);
-                
-                hMainImgAx=obj.goggleViewer.hMainImgAx;
-                prevhold=ishold(hMainImgAx);
-                hold(hMainImgAx, 'on')
-                %% Eliminate markers not in the current x y view
-                xView=obj.goggleViewer.mainDisplay.viewXLimOriginalCoords;
-                yView=obj.goggleViewer.mainDisplay.viewYLimOriginalCoords;
-                
-                inViewX=(markerX>=xView(1))&(markerX<=xView(2));
-                inViewY=(markerY>=yView(1))&(markerY<=yView(2));
-                
-                inViewIdx=inViewX&inViewY;
-                
-                markerX=markerX(inViewIdx);
-                markerY=markerY(inViewIdx);
-                markerSz=markerSz(inViewIdx);
-                markerCol=markerCol(inViewIdx, :);
-                %% Draw
-                goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Beginning drawing',toc,'s')
-                obj.hDisplayedMarkers=scatter(obj.goggleViewer.hMainImgAx, markerX , markerY, markerSz, markerCol, 'filled', 'HitTest', 'off', 'Tag', 'CellCounter');
-                goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Drawing complete',toc,'s')
-                %% Draw highlights on this plane if we're not too zoomed out
-                
-                obj.drawMarkerHighlights;
-                goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Complete',toc,'s')
-                %% Restore hold
+                else
+                    goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Beginning',toc,'s')
+                    obj.clearMarkers;
+                    goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Markers cleared',toc,'s')
+                    %% Calculate position and size
+                    zRadius=(gbSetting('cellCounter.markerDiameter.z')/2);
+                    
+                    allMarkerZVoxel=[obj.markers.zVoxel];
+                    
+                    allMarkerZRelativeToCurrentPlaneVoxels=(abs(allMarkerZVoxel-obj.cursorZVoxels));
+                    
+                    idx=allMarkerZRelativeToCurrentPlaneVoxels<zRadius;
+                    if ~any(idx)
+                        return
+                    end
+                    markersWithinViewOfThisPlane=obj.markers(idx);
+                    
+                    markerX=[markersWithinViewOfThisPlane.xVoxel];
+                    markerY=[markersWithinViewOfThisPlane.yVoxel];
+                    markerZ=[markersWithinViewOfThisPlane.zVoxel];
+                    
+                    [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ);
+                    markerRelZ=allMarkerZRelativeToCurrentPlaneVoxels(idx);
+                    markerSz=(gbSetting('cellCounter.markerDiameter.xy')*(1-markerRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
+                    
+                    markerSz=max(markerSz, gbSetting('cellCounter.minimumSize'));
+                    
+                    markerCol=cat(1, markersWithinViewOfThisPlane.color);
+                    
+                    hMainImgAx=obj.goggleViewer.hMainImgAx;
+                    prevhold=ishold(hMainImgAx);
+                    hold(hMainImgAx, 'on')
+                    %% Eliminate markers not in the current x y view
+                    xView=obj.goggleViewer.mainDisplay.viewXLimOriginalCoords;
+                    yView=obj.goggleViewer.mainDisplay.viewYLimOriginalCoords;
+                    
+                    inViewX=(markerX>=xView(1))&(markerX<=xView(2));
+                    inViewY=(markerY>=yView(1))&(markerY<=yView(2));
+                    
+                    inViewIdx=inViewX&inViewY;
+                    
+                    markerX=markerX(inViewIdx);
+                    markerY=markerY(inViewIdx);
+                    markerSz=markerSz(inViewIdx);
+                    markerCol=markerCol(inViewIdx, :);
+                    %% Draw
+                    goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Beginning drawing',toc,'s')
+                    obj.hDisplayedMarkers=scatter(obj.goggleViewer.hMainImgAx, markerX , markerY, markerSz, markerCol, 'filled', 'HitTest', 'off', 'Tag', 'CellCounter');
+                    goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Drawing complete',toc,'s')
+                    %% Draw highlights on this plane if we're not too zoomed out
+                    
+                    obj.drawMarkerHighlights;
+                    goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Complete',toc,'s')
+                    %% Restore hold
                 if ~prevhold
                     hold(hMainImgAx, 'off')
+                end
                 end
             end
         end
@@ -531,6 +549,32 @@ end
 
 %% Callbacks
 
+function keyPress(~, eventdata, obj)
+key=eventdata.Key;
+key=strrep(key, 'numpad', '');
+
+ctrlMod=ismember('control', eventdata.Modifier);
+
+switch key
+    case {'1' '2' '3' '4' '5' '6' '7' '8' '9'}
+        obj.hMarkerTypeSelection(str2double(key)).Value=1;
+    case {'0'}
+        obj.hMarkerTypeSelection(10).Value=1;
+    case 'a'
+        if ctrlMod
+            obj.hModeAdd.Value=1;
+        end
+    case 'd'
+        if ctrlMod
+            obj.hModeDelete.Value=1;
+        end
+    case 'h'
+        obj.hSuspendDrawing.Value=~obj.hSuspendDrawing.Value;
+        obj.drawMarkers();
+end
+end
+
+
 function deleteRequest(~, ~, obj, forceQuit)
     gbSetting('cellCounter.figurePosition', obj.hFig.Position)
     if obj.changeFlag && ~(nargin>3 && forceQuit ==1)
@@ -630,28 +674,6 @@ y=obj.deCorrectedCursorY;
 
 euclideanDistance=sqrt((mX-x).^2+(mY-y).^2);
 [dist, idx]=min(euclideanDistance);
-end
-
-function keyPress(~, eventdata, obj)
-key=eventdata.Key;
-key=strrep(key, 'numpad', '');
-
-ctrlMod=ismember('control', eventdata.Modifier);
-
-switch key
-    case {'1' '2' '3' '4' '5' '6' '7' '8' '9'}
-        obj.hMarkerTypeSelection(str2double(key)).Value=1;
-    case {'0'}
-        obj.hMarkerTypeSelection(10).Value=1;
-    case 'a'
-        if ctrlMod
-            obj.hModeAdd.Value=1;
-        end
-    case 'd'
-        if ctrlMod
-            obj.hModeDelete.Value=1;
-        end
-end
 end
 
 function [m, t]=convertStructArrayToMarkerAndTypeArrays(s)
