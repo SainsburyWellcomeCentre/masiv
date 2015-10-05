@@ -33,6 +33,7 @@ classdef goggleViewer<handle
         mainDisplay
         additionalDisplays
         contrastMode=0;
+        dragOrigin=NaN;
         
     end
     
@@ -81,6 +82,8 @@ classdef goggleViewer<handle
                 'KeyReleaseFcn', {@hFigMain_KeyRelease, obj}, ...
                 'WindowButtonMotionFcn', {@mouseMove, obj}, ...
                 'WindowScrollWheelFcn', {@hFigMain_ScrollWheel, obj}, ...
+                'WindowButtonDownFcn', {@hFigMain_BtnDown, obj}, ...
+                'WindowButtonUpFcn', {@hFigMain_BtnUp, obj}, ...
                 'CloseRequestFcn', {@closeRequest, obj}, ...
                 'BusyAction', 'cancel', 'Visible', 'off');
             obj.hMainImgAx=axes(...
@@ -475,8 +478,16 @@ function hFigMain_KeyRelease(~, eventdata, obj)
             end
     end
 end
+function hFigMain_BtnDown(~, ~, obj)
+    if obj.contrastMode;
+        obj.dragOrigin=mouseMove([],[],obj);
+    end
+end
+function hFigMain_BtnUp(~, ~, obj)
+    obj.dragOrigin=NaN;
+end
 
-function mouseMove (~, ~, obj)
+function pos=mouseMove (~, ~, obj)
     C = get (obj.hMainImgAx, 'CurrentPoint');
     xl=xlim(obj.hMainImgAx);
     yl=ylim(obj.hMainImgAx);
@@ -487,7 +498,25 @@ function mouseMove (~, ~, obj)
         notify(obj, 'CursorPositionChangedWithinImageAxes', CursorPositionData(C, v));
     else
         notify(obj, 'CursorPositionChangedOutsideImageAxes')
-    end        
+    end 
+    
+    pos=[x,y];
+    
+    if obj.contrastMode && ~any(isnan(obj.dragOrigin))
+        %% Contrast
+        delta=pos-obj.dragOrigin;
+        obj.hjSliderContrast.setHighValue(obj.hjSliderContrast.getHighValue()+delta(2)/4);
+        
+        
+        %% Brightness
+        obj.hjSliderContrast.setHighValue(obj.hjSliderContrast.getHighValue()+delta(1)/4);
+        obj.hjSliderContrast.setLowValue(obj.hjSliderContrast.getLowValue()+delta(1)/4);
+        %% Reset
+        obj.dragOrigin=pos;
+    end
+    
+    
+    
 end
 function hFigMain_ScrollWheel(~, eventdata, obj)
     startDebugOutput
