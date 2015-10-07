@@ -102,9 +102,12 @@ classdef goggleViewer<handle
                     uimenu(obj.mnuImage, 'Label', 'Adjust precise XY position', ...
                                      'Callback', {@adjustXYPosClick, obj});
                                 
+            addPlugins(obj.mnuImage, obj, 'resources/corePlugins', 1);
+
             
             obj.mnuPlugins=uimenu(obj.hFig, 'Label', 'Plugins');
-                    addPlugins(obj.mnuPlugins, obj,'plugins')
+                    addPlugins(obj.mnuPlugins, obj,'plugins');
+                    
             obj.mnuTutPlugins=uimenu(obj.mnuPlugins,'label','Tutorials');
                     addPlugins(obj.mnuTutPlugins, obj,['plugins',filesep,'tutorials'])
 
@@ -630,7 +633,10 @@ end
 end
 
 %% Plugins menu creation
-function addPlugins(hMenuBase, obj, pluginsDirName)
+function addPlugins(hMenuBase, obj, pluginsDirName, separateFirstEntry)
+    if nargin<4||isempty(separateFirstEntry)
+        separateFirstEntry=0;
+    end
     pluginsDir=fullfile(fileparts(which('goggleViewer')), pluginsDirName);
     
     if ~exist(pluginsDir, 'dir')
@@ -647,7 +653,10 @@ function addPlugins(hMenuBase, obj, pluginsDirName)
             
             [pluginDisplayString, pluginStartCallback]=getPluginInfo(filesInPluginsDirectory(ii));
                        
-            uimenu(hMenuBase, 'Label', pluginDisplayString, 'Callback', pluginStartCallback, 'UserData', obj)
+            hItem=uimenu(hMenuBase, 'Label', pluginDisplayString, 'Callback', pluginStartCallback, 'UserData', obj);
+            if separateFirstEntry&&ii==1
+                hItem.Separator='on';
+            end
         end
     end
 end
