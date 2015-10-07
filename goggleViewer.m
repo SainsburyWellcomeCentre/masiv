@@ -444,7 +444,7 @@ function hFigMain_KeyPress (~, eventdata, obj)
 
     %% What shall we do?
     ctrlMod=ismember('control', eventdata.Modifier);
-    
+    shiftMod=ismember('shift', eventdata.Modifier);
     if ~ctrlMod
         switch eventdata.Key
             case 'uparrow'
@@ -457,21 +457,24 @@ function hFigMain_KeyPress (~, eventdata, obj)
                 obj.formatKeyPanAndAddToQueue(eventdata);
             case 'c'
                 updateContrastHistogram(obj.mainDisplay, obj.hAxContrastHist)
-            case 'space'
-                if ~obj.contrastMode
-                    obj.contrastMode=1;
-                    obj.hFig.Pointer='bottom';
-                end
+           
             otherwise
                 notify(obj, 'KeyPress', KeyPressEventData(eventdata))
         end
     else
         notify(obj, 'KeyPress', KeyPressEventData(eventdata))
     end
+    if shiftMod
+         if ~obj.contrastMode
+             obj.contrastMode=1;
+             obj.hFig.Pointer='bottom';
+         end
+    end
+        
 end
 function hFigMain_KeyRelease(~, eventdata, obj)
-    switch eventdata.Key
-        case 'space'
+shiftMod=ismember('shift', eventdata.Modifier);
+    if ~shiftMod
             if obj.contrastMode
                 obj.contrastMode=0;
                 obj.hFig.Pointer='arrow';
