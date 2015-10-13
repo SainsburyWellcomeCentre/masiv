@@ -908,11 +908,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 if any(visibleNodesInPathRelZ==0)
                     f=find(visibleNodesInPathRelZ==0);
 
-                    %The following currently draws lines between points the shouldn't be joined
-                    %when stuff enters and leaves the z-plane
-                    %obj.neuriteTraceHandles(obj.currentTree).hDisplayedLinesHighlight=plot(hMainImgAx,  markerX(f), markerY(f), '-',...
-                    %    'Color',obj.neuriteTraceHandles(obj.currentTree).hDisplayedLines.Color,'LineWidth',2,'Tag', 'NeuriteTracer','HitTest', 'off');
-                    obj.neuriteTraceHandles(obj.currentTree).hDisplayedMarkerHighlights=scatter(hMainImgAx, markerX(f), markerY(f), markerSz(f)/4, [1,1,1],...
+                    obj.neuriteTraceHandles(obj.currentTree).hDisplayedMarkerHighlights = ...
+                            scatter(hMainImgAx, markerX(f), markerY(f), markerSz(f)/4, [1,1,1],...
                             'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracerHighlights');
 
                 end
@@ -1206,12 +1203,12 @@ end
 
 %% Utilities
 function ms=defaultMarkerTypes(nTypes)
-ms(nTypes)=goggleMarkerType;
-cols=lines(nTypes);
-for ii=1:nTypes
-    ms(ii).name=sprintf('Tree%u', ii);
-    ms(ii).color=cols(ii, :);
-end
+    ms(nTypes)=goggleMarkerType;
+    cols=lines(nTypes);
+    for ii=1:nTypes
+        ms(ii).name=sprintf('Tree%u', ii);
+        ms(ii).color=cols(ii, :);
+    end
 end
 
 %which points are in the x/y view (may still be in a different z plane)
@@ -1241,39 +1238,39 @@ end
 
 function [dist, idx]=minEucDist2DToMarker(markerCollection, obj)            
 
+    mX=[markerCollection.xVoxel];
+    mY=[markerCollection.yVoxel];
 
-mX=[markerCollection.xVoxel];
-mY=[markerCollection.yVoxel];
+    x=obj.deCorrectedCursorX;
+    y=obj.deCorrectedCursorY;
 
-x=obj.deCorrectedCursorX;
-y=obj.deCorrectedCursorY;
-
-euclideanDistance=sqrt((mX-x).^2+(mY-y).^2);
-[dist, idx]=min(euclideanDistance);
+    euclideanDistance=sqrt((mX-x).^2+(mY-y).^2);
+    [dist, idx]=min(euclideanDistance);
 end
+
 
 function keyPress(~, eventdata, obj)
-key=eventdata.Key;
-key=strrep(key, 'numpad', '');
+    key=eventdata.Key;
+    key=strrep(key, 'numpad', '');
 
-ctrlMod=ismember('control', eventdata.Modifier);
+    ctrlMod=ismember('control', eventdata.Modifier);
 
-
-switch key
-    case {'1' '2' '3' '4' '5' '6' '7' '8' '9'}
-        obj.hTreeSelection(str2double(key)).Value=1;
-    case {'0'}
-        obj.hTreeSelection(10).Value=1;
-    case 'a'
-        if ctrlMod
-            obj.hModeAdd.Value=1;
-        end
-    case 'd'
-        if ctrlMod
-            obj.hModeDelete.Value=1;
-        end
+    switch key
+        case {'1' '2' '3' '4' '5' '6' '7' '8' '9'}
+            obj.hTreeSelection(str2double(key)).Value=1;
+        case {'0'}
+            obj.hTreeSelection(10).Value=1;
+        case 'a'
+            if ctrlMod
+                obj.hModeAdd.Value=1;
+            end
+        case 'd'
+            if ctrlMod
+                obj.hModeDelete.Value=1;
+            end
+    end
 end
-end
+
 
 function [m, t]=convertStructArrayToMarkerAndTypeArrays(s)
     f=fieldnames(s);
@@ -1289,6 +1286,7 @@ function [m, t]=convertStructArrayToMarkerAndTypeArrays(s)
     end
 end
 
+
 function [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ)
     zvm=obj.goggleViewer.mainDisplay.zoomedViewManager;
     if isempty(zvm.xyPositionAdjustProfile)
@@ -1300,6 +1298,7 @@ function [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ)
     end
         
 end
+
 
 function IND = mFind(long,short)
 % function IND = mFind(long,short)
@@ -1355,50 +1354,51 @@ short=short(:)';
     error('There seems to be a mistake; please check the inputs.')    
   end
   
-end
+end %mFind
+
 %% Set up context menus to change markers
 function setNameChangeContextMenu(h, obj)
-mnuChangeMarkerName=uicontextmenu;
-uimenu(mnuChangeMarkerName, 'Label', 'Change name...', 'Callback', {@changeMarkerTypeName, h, obj})
-h.UIContextMenu=mnuChangeMarkerName;
+    mnuChangeMarkerName=uicontextmenu;
+    uimenu(mnuChangeMarkerName, 'Label', 'Change name...', 'Callback', {@changeMarkerTypeName, h, obj})
+    h.UIContextMenu=mnuChangeMarkerName;
 end
 
 function setColorChangeContextMenu(h, obj)
-mnuChangeMarkerColor=uicontextmenu;
-uimenu(mnuChangeMarkerColor, 'Label', 'Change color...','Callback', {@changeMarkerTypeColor, h, obj})
-h.UIContextMenu=mnuChangeMarkerColor;
+    mnuChangeMarkerColor=uicontextmenu;
+    uimenu(mnuChangeMarkerColor, 'Label', 'Change color...','Callback', {@changeMarkerTypeColor, h, obj})
+    h.UIContextMenu=mnuChangeMarkerColor;
 end
 
 %% Marker change callbacks
 function changeMarkerTypeName(~, ~, obj, parentObj)
-oldName=obj.String;
-proposedNewName=inputdlg('Change marker name to:', 'Cell Counter: Change Marker Name', 1, {oldName});
+    oldName=obj.String;
+    proposedNewName=inputdlg('Change marker name to:', 'Cell Counter: Change Marker Name', 1, {oldName});
 
-if isempty(proposedNewName)
-    return
-else
-    proposedNewName=matlab.lang.makeValidName(proposedNewName{1});
-end
-if ismember(proposedNewName, {parentObj.markerTypes.name})
-    msgbox(sprintf('Name %s is alread taken!', proposedNewName), 'Cell Counter')
-    return
-end
-%% Change type
-oldType=parentObj.markerTypes(obj.UserData);
-newType=oldType;newType.name=proposedNewName;
-parentObj.markerTypes(obj.UserData)=newType;
-
-%% Change matching markers
-if ~isempty(parentObj.neuriteTrees)
-    markersWithOldTypeIdx=find([parentObj.neuriteTrees.type]==oldType);
-    for ii=1:numel(markersWithOldTypeIdx)
-        parentObj.neuriteTrees(markersWithOldTypeIdx(ii)).type=newType;
+    if isempty(proposedNewName)
+        return
+    else
+        proposedNewName=matlab.lang.makeValidName(proposedNewName{1});
     end
-end
-%% Refresh panel
-obj.String=proposedNewName;
-%% Set change flag
-            parentObj.changeFlag=1;
+    if ismember(proposedNewName, {parentObj.markerTypes.name})
+        msgbox(sprintf('Name %s is alread taken!', proposedNewName), 'Cell Counter')
+        return
+    end
+    %% Change type
+    oldType=parentObj.markerTypes(obj.UserData);
+    newType=oldType;newType.name=proposedNewName;
+    parentObj.markerTypes(obj.UserData)=newType;
+
+    %% Change matching markers
+    if ~isempty(parentObj.neuriteTrees)
+        markersWithOldTypeIdx=find([parentObj.neuriteTrees.type]==oldType);
+        for ii=1:numel(markersWithOldTypeIdx)
+            parentObj.neuriteTrees(markersWithOldTypeIdx(ii)).type=newType;
+        end
+    end
+    %% Refresh panel
+    obj.String=proposedNewName;
+    %% Set change flag
+    parentObj.changeFlag=1;
 end
 
 function changeMarkerTypeColor(~, ~, obj, parentObj)
