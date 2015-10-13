@@ -129,10 +129,10 @@ classdef goggleViewer<handle
              ppos=getpixelposition(sliderPanel);
              border=ppos(3:4)./[100 20]; border=[border border*2];
              
-             obj.hjSliderContrast = com.jidesoft.swing.RangeSlider(0,5000,0,1000);  % min,max,low,high
+             obj.hjSliderContrast = com.jidesoft.swing.RangeSlider(0,15000,0,1000);  % min,max,low,high
              obj.hjSliderContrast = javacomponent(obj.hjSliderContrast, [border(1),border(2),ppos(3)-border(3),ppos(4)-border(4)], sliderPanel);
              
-             set(obj.hjSliderContrast, 'MajorTickSpacing',1000, 'MinorTickSpacing',500, 'PaintTicks',true, 'PaintLabels',true, ...
+             set(obj.hjSliderContrast, 'MajorTickSpacing',5000, 'MinorTickSpacing',1000, 'PaintTicks',true, 'PaintLabels',true, ...
                  'Background',java.awt.Color(0.1, 0.1, 0.1), 'Foreground', java.awt.Color(0.8, 0.8, 0.8), ...
                  'StateChangedCallback',@(h,e) adjustContrast(h,e,obj));
             
