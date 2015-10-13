@@ -44,6 +44,9 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         hAxon
         hDendrite
 
+        hIsTerminatedGroup
+        hIsTerminated
+
         cursorX
         cursorY
         
@@ -187,7 +190,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 'Style', 'radiobutton', ...
                 'Units', 'normalized', ...
                 'Position', [0.05 0.45 0.96 0.47], ...
-                'String', 'Axon', ...
+                'String', 'Axon', ...                
+                'Callback', {@neuriteTypeCallback,obj}, ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
                 'Value', 1, ...
@@ -199,6 +203,31 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 'Units', 'normalized', ...
                 'Position', [0.05 0.02 0.96 0.47], ...
                 'String', 'Dendrite', ...
+                'Callback', {@neuriteTypeCallback,obj}, ...
+                'FontName', obj.fontName, ...
+                'FontSize', obj.fontSize, ...
+                'Value', 0, ...
+                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', gbSetting('viewer.textMainColor'));
+
+
+            %% Premature termination checkbox
+            obj.hIsTerminatedGroup=uibuttongroup(...
+                'Parent', obj.hFig, ...
+                'Units', 'normalized', ...
+                'Position', [0.64 0.61 0.34 0.12], ...
+                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'Title', 'Termination', ...
+                'FontName', obj.fontName, ...
+                'FontSize', obj.fontSize);
+            obj.hIsTerminated=uicontrol(...
+                'Parent', obj.hIsTerminatedGroup, ...
+                'Style', 'checkbox', ...
+                'Callback', {@prematureCallback,obj}, ...
+                'Units', 'normalized', ...
+                'Position', [0.05 0.45 0.96 0.47], ...
+                'String', 'Premature', ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
                 'Value', 0, ...
@@ -210,7 +239,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             hSettingPanel=uipanel(...
                 'Parent', obj.hFig, ...
                 'Units', 'normalized', ...
-                'Position', [0.64 0.17 0.34 0.55], ...
+                'Position', [0.64 0.17 0.34 0.43], ...
                 'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
                 'ForegroundColor', gbSetting('viewer.textMainColor'), ...
                 'Title', 'Display Settings', ...
@@ -271,7 +300,9 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 'hDisplayedLinesHighlight',[],...
                 'hHighlightedMarker',[],...
                 'hRootNode',[]);
-        end
+
+            obj.toggleNodeModifers('off')
+        end % Constructor
         
         %% Set up markers
         function updateMarkerTypeUISelections(obj)
@@ -367,7 +398,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 'Position',[0.02 0.98-(0.08*ii)+0.01, 0.06, 0.06],...
                 'FontName', obj.fontName,...
                 'FontSize', obj.fontSize-1,...
-                'Callback', {@treeCheckBoxCallback,obj}, ...
+                'Callback', @treeCheckBoxCallback, ...
                 'BackgroundColor', obj.markerTypes(ii).color);
             end
 
@@ -463,13 +494,15 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         %Marker addition and deletion
         function UIaddMarker(obj) %Adds a marker to the currently selected tree
             goggleDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Beginning',toc,'s')
-            newMarker=goggleMarker(obj.currentType, obj.deCorrectedCursorX, obj.deCorrectedCursorY, obj.cursorZVoxels);
+            newMarker=goggleTreeNode(obj.currentType, obj.deCorrectedCursorX, obj.deCorrectedCursorY, obj.cursorZVoxels);
 
             goggleDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: New marker created',toc,'s')
 
             thisT = obj.selectedTreeIdx;
 
             if isempty(obj.neuriteTrees{thisT})
+                newMarker.branchType='soma';
+
                 obj.neuriteTrees{thisT} = tree(newMarker); %Add first point to tree root
                 obj.lastNode(thisT)=1;
             else
@@ -917,6 +950,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
                 %If the node append highlight is on the current branch of the user's selected tree, we attempt to plot it
                 if obj.currentTree ~= obj.selectedTreeIdx, continue, end %nothing more to do unless this is the user's current tree
+
                 if ~isempty(find(visibleNodesInPathIdx==obj.lastNode(obj.selectedTreeIdx)))
                     goggleDebugTimingInfo(2, sprintf('Plotting node highlighter on path %d',ii), toc, 's')
 
@@ -938,8 +972,15 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                         plot(hMainImgAx, highlightNode.xVoxel, highlightNode.yVoxel,...
                         'or', 'markersize', mSize, 'LineWidth', 2,...
                         'Tag','LastNode','HitTest', 'off'); 
-                end
 
+                    % If possible, enable the meta-data boxes so the user can edit the properties of the selected tree node
+                    if isa(rootNode,'goggleTreeNode') & obj.lastNode(obj.selectedTreeIdx)>1
+                        obj.toggleNodeModifers('on')
+                    else
+                        obj.toggleNodeModifers('off')
+                    end
+
+                end
 
 
 
@@ -947,7 +988,6 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
         end %function drawTree(obj, ~, ~)
         
-
 
 
         
@@ -965,18 +1005,39 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
             lastNodeObj = findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'LastNode') ;
             verbose=1;
-            if ~isempty(lastNodeObj)
+            if ~isempty(lastNodeObj) %The tree has not been changed and the marker only moved
                 thisMarker = obj.neuriteTrees{obj.selectedTreeIdx}.Node{idx};
                 set(obj.neuriteTraceHandles(obj.selectedTreeIdx).hHighlightedMarker,...
                  'XData', thisMarker.xVoxel,...
                  'YData', thisMarker.yVoxel);
                 if verbose, goggleDebugTimingInfo(2, sprintf('Moved lastnode marker to node %d',idx),toc,'s'), end
-            else
+
+                % If possible, enable the meta-data boxes so the user can edit the properties of the selected tree node
+                if isa(obj.neuriteTrees{obj.selectedTreeIdx}.Node{1},'goggleTreeNode') & idx>1
+                    obj.toggleNodeModifers('on')
+                else
+                    obj.toggleNodeModifers('off')
+                end
+
+            else %The tree has been changed so we re-draw it
                 drawAllTrees(obj)
+            end
+
+            %If the class of the node is appropriate and it's a not a root node, we should update the UI
+            %to reflect the node properties
+            if isa(obj.neuriteTrees{obj.selectedTreeIdx}.Node{1},'goggleTreeNode') & idx>1
+                set(obj.hIsTerminated,'Value', obj.neuriteTrees{obj.selectedTreeIdx}.Node{idx}.isPrematureTermination);
+                bT=obj.neuriteTrees{obj.selectedTreeIdx}.Node{idx}.branchType;
+                if strcmp(bT,'axon')
+                    set(obj.hAxon,'Value',1)
+                elseif strcmp(bT,'dendrite')
+                    set(obj.hDendrite,'Value',1)
+                end
             end
 
 
         end
+
 
         function clearMarkers(obj)
             %clear all trees and markers if any tree is present
@@ -1002,6 +1063,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             treeIdx = strmatch(cType.name, {obj.markerTypes(:).name});
         end
 
+
         %------------------------------------------------------------------------------------------
         %Marker count functions
         function updateMarkerCount(obj, markerTypeToUpdate)
@@ -1017,6 +1079,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             obj.hCountIndicatorText(idx).String=sprintf('%u', num);
         end
         
+
         function incrementMarkerCount(obj, markerTypeToIncrement)
             idx=obj.markerTypes==markerTypeToIncrement;
             prevCount=str2double(obj.hCountIndicatorText(idx).String);
@@ -1024,6 +1087,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             obj.hCountIndicatorText(idx).String=sprintf('%u', newCount);
         end
         
+
         function decrementMarkerCount(obj, markerTypeToDecrement)
             idx=obj.markerTypes==markerTypeToDecrement;
             prevCount=str2double(obj.hCountIndicatorText(idx).String);
@@ -1032,18 +1096,41 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         end
 
 
+        %------------------------------------------------------------------------------------------
+        %UI control functions
+        function toggleNodeModifers(obj,enable)
+            %whether to enable or disable the node modifer UI elements. 
+            %they should only be enabled if we've selected a node that has meta-data that can be set.
+            %i.e. that it's a goggleTreeNode and not a root node
+
+            if ~isstr(enable)
+                error('enable should be a string')
+            end
+
+            if ~strcmpi('off',enable) & ~strcmpi('on',enable) 
+                error('enable should be the strings on or off')
+            end
+
+            set(obj.hIsTerminated,'enable',enable)
+            set(obj.hDendrite,'enable',enable)
+            set(obj.hAxon,'enable',enable)
+        end
+
 
         %--------------------------------------------------------------------------------------
         %% Getters
         function mType=get.currentType(obj)
             mType=obj.markerTypes(obj.hMarkerButtonGroup.SelectedObject.UserData);
         end
+
         function idx=get.selectedTreeIdx(obj) %The index of the currently selected tree
             idx=obj.hMarkerButtonGroup.SelectedObject.UserData;
         end
+
         function z=get.cursorZVoxels(obj)
             z=obj.goggleViewer.mainDisplay.currentZPlaneOriginalVoxels;
         end
+
         function z=get.cursorZUnits(obj)
             z=obj.goggleViewer.mainDisplay.currentZPlaneUnits;
         end
@@ -1056,12 +1143,15 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 offset=zvm.xyPositionAdjustProfile(obj.cursorZVoxels, :);
             end
         end
+
         function x=get.deCorrectedCursorX(obj)
             x=obj.cursorX-obj.correctionOffset(2);
         end
+
         function y=get.deCorrectedCursorY(obj)
              y=obj.cursorY-obj.correctionOffset(1);
         end
+
         
         %% Setter
         function set.changeFlag(obj, newVal)
@@ -1079,6 +1169,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             end
         end
     end
+
     
     methods(Static)
         function d=displayString()
@@ -1107,6 +1198,7 @@ function deleteRequest(~, ~, obj, forceQuit)
     delete(obj.hFig);
     delete(obj);
 end
+
 
 function exportData(~, ~, obj)
 
@@ -1190,14 +1282,51 @@ function importData(~, ~, obj)
     obj.drawAllTrees();
 
 end
+
 function treeRadioSelectCallback(~, ~, obj)
     tic
     obj.hTreeCheckBox(obj.userSelectedTreeIdx).Value=1;%enable tree when user selects it
     obj.drawAllTrees
 end
+
 function treeCheckBoxCallback(~, ~, obj)
     tic
     obj.drawAllTrees
+end
+
+function prematureCallback(~,~,obj)
+    % Set this node as being a premature termination 
+    % The checkbox is disabled if the tree is not composed of goggleTreeNodes 
+    % or if the selected node is the root node
+    selectedNode = obj.lastNode(obj.selectedTreeIdx);
+    obj.neuriteTrees{obj.selectedTreeIdx}.Node{selectedNode}.isPrematureTermination = get(obj.hIsTerminated,'Value');
+end
+
+
+function neuriteTypeCallback(~,~,obj)
+    % Set all nodes on this branch (to the root and to all leaves) to the radio-button choice
+    if get(obj.hAxon,'Value')
+        neuriteName='axon';
+    elseif get(obj.hDendrite,'Value')
+        neuriteName='dendrite';
+    else
+        neuriteName='';
+    end
+
+    tic
+    selectedNode = obj.lastNode(obj.selectedTreeIdx);
+    leavesOnThisBranch = obj.neuriteTrees{obj.selectedTreeIdx}.findleaves(selectedNode);
+
+    for ii=1:length(leavesOnThisBranch)
+        p=obj.neuriteTrees{obj.selectedTreeIdx}.pathtoroot(leavesOnThisBranch(ii));
+        p(end)=[];%remove the root node
+        for n=1:length(p)
+            obj.neuriteTrees{obj.selectedTreeIdx}.Node{p(n)}.branchType=neuriteName;
+        end
+    end
+    goggleDebugTimingInfo(2, ['Setting neurite type to ',neuriteName], toc, 's')
+    
+
 end
 
 
@@ -1248,7 +1377,6 @@ function [dist, idx]=minEucDist2DToMarker(markerCollection, obj)
     [dist, idx]=min(euclideanDistance);
 end
 
-
 function keyPress(~, eventdata, obj)
     key=eventdata.Key;
     key=strrep(key, 'numpad', '');
@@ -1271,7 +1399,6 @@ function keyPress(~, eventdata, obj)
     end
 end
 
-
 function [m, t]=convertStructArrayToMarkerAndTypeArrays(s)
     f=fieldnames(s);
     t(numel(f))=goggleMarkerType;
@@ -1285,7 +1412,6 @@ function [m, t]=convertStructArrayToMarkerAndTypeArrays(s)
         end
     end
 end
-
 
 function [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ)
     zvm=obj.goggleViewer.mainDisplay.zoomedViewManager;
@@ -1472,10 +1598,3 @@ function checkAndUpdateNewNumericSetting(obj,ev, parentObject)
     end
     parentObject.drawAllTrees();
 end
-
-
-
-
-
-
-
