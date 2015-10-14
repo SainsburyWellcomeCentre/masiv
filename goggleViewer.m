@@ -166,7 +166,9 @@ classdef goggleViewer<handle
             %% Start parallel pool
             h=splashWindow('Starting Parallel Pool', 'goggleViewer');
             drawnow;
-            gcp();
+            G=gcp;
+            G.IdleTimeout=inf;
+
             delete(h);
             %% Show the figure, we're done here!
             obj.hFig.Visible='on';
