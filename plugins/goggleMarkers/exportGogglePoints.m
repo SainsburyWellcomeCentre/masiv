@@ -1,7 +1,7 @@
-function exportGogglePoints(ymlPoints,fname,downSample,separateFiles)
+function varargout = exportGogglePoints(ymlPoints,fname,downSample,separateFiles)
 % export a neurite tree to a text file or return it as a matrix
 %
-% function exportGogglePoints(ymlPoints,fname,downSample,separateFiles)
+% function logging = exportGogglePoints(ymlPoints,fname,downSample,separateFiles)
 %
 %
 % Purpose
@@ -22,13 +22,18 @@ function exportGogglePoints(ymlPoints,fname,downSample,separateFiles)
 % separateFiles - false by default. If true, separate point series are saved to 
 %                 separate files.  
 % 
-% Output format
+% Output CSV format
 % The returned the exported data are in following format:
 %  * One row per point
 %  * If separateFiles is false, each row is: 
 %    [z position,x position,y position,point series]
 %  * If separateFiles is true, each row is: 
 %    [z position,x position,y position]
+%
+%
+%
+% Outputs
+% logging - [optional] contains the names of the files that were created 
 %
 %
 % Rob Campbell - Basel 2015
@@ -61,10 +66,13 @@ end
 %Loop through the fields of ymlPoints and write to disk
 if ~separateFiles
 	fid = fopen(fname,'w+');
+	logging.fname = fname;
+	logging.type = 'sparse points';
 end
 
 theseFields = fields(ymlPoints);
 for ii = 1:length(theseFields) %loop through each point series
+
 	thisField = theseFields{ii};
 
 	if ~isfield(ymlPoints.(thisField),'markers')
@@ -81,6 +89,8 @@ for ii = 1:length(theseFields) %loop through each point series
 		thisFname = sprintf('%s_%02d%s', fileName,ii,fileExtension);
 		thisFname = fullfile(filePath,thisFname);
 		fid = fopen(thisFname,'w+');
+		logging(ii).fname = thisFname;
+		logging(ii).type = 'sparse points';
 	end
 
 	for m = 1:length(mrk)
@@ -104,3 +114,9 @@ if ~separateFiles
 	fclose(fid);
 end
 
+
+
+if nargout>0
+	logging(cellfun(@isempty,{logging.fname})) = []; %remove empty structures
+	varargout{1}=logging;
+end
