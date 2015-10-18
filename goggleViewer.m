@@ -79,7 +79,6 @@ classdef goggleViewer<handle
                 'Color', gbSetting('viewer.mainBkgdColor'), ...
                 'ColorMap', gray(256), ...
                 'KeyPressFcn', {@hFigMain_KeyPress, obj}, ...
-                'KeyReleaseFcn', {@hFigMain_KeyRelease, obj}, ...
                 'WindowButtonMotionFcn', {@mouseMove, obj}, ...
                 'WindowScrollWheelFcn', {@hFigMain_ScrollWheel, obj}, ...
                 'WindowButtonDownFcn', {@hFigMain_BtnDown, obj}, ...
@@ -106,9 +105,12 @@ classdef goggleViewer<handle
                     uimenu(obj.mnuImage, 'Label', 'Adjust precise XY position', ...
                                      'Callback', {@adjustXYPosClick, obj});
                                 
+            addPlugins(obj.mnuImage, obj, 'resources/corePlugins', 1);
+
             
             obj.mnuPlugins=uimenu(obj.hFig, 'Label', 'Plugins');
-                    addPlugins(obj.mnuPlugins, obj,'plugins')
+                    addPlugins(obj.mnuPlugins, obj,'plugins');
+                    
             obj.mnuTutPlugins=uimenu(obj.mnuPlugins,'label','Tutorials');
                     addPlugins(obj.mnuTutPlugins, obj,['plugins',filesep,'tutorials'])
 
@@ -130,10 +132,10 @@ classdef goggleViewer<handle
              ppos=getpixelposition(sliderPanel);
              border=ppos(3:4)./[100 20]; border=[border border*2];
              
-             obj.hjSliderContrast = com.jidesoft.swing.RangeSlider(0,5000,0,1000);  % min,max,low,high
+             obj.hjSliderContrast = com.jidesoft.swing.RangeSlider(0,15000,0,1000);  % min,max,low,high
              obj.hjSliderContrast = javacomponent(obj.hjSliderContrast, [border(1),border(2),ppos(3)-border(3),ppos(4)-border(4)], sliderPanel);
              
-             set(obj.hjSliderContrast, 'MajorTickSpacing',1000, 'MinorTickSpacing',500, 'PaintTicks',true, 'PaintLabels',true, ...
+             set(obj.hjSliderContrast, 'MajorTickSpacing',5000, 'MinorTickSpacing',1000, 'PaintTicks',true, 'PaintLabels',true, ...
                  'Background',java.awt.Color(0.1, 0.1, 0.1), 'Foreground', java.awt.Color(0.8, 0.8, 0.8), ...
                  'StateChangedCallback',@(h,e) adjustContrast(h,e,obj));
             
@@ -167,7 +169,9 @@ classdef goggleViewer<handle
             %% Start parallel pool
             h=splashWindow('Starting Parallel Pool', 'goggleViewer');
             drawnow;
-            gcp();
+            G=gcp;
+            G.IdleTimeout=inf;
+
             delete(h);
             %% Show the figure, we're done here!
             obj.hFig.Visible='on';
@@ -677,7 +681,10 @@ end
 end
 
 %% Plugins menu creation
-function addPlugins(hMenuBase, obj, pluginsDirName)
+function addPlugins(hMenuBase, obj, pluginsDirName, separateFirstEntry)
+    if nargin<4||isempty(separateFirstEntry)
+        separateFirstEntry=0;
+    end
     pluginsDir=fullfile(fileparts(which('goggleViewer')), pluginsDirName);
     
     if ~exist(pluginsDir, 'dir')
@@ -694,7 +701,10 @@ function addPlugins(hMenuBase, obj, pluginsDirName)
             
             [pluginDisplayString, pluginStartCallback]=getPluginInfo(filesInPluginsDirectory(ii));
                        
-            uimenu(hMenuBase, 'Label', pluginDisplayString, 'Callback', pluginStartCallback, 'UserData', obj)
+            hItem=uimenu(hMenuBase, 'Label', pluginDisplayString, 'Callback', pluginStartCallback, 'UserData', obj);
+            if separateFirstEntry&&ii==1
+                hItem.Separator='on';
+            end
         end
     end
 end
