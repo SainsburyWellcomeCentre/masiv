@@ -79,6 +79,7 @@ classdef goggleViewer<handle
                 'Color', gbSetting('viewer.mainBkgdColor'), ...
                 'ColorMap', gray(256), ...
                 'KeyPressFcn', {@hFigMain_KeyPress, obj}, ...
+                'KeyReleaseFcn', {@hFigMain_KeyRelease, obj}, ...
                 'WindowButtonMotionFcn', {@mouseMove, obj}, ...
                 'WindowScrollWheelFcn', {@hFigMain_ScrollWheel, obj}, ...
                 'WindowButtonDownFcn', {@hFigMain_BtnDown, obj}, ...
@@ -132,7 +133,7 @@ classdef goggleViewer<handle
              ppos=getpixelposition(sliderPanel);
              border=ppos(3:4)./[100 20]; border=[border border*2];
              
-             obj.hjSliderContrast = com.jidesoft.swing.RangeSlider(0,15000,0,1000);  % min,max,low,high
+             obj.hjSliderContrast = com.jidesoft.swing.RangeSlider(-5000,15000,0,1000);  % min,max,low,high
              obj.hjSliderContrast = javacomponent(obj.hjSliderContrast, [border(1),border(2),ppos(3)-border(3),ppos(4)-border(4)], sliderPanel);
              
              set(obj.hjSliderContrast, 'MajorTickSpacing',5000, 'MinorTickSpacing',1000, 'PaintTicks',true, 'PaintLabels',true, ...
@@ -166,6 +167,13 @@ classdef goggleViewer<handle
             %% Set fonts to something nice
             set(findall(gcf, '-property','FontName'), 'FontName', gbSetting('font.name'))
             
+            %% Load and set icon 
+            try
+                load bc.mat
+                obj.hFig.PointerShapeCData=bcIco;
+            catch
+                warning('Unable to load custom brightness/contrast icon')
+            end
             %% Start parallel pool
             h=splashWindow('Starting Parallel Pool', 'goggleViewer');
             drawnow;
@@ -471,7 +479,7 @@ function hFigMain_KeyPress (~, eventdata, obj)
     if shiftMod
          if ~obj.contrastMode
              obj.contrastMode=1;
-             obj.hFig.Pointer='bottom';
+             obj.hFig.Pointer='custom';
          end
     end
         
@@ -512,12 +520,39 @@ function pos=mouseMove (~, ~, obj)
     if obj.contrastMode && ~any(isnan(obj.dragOrigin))
         %% Contrast
         delta=pos-obj.dragOrigin;
-        obj.hjSliderContrast.setHighValue(obj.hjSliderContrast.getHighValue()+delta(2)/4);
+        delta(1)=delta(1)/range(xlim); % make it relative
+        delta(2)=delta(2)/range(ylim);
+        
+        m=obj.hjSliderContrast.getLowValue();
+        rng=obj.hjSliderContrast.getHighValue-m;
+        newVal=obj.hjSliderContrast.getHighValue()+delta(2)*rng; % scales quite nicely
+        
+        if newVal>m
+            obj.hjSliderContrast.setHighValue(newVal);
+        else
+            obj.hjSliderContrast.setHighValue(m+0);
+        end
         
         
         %% Brightness
-        obj.hjSliderContrast.setHighValue(obj.hjSliderContrast.getHighValue()+delta(1)/4);
-        obj.hjSliderContrast.setLowValue(obj.hjSliderContrast.getLowValue()+delta(1)/4);
+        bAdj=delta(1)*(obj.hjSliderContrast.maximum-obj.hjSliderContrast.minimum);
+        
+        newLow=obj.hjSliderContrast.getLowValue()+bAdj;
+        newHigh=obj.hjSliderContrast.getHighValue()+bAdj;
+        
+        if newLow<obj.hjSliderContrast.minimum
+            newHigh=newHigh+obj.hjSliderContrast.minimum-newLow-1;
+            newLow=obj.hjSliderContrast.minimum;
+        end
+        
+        if newHigh>obj.hjSliderContrast.maximum
+            newLow=newLow+obj.hjSliderContrast.maximum-newHigh-1;
+            newHigh=obj.hjSliderContrast.maximum;
+        end
+        
+        obj.hjSliderContrast.setHighValue(newHigh);
+        obj.hjSliderContrast.setLowValue(newLow);
+        
         %% Reset
         obj.dragOrigin=pos;
     end
