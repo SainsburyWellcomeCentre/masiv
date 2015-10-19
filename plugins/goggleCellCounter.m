@@ -309,21 +309,24 @@ classdef goggleCellCounter<goggleBoxPlugin
         function updateCursorWithinAxes(obj, ~, evData)
             obj.cursorX=round(evData.CursorPosition(1,1));
             obj.cursorY=round(evData.CursorPosition(2,2));
-            obj.goggleViewer.hFig.Pointer='crosshair';
+            if ~ obj.goggleViewer.contrastMode
+                obj.goggleViewer.hFig.Pointer='crosshair';
+            end
         end
         function updateCursorOutsideAxes(obj, ~, ~)
             obj.goggleViewer.hFig.Pointer='arrow';
         end
         function mouseClickInMainWindowAxes(obj, ~, ~)
             tic
-            if obj.hModeAdd.Value
-                obj.UIaddMarker
-            elseif obj.hModeDelete.Value
-                obj.UIdeleteMarker
-            else
-                error('Unknown mode selection')
+            if ~obj.goggleViewer.contrastMode
+                if obj.hModeAdd.Value
+                    obj.UIaddMarker
+                elseif obj.hModeDelete.Value
+                    obj.UIdeleteMarker
+                else
+                    error('Unknown mode selection')
+                end
             end
-            
         end
         function parentKeyPress(obj, ~,ev)
             keyPress([], ev.KeyPressData, obj);
