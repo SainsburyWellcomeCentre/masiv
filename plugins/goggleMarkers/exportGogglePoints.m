@@ -68,6 +68,7 @@ if ~separateFiles
 	fid = fopen(fname,'w+');
 	logging.fname = fname;
 	logging.type = 'sparse points';
+	logging.downsample=downSample;
 end
 
 theseFields = fields(ymlPoints);
@@ -91,6 +92,7 @@ for ii = 1:length(theseFields) %loop through each point series
 		fid = fopen(thisFname,'w+');
 		logging(ii).fname = thisFname;
 		logging(ii).type = 'sparse points';
+		logging(ii).downsample=downSample;
 	end
 
 	for m = 1:length(mrk)
