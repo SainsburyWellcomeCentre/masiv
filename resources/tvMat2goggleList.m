@@ -1,7 +1,7 @@
-function tvMat2goggleList(stitchedDir)
+function tvMat2goggleList(stitchedDir,overide)
 % Make goggleViewer files listing the stitched file locations from tvMat data
 %
-% function makeStictichedFileLists(stitchedDir)
+% function makeStictichedFileLists(stitchedDir,overide)
 %
 %
 % Purpose
@@ -10,8 +10,11 @@ function tvMat2goggleList(stitchedDir)
 %
 %
 % Inputs
-% stitchedDir - path to stitched data directory. 
-%
+% stitchedDir - path to stitched data directory. e.g. 'stitchedImages_100'
+% overide - [optional, 0 by default] if 1, build channel lists even if sections are missing
+% 
+% Examples
+% tvMat2goggleList('stitchedImages_100')
 % 
 % Rob Campbell
 %
@@ -19,6 +22,11 @@ function tvMat2goggleList(stitchedDir)
 % Produces file with unix file seps on all platforms. Windows
 % MATLAB seems OK about using these paths. Windows fileseps 
 % mess up the fprintf.
+
+if nargin<2
+	overide=0;
+end
+
 
 if ispc
 	fprintf('Fails on Windows machines. Not fixed yet\n')
@@ -44,7 +52,7 @@ for ii=1:length(chans)
 
 	if regexp(chans(ii).name,'\d+')
 
-        fprintf('Making channel %s file\n',chans(ii).name)
+
         tifDir=[stitchedDir,'/',chans(ii).name];
 		tifs=dir([tifDir,'/','*.tif']);
 
@@ -53,6 +61,16 @@ for ii=1:length(chans)
 			continue
 		end
 
+		missing=findMissingSections(tifs);
+		if missing & ~overide
+			fprintf('\nMissing sections. Not building the image lists.\nPlease fix your data or overide this warning (help %s), if you know what you''re doing. \n\n',mfilename)
+			return
+		end
+		if missing & overide
+			fprintf('\n BUILDING THE LISTS WITH MISSING SECTIONS\n\n')
+		end
+
+        fprintf('Making channel %s file\n',chans(ii).name)
 		thisChan = str2num(chans(ii).name);
         
 		fid=fopen(sprintf('%sCh%02d.txt',stitchedFileListName,thisChan),'w+');
@@ -65,3 +83,44 @@ for ii=1:length(chans)
 	end
 
 end
+
+
+function missing=findMissingSections(tifs)
+	%Look for missing sections 
+	sections = zeros(length(tifs),1);
+	optical = zeros(length(tifs),1);	
+
+
+	for ii=1:length(tifs);
+		tok=regexp(tifs(ii).name,'section_(\d+)_(\d+)','tokens');
+		if isempty(tok)
+			error('regexp failed')
+		end
+
+		tok=tok{1};
+		if length(tok)~=2
+			error('Failed to find two tokens')
+		end
+
+		sections(ii) = str2num(tok{1});
+		optical(ii) = str2num(tok{2});				
+	end
+
+	sections=unique(sections);
+	optical=unique(optical);
+
+	missing=0;
+	%now check if any sections arem missing (a bit brute-force, but it'll work)
+	for sct=1:length(sections)
+		for opt=1:length(optical)
+
+			f=find(sections==sct);
+			if isempty(f)
+				fprintf('\t ** Missing physical section %d, optical section %d **\n',sct,opt)
+				missing=1;
+			end
+
+		end
+	end
+
+
