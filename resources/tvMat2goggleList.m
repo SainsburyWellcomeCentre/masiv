@@ -1,7 +1,7 @@
-function tvMat2goggleList(stitchedDir,overide)
+function varargout=tvMat2goggleList(stitchedDir,overide)
 % Make goggleViewer files listing the stitched file locations from tvMat data
 %
-% function makeStictichedFileLists(stitchedDir,overide)
+% function status=makeStictichedFileLists(stitchedDir,overide)
 %
 %
 % Purpose
@@ -13,6 +13,14 @@ function tvMat2goggleList(stitchedDir,overide)
 % stitchedDir - path to stitched data directory. e.g. 'stitchedImages_100'
 % overide - [optional, 0 by default] if 1, build channel lists even if sections are missing
 % 
+% 
+% Outputs
+% status - [optional]
+% 			-1 - failed to build anything
+%			 0 - made partial list but there are missing sections
+%			 1 - made complete list
+%
+%
 % Examples
 % tvMat2goggleList('stitchedImages_100')
 % 
@@ -64,11 +72,16 @@ for ii=1:length(chans)
 		missing=findMissingSections(tifs);
 		if missing & ~overide
 			fprintf('\nMissing sections. Not building the image lists.\nPlease fix your data or overide this warning (help %s), if you know what you''re doing. \n\n',mfilename)
+			if nargout>0
+				varargout{1}=-1;
+			end
 			return
 		end
 		if missing & overide
 			fprintf('\n BUILDING THE LISTS WITH MISSING SECTIONS\n\n')
+
 		end
+	
 
         fprintf('Making channel %s file\n',chans(ii).name)
 		thisChan = str2num(chans(ii).name);
@@ -84,6 +97,10 @@ for ii=1:length(chans)
 
 end
 
+
+if nargout>0
+	varargout{1}=~missing;
+end
 
 function missing=findMissingSections(tifs)
 	%Look for missing sections 
