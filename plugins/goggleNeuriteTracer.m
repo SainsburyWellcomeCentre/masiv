@@ -398,7 +398,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 'Position',[0.02 0.98-(0.08*ii)+0.01, 0.06, 0.06],...
                 'FontName', obj.fontName,...
                 'FontSize', obj.fontSize-1,...
-                'Callback', @treeCheckBoxCallback, ...
+                'Callback', {@treeCheckBoxCallback,obj}, ...
                 'BackgroundColor', obj.markerTypes(ii).color);
             end
 
@@ -1279,7 +1279,7 @@ function importData(~, ~, obj)
         obj.goggleViewer.mainDisplay.updateZoomedView;
     end
 
-    obj.drawAllTrees();
+    obj.drawAllTrees
 
 end
 
