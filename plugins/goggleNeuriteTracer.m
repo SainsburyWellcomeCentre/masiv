@@ -518,6 +518,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
             %% Update count
             obj.incrementMarkerCount(obj.currentType); %TODO: I don't think this even works
+
             goggleDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Count updated',toc,'s')
             %% Set change flag
             obj.changeFlag=1;

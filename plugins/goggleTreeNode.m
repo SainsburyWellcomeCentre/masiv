@@ -3,10 +3,11 @@ classdef goggleTreeNode < goggleMarker
     % goggleTreeNode inherits goggleMarker but adds other meta-data too
     
     properties
-        branchType %any string such as 'axon', 'dendrite', 'bulklabel', etc 
-        isPrematureTermination %0 or 1. If 1, then this node ought to be a leaf (but this is not enforced right now [TODO?])
-        isBouton %0 or 1. If 1, then this node is considered to be a putative bouton
-        data %A structure that can contain other data. Reserved and not used right now 2015/10/13
+        branchType              %any string such as 'axon', 'dendrite', 'bulklabel', etc 
+        isPrematureTermination  %0 or 1. If 1, then this node ought to be a leaf (but this is not enforced right now [TODO?])
+        isBouton                %0 or 1. If 1, then this node is considered to be a putative bouton
+        data                    %Structure that can contain other data. Reserved and not used right now 2015/10/13
+
     end
 
     methods
