@@ -517,7 +517,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             goggleDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Markers Drawn',toc,'s')
 
             %% Update count
-            obj.incrementMarkerCount(obj.currentType); %TODO: I don't think this even works
+            obj.incrementMarkerCount(obj.currentType); 
 
             goggleDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Count updated',toc,'s')
             %% Set change flag
@@ -574,7 +574,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             obj.drawAllTrees;
 
             %% Update count
-            obj.decrementMarkerCount(obj.currentType); %TODO: leave this here?
+            obj.decrementMarkerCount(obj.currentType);
+
             %% Set change flag
             obj.changeFlag=1;
             goggleDebugTimingInfo(2, 'Leaving UIdeleteMarker',toc,'s')
@@ -1069,14 +1070,34 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         %------------------------------------------------------------------------------------------
         %Marker count functions
         function updateMarkerCount(obj, markerTypeToUpdate)
-            %TODO: make marker counts work
-            return
-            if isempty(obj.neuriteTrees)
-                num=0;
-            else
-                num=sum([obj.neuriteTrees.type]==markerTypeToUpdate);
+            %Count the total number of nodes for marker type markerTypeToUpdate
+
+            if all(cellfun(@isempty, obj.neuriteTrees)) %there are no marker trees loaded
+                return
             end
-            idx=obj.markerTypes==markerTypeToUpdate;
+            
+            num=[];
+            for ii=1:length(obj.neuriteTrees)
+                thisTree=obj.neuriteTrees{ii};
+                if isempty(thisTree), continue, end
+                thisType = thisTree.Node{1}.type;
+
+                if thisType == markerTypeToUpdate
+                    num = length(thisTree.Node);           
+                end
+
+            end
+
+            if isempty(num)
+                return
+            end
+
+            idx=find(obj.markerTypes==markerTypeToUpdate);
+
+            if isempty(idx)
+                fprintf('Failed to find marker type to update counter')
+                return
+            end
             
             obj.hCountIndicatorText(idx).String=sprintf('%u', num);
         end
@@ -1249,8 +1270,9 @@ function importData(~, ~, obj)
         if ~isempty(obj.neuriteTrees{ii}) %if neurite tree is present
             obj.lastNode(ii)=length(obj.neuriteTrees{ii}.Node); %set highlight (append) node to last point in tree
             obj.lastNode(ii)=1;
-            %enable check box
-            obj.hTreeCheckBox(ii).Value=1;
+            
+            obj.hTreeCheckBox(ii).Value=1; %enable check box 
+            obj.updateMarkerCount(obj.neuriteTrees{ii}.Node{1}.type)  %Set marker count
         else
             obj.hTreeCheckBox(ii).Value=0;
         end
