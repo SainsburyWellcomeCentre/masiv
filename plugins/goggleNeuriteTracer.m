@@ -920,10 +920,10 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 end
 
                 
-
                 %Overlay a larger, different, symbol over the root node if it's visible
+                rootNode = obj.neuriteTrees{obj.currentTree}.Node{1}; %Store the root node somewhere easy to access
                 if ~isempty(find(visibleNodesInPathIdx==1))
-                    rootNode = obj.neuriteTrees{obj.currentTree}.Node{1};
+
                     rootNodeInd = find(visibleNodesInPathIdx==1);
 
                     mSize = markerSz(rootNodeInd)/5;
@@ -934,7 +934,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     obj.neuriteTraceHandles(obj.currentTree).hRootNode = plot(hMainImgAx, rootNode.xVoxel, rootNode.yVoxel, 'd',...
                         'MarkerSize', mSize, 'color', 'w', 'MarkerFaceColor',rootNode.color,...
                         'Tag', 'NeuriteTracer','HitTest', 'off', 'LineWidth', median(markerSz)/75);
-                 end
+    
+                end
 
  
                 %% Draw highlights over points in the plane
