@@ -16,6 +16,10 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
     %
     % Note that mouse wheel changes layers and ctrl+wheel zooms.
     %
+    % Keyboard shortcuts:
+    % ctrl+a - switch to add mode
+    % ctrl+d - switch to delete mode
+    %
     % 
     % REQUIRES:
     % https://github.com/raacampbell13/matlab-tree.git
@@ -1070,10 +1074,20 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
         %------------------------------------------------------------------------------------------
         % Navigation functions
-
         function goToCurrentRootNode(obj,~,~)
-            %Go to the layer that conatins the current root node
+            %Go to the layer that contains the root node of the currently selected tree
+            %see also: obj.keyPress
+            selectedIDX = obj.userSelectedTreeIdx;
 
+            deltaZ=obj.neuriteTrees{selectedIDX}.Node{1}.zVoxel-obj.goggleViewer.mainDisplay.currentIndex;
+            stdout=obj.goggleViewer.mainDisplay.seekZ(deltaZ); %Seek to this z-depth TODO: is this the best way?
+
+            if stdout
+                obj.goggleViewer.mainDisplay.updateZoomedView;
+            end
+
+            %TODO: Now ensure we are zoom out to zoom of 1 [how?]
+            obj.drawAllTrees
         end
 
 
@@ -1300,20 +1314,9 @@ function importData(~, ~, obj)
         fprintf('NO DATA PRESENT. Quitting import function!\n')
         return
     end
-
     ind = presentTraces(1);
     obj.hTreeSelection(ind).Value=1; %Set radio button to match what is selected
-    deltaZ=obj.neuriteTrees{ind}.Node{1}.zVoxel-obj.goggleViewer.mainDisplay.currentIndex;
-    stdout=obj.goggleViewer.mainDisplay.seekZ(deltaZ); %Seek to this z-depth TODO: is this the best way?
-    %TODO: Now ensure we are zoom out to zoom of 1 [how?]
-
-
-
-    if stdout
-        obj.goggleViewer.mainDisplay.updateZoomedView;
-    end
-
-    obj.drawAllTrees
+    obj.goToCurrentRootNode; %This will perform an obj.drawAllTrees
 
 end
 
@@ -1412,6 +1415,7 @@ function [dist, idx]=minEucDist2DToMarker(markerCollection, obj)
 end
 
 function keyPress(~, eventdata, obj)
+    %executes defined callbacks when the user presses particular buttons. n
     key=eventdata.Key;
     key=strrep(key, 'numpad', '');
 
@@ -1422,15 +1426,18 @@ function keyPress(~, eventdata, obj)
             obj.hTreeSelection(str2double(key)).Value=1;
         case {'0'}
             obj.hTreeSelection(10).Value=1;
-        case 'a'
+        case 'a' %add mode
             if ctrlMod
                 obj.hModeAdd.Value=1;
             end
-        case 'd'
+        case 'd' %delete mode
             if ctrlMod
                 obj.hModeDelete.Value=1;
             end
-    end
+        case 'r' %go to root node of currently selected tree
+            obj.goToCurrentRootNode
+    end %switch key
+
 end
 
 function [m, t]=convertStructArrayToMarkerAndTypeArrays(s)
