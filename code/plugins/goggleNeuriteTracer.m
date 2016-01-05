@@ -1,6 +1,5 @@
 classdef goggleNeuriteTracer<goggleBoxPlugin
 
-
     % goggleNeuriteTracer
     %
     % Purpose 
@@ -12,6 +11,11 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
     % down "ALT" and mousing over other points in the current depth 
     % (highlighted by white dots). 
     %
+    % You may label the current node using the GUI panel (e.g. see the 
+    % "neurite type" and "termination" panels)
+    %
+    % Note that mouse wheel changes layers and ctrl+wheel zooms.
+    %
     % 
     % REQUIRES:
     % https://github.com/raacampbell13/matlab-tree.git
@@ -21,12 +25,12 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
     properties
         hFig
         pluginName
-        
+
         cursorListenerInsideAxes
         cursorListenerOutsideAxes
         cursorListenerClick
         keyPressListener
-        
+
         %Tree selector handles
         hMarkerButtonGroup
         hTreeSelection
@@ -35,7 +39,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         hTreeCheckBox
         hCountIndicatorAx
         hCountIndicatorText
-        
+
         hModeButtonGroup
         hModeAdd
         hModeDelete
@@ -49,7 +53,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
         cursorX
         cursorY
-        
+
         maxNeuriteTrees %maximum number of trees that can be drawn
         markerTypes
         neuriteTrees %Stores the neurite traces in a tree structure
@@ -59,36 +63,36 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         %consider replacing the handles with a structure of handles (TODO)
         neuriteTraceHandles
 
-        
+
         fontName
         fontSize
-        
+
         scrolledListener
         zoomedListener
         pannedListener
         gvClosingListener
-        
+
         changeFlag=0
-        
+
     end
-    
+
     properties(Dependent, SetAccess=protected) %access with get methods
         currentType
         selectedTreeIdx 
         cursorZVoxels
         cursorZUnits
-        
+
         correctionOffset
         deCorrectedCursorX
         deCorrectedCursorY
     end
-    
+
     methods
         %% Constructor
         function obj=goggleNeuriteTracer(caller, ~)
             obj=obj@goggleBoxPlugin(caller); %call constructor of goggleBoxPlugin
             obj.goggleViewer=caller.UserData;
-     
+
 
             %% Settings
             obj.fontName=gbSetting('font.name');
@@ -120,7 +124,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 'Name', [obj.pluginName, ': ' obj.goggleViewer.mosaicInfo.experimentName], ...
                 'Color', gbSetting('viewer.panelBkgdColor'), ...
                 'KeyPressFcn', {@keyPress, obj});
-            
+
             %% Marker selection initialisation
             obj.hMarkerButtonGroup=uibuttongroup(...
                 'Parent', obj.hFig, ...
@@ -137,7 +141,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             obj.lastNode=zeros(1,obj.maxNeuriteTrees);
             obj.markerTypes=defaultMarkerTypes(obj.maxNeuriteTrees); %Set this to the number of neurons
             updateMarkerTypeUISelections(obj);
-            
+
 
 
             %% Placement mode (add/delete) selection initialisation 
@@ -172,7 +176,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 'Value', 0, ...
                 'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
                 'ForegroundColor', gbSetting('viewer.textMainColor'));
-            
+
 
 
             %% Axon/dendrite radio group selection initialisation 
@@ -279,7 +283,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
                 'ForegroundColor', gbSetting('viewer.textMainColor'), ...
                 'Callback', {@exportData, obj});
-            
+
             %% Listener Declarations
             obj.cursorListenerInsideAxes=event.listener(obj.goggleViewer, 'CursorPositionChangedWithinImageAxes', @obj.updateCursorWithinAxes);
             obj.cursorListenerOutsideAxes=event.listener(obj.goggleViewer, 'CursorPositionChangedOutsideImageAxes', @obj.updateCursorOutsideAxes);
@@ -289,7 +293,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             obj.pannedListener=event.listener(obj.goggleViewer, 'Panned', @obj.drawAllTrees);
             obj.keyPressListener=event.listener(obj.goggleViewer, 'KeyPress', @obj.parentKeyPress);
             obj.gvClosingListener=event.listener(obj.goggleViewer, 'ViewerClosing', @obj.parentClosing);
-            
+
 
             %set up the handles for the plot elements
             obj.neuriteTraceHandles = ...
@@ -303,7 +307,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
             obj.toggleNodeModifers('off')
         end % Constructor
-        
+
         %% Set up markers
         function updateMarkerTypeUISelections(obj)
             %% Clear controls, if appropriate
@@ -315,10 +319,10 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             else
                 prevSelection=1;
             end
-            
+
             %% Set up radio buttons
             ii=1;
-            
+
             obj.hTreeSelection=uicontrol(...
                 'Parent', obj.hMarkerButtonGroup, ...
                 'Style', 'radiobutton', ...
@@ -332,7 +336,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
                 'ForegroundColor', gbSetting('viewer.textMainColor'));
             setNameChangeContextMenu(obj.hTreeSelection, obj)
-            
+
             for ii=2:numel(obj.markerTypes)
                 obj.hTreeSelection(ii)=uicontrol(...
                     'Parent', obj.hMarkerButtonGroup, ...
@@ -347,7 +351,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
                     'ForegroundColor', gbSetting('viewer.textMainColor'));
                 setNameChangeContextMenu(obj.hTreeSelection(ii), obj)
-                
+
             end
             obj.hTreeSelection(1).Value=1; 
             %% Set up color indicator
@@ -423,10 +427,10 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 'FontSize', obj.fontSize+2, ...
                 'Color', gbSetting('viewer.textMainColor'), ...
                 'HorizontalAlignment', 'center');
-            
+
             obj.hTreeSelection(ii).Value=1;
             obj.updateMarkerCount(obj.currentType);
-            
+
             for ii=2:numel(obj.markerTypes)
                 obj.hCountIndicatorText(ii)=text(...
                     'Parent', obj.hCountIndicatorAx, ...
@@ -440,20 +444,20 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     'HorizontalAlignment', 'center');                
                 obj.hTreeSelection(ii).Value=1;
                 obj.updateMarkerCount(obj.currentType);
-                
+
             end
-            
+
             %% Reset Selection
             obj.hTreeSelection(prevSelection).Value=1;
-            
+
         end
-        
+
         %% Listener Callbacks
         function updateCursorWithinAxes(obj, ~, cursorEventData)                          
             obj.cursorX=round(cursorEventData.CursorPosition(1,1));
             obj.cursorY=round(cursorEventData.CursorPosition(2,2));
             obj.goggleViewer.hFig.Pointer='crosshair';
-        
+
             %If alt is pressed we highlight the nearest data point 
             %within the delete proximity and if the user also clicks
             %a new branch is drawn 
@@ -474,7 +478,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             else
                 error('Unknown mode selection')
             end
-            
+
         end
         function parentKeyPress(obj, ~,ev)
             keyPress([], ev.KeyPressData, obj);
@@ -482,7 +486,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         function parentClosing(obj, ~, ~)
             deleteRequest([],[], obj,1) %force quit
         end
-        
+
 
         %------------------------------------------------------------------------------------------
         %------------------------------------------------------------------------------------------
@@ -523,7 +527,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             %% Set change flag
             obj.changeFlag=1;
         end
-        
+
         function idx = findMarkerNearestToCursor(obj)
             %Find marker nearest the cursor and return its index if it's within the delete distance
             %otherwise return nothing
@@ -548,9 +552,9 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             else
                 idx=[];
             end
-        
+
         end
-        
+
         function UIdeleteMarker(obj)
             goggleDebugTimingInfo(2, 'Entering UIdeleteMarker',toc,'s')
 
@@ -570,7 +574,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
             obj.lastNode(thisT) = obj.neuriteTrees{thisT}.Parent(obj.lastNode(thisT)); %TODO: is this right?
             obj.neuriteTrees{thisT} = obj.neuriteTrees{thisT}.removenode(idx);
-                
+
             obj.drawAllTrees;
 
             %% Update count
@@ -580,7 +584,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             obj.changeFlag=1;
             goggleDebugTimingInfo(2, 'Leaving UIdeleteMarker',toc,'s')
         end
-        
+
 
         %------------------------------------------------------------------------------------------
         % Drawing functions
@@ -602,7 +606,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
             %Set focus to main axes whenever a draw event happens.
             axes(obj.goggleViewer.hMainImgAx); 
-            
+
             %Loop through all trees and plot
             for thisTreeIdx=1:length(obj.neuriteTrees)
                 if ~obj.hTreeCheckBox(thisTreeIdx).Value | isempty(obj.neuriteTrees{thisTreeIdx})
@@ -654,7 +658,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             if pathToRoot
                 for thisLeaf=1:length(leaves)
                     thisPath =  obj.neuriteTrees{obj.currentTree}.findpath(leaves(thisLeaf),1);
-          
+
                     if ~isempty(mFind(thisPath,visibleNodeIdx)) %Does this branch contain indices that are in this z-plane?
                         paths{n}=thisPath; 
                         n=n+1;
@@ -671,7 +675,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     end
                 end
             end
-            
+
 
             if pathToRoot
                 %sort the paths by length
@@ -681,7 +685,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
             %remove points from shorter paths that intersect with the longest path
             %and points outside of the frame. 
-   
+
             showRemovalDetails=0;
             nRemoved=0;
             for thisPath=length(paths):-1:1
@@ -701,7 +705,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                         if length(pathInd)>1
                             pathInd(end)=[];
                         end
-                    
+
                         paths{thisPath}(pathInd)=[]; %trim
                     end
                 end
@@ -709,7 +713,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 %remove branches or segments that are not in view
                 x=[nodes(paths{thisPath}).xVoxel];
                 y=[nodes(paths{thisPath}).yVoxel];
-                    
+
                 if all(~pointsInView(obj,x,y))
                     paths{thisPath}=[]; %remove branch if none of its nodes are visible
                     nRemoved=nRemoved+1;
@@ -755,7 +759,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             % visible to the current z-plane. 
             hMainImgAx=obj.goggleViewer.hMainImgAx;
 
- 
+
             goggleDebugTimingInfo(2, 'NeuriteTracer.drawTree: Beginning drawing',toc,'s')
 
             %Extract some constants here that we don't need to recalculate each time time in the loop
@@ -779,7 +783,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
                 %Now we can extract the visible nodes and their corresponding relative z positions
                 visibleNodesInPath=nodes(visibleNodesInPathIdx); %Extract the visible nodes from the list of all nodes
-               
+
 
                 goggleDebugTimingInfo(2, sprintf('     Found visible %d nodes in current branch',length(visibleNodesInPathIdx)), toc, 's')
 
@@ -869,7 +873,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     y=markerY(fN);
                     z=markerZ(fN);
                     L=markerNodeIdx(fN);
-                    
+
                     parentNode=obj.neuriteTrees{obj.currentTree}.getparent(L);
                     if parentNode==0 %this is the root node. 
                         continue
@@ -885,7 +889,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     if abs(pZ - obj.cursorZVoxels)>zRadius
                         x(2)=nodes(parentNode).xVoxel;
                         y(2)=nodes(parentNode).yVoxel;
-                        
+
                         if z>pZ
                             lineType='--';
                         elseif z<pZ
@@ -921,7 +925,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                         markerCol,'linewidth',lWidth,'HitTest', 'off','Tag','NeuriteTracer','MarkerSize',mSize) 
                 end
 
-                
+
                 %Overlay a larger, different, symbol over the root node if it's visible
                 rootNode = obj.neuriteTrees{obj.currentTree}.Node{1}; %Store the root node somewhere easy to access
                 if ~isempty(find(visibleNodesInPathIdx==1))
@@ -936,10 +940,10 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     obj.neuriteTraceHandles(obj.currentTree).hRootNode = plot(hMainImgAx, rootNode.xVoxel, rootNode.yVoxel, 'd',...
                         'MarkerSize', mSize, 'color', 'w', 'MarkerFaceColor',rootNode.color,...
                         'Tag', 'NeuriteTracer','HitTest', 'off', 'LineWidth', median(markerSz)/75);
-    
+
                 end
 
- 
+
                 %% Draw highlights over points in the plane
                 if any(visibleNodesInPathRelZ==0)
                     f=find(visibleNodesInPathRelZ==0);
@@ -990,10 +994,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             end %close paths{ii} loop
 
         end %function drawTree(obj, ~, ~)
-        
 
-
-        
         function highlightMarker(obj)       
             tic
 
@@ -1058,12 +1059,21 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                  delete(findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'LastNode'))
             end
         end
-        
+
 
         %Returns the index of the tree which the user has selected with the radio buttons
         function treeIdx = userSelectedTreeIdx(obj)
             cType = obj.currentType;
             treeIdx = strmatch(cType.name, {obj.markerTypes(:).name});
+        end
+
+
+        %------------------------------------------------------------------------------------------
+        % Navigation functions
+
+        function goToCurrentRootNode(obj,~,~)
+            %Go to the layer that conatins the current root node
+
         end
 
 
@@ -1075,7 +1085,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             if all(cellfun(@isempty, obj.neuriteTrees)) %there are no marker trees loaded
                 return
             end
-            
+
             num=[];
             for ii=1:length(obj.neuriteTrees)
                 thisTree=obj.neuriteTrees{ii};
@@ -1098,10 +1108,10 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 fprintf('Failed to find marker type to update counter')
                 return
             end
-            
+
             obj.hCountIndicatorText(idx).String=sprintf('%u', num);
         end
-        
+
 
         function incrementMarkerCount(obj, markerTypeToIncrement)
             idx=obj.markerTypes==markerTypeToIncrement;
@@ -1109,7 +1119,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             newCount=prevCount+1;
             obj.hCountIndicatorText(idx).String=sprintf('%u', newCount);
         end
-        
+
 
         function decrementMarkerCount(obj, markerTypeToDecrement)
             idx=obj.markerTypes==markerTypeToDecrement;
@@ -1157,7 +1167,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         function z=get.cursorZUnits(obj)
             z=obj.goggleViewer.mainDisplay.currentZPlaneUnits;
         end
-        
+
         function offset=get.correctionOffset(obj)
             zvm=obj.goggleViewer.mainDisplay.zoomedViewManager;
             if isempty(zvm.xyPositionAdjustProfile)
@@ -1175,7 +1185,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
              y=obj.cursorY-obj.correctionOffset(1);
         end
 
-        
+
         %% Setter
         function set.changeFlag(obj, newVal)
             obj.changeFlag=newVal;
@@ -1193,7 +1203,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         end
     end
 
-    
+
     methods(Static)
         function d=displayString()
             d='Neurite Tracer';
@@ -1229,7 +1239,7 @@ function exportData(~, ~, obj)
     if isnumeric(f)&&f==0
         return
     end
-    
+
     neurite_markers=obj.neuriteTrees;
     try
         save(fullfile(p, f),'neurite_markers')
@@ -1242,15 +1252,15 @@ end
 
 function importData(~, ~, obj)
 
-     if obj.changeFlag
+    if obj.changeFlag
         agree=questdlg(sprintf('There are unsaved changes that will be lost.\nAre you sure you want to import markers?'), obj.pluginName, 'Yes', 'No', 'Yes');
         if strcmp(agree, 'No')
             return
         end
-     end
+    end
     [f,p]=uigetfile('*.mat', 'Import Markers', gbSetting('neuriteTracer.importExportDefault'));
 
-    
+
     try
         m=load(fullfile(p, f));
         f=fields(m);
@@ -1270,7 +1280,7 @@ function importData(~, ~, obj)
         if ~isempty(obj.neuriteTrees{ii}) %if neurite tree is present
             obj.lastNode(ii)=length(obj.neuriteTrees{ii}.Node); %set highlight (append) node to last point in tree
             obj.lastNode(ii)=1;
-            
+
             obj.hTreeCheckBox(ii).Value=1; %enable check box 
             obj.updateMarkerCount(obj.neuriteTrees{ii}.Node{1}.type)  %Set marker count
         else
@@ -1349,7 +1359,7 @@ function neuriteTypeCallback(~,~,obj)
         end
     end
     goggleDebugTimingInfo(2, ['Setting neurite type to ',neuriteName], toc, 's')
-    
+
 
 end
 
@@ -1446,64 +1456,62 @@ function [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ)
         markerX=markerX+offsets(: , 2)';
         markerY=markerY+offsets(: , 1)';
     end
-        
+
 end
 
 
 function IND = mFind(long,short)
-% function IND = mFind(long,short)
-%
-% vectorised multiple find for numeric vectors.
-%
-% A. If long and short are numeric vectors (usually of different lengths),
-% finds the occurance of any of the numbers present in short in the vector
-% long. Returns a vector of indecies with the results.
-%
-% e.g.
-%
-%   long = round(rand(1,20)*10);
-%   short = [1,5,7];
-%   F = mFind(long,short)
-%
-%  F =
-%
-%    15     6    19     8
-%
-% B. If long is an N-by-M matrix and short is a 1-by-M column vector then
-% finds all the rows of long which match the columns in short.
-%  
-% 
-%  Rob Campbell - December 2006
+    % function IND = mFind(long,short)
+    %
+    % vectorised multiple find for numeric vectors.
+    %
+    % A. If long and short are numeric vectors (usually of different lengths),
+    % finds the occurance of any of the numbers present in short in the vector
+    % long. Returns a vector of indecies with the results.
+    %
+    % e.g.
+    %
+    %   long = round(rand(1,20)*10);
+    %   short = [1,5,7];
+    %   F = mFind(long,short)
+    %
+    %  F =
+    %
+    %    15     6    19     8
+    %
+    % B. If long is an N-by-M matrix and short is a 1-by-M column vector then
+    % finds all the rows of long which match the columns in short.
+    %  
+    % 
+    %  Rob Campbell - December 2006
 
 
-%short should be a column vector for both find operations
-short=short(:)';
+    %short should be a column vector for both find operations
+    short=short(:)';
 
-  
-  if size(long,1)*size(long,2) == length(long)
 
-    %make sure long is row vector
-    long=long(:);
-    
-    %expand these into two arrays of the same size and subtract
-    tmpLong=repmat(long,1,length(short));
-    tmpShort=repmat(short,length(long),1);
-    tmp=tmpLong-tmpShort;
-    
-    %Rows with zeros are matches
-    [M,N]=find(tmp==0);
-    IND = M' ;
-    
-    
-  elseif size(long,2)==size(short,2)
-    tmpShort=repmat(short,size(long,1),1);
-    tmp=abs(long-tmpShort);
-    tmp=sum(tmp,2);
-    IND=find(tmp==0);    
-  else
-    error('There seems to be a mistake; please check the inputs.')    
-  end
-  
+    if size(long,1)*size(long,2) == length(long)
+
+        %make sure long is row vector
+        long=long(:);
+
+        %expand these into two arrays of the same size and subtract
+        tmpLong=repmat(long,1,length(short));
+        tmpShort=repmat(short,length(long),1);
+        tmp=tmpLong-tmpShort;
+
+        %Rows with zeros are matches
+        [M,N]=find(tmp==0);
+        IND = M' ;
+
+
+    elseif size(long,2)==size(short,2)
+        tmpShort=repmat(short,size(long,1),1);
+        tmp=abs(long-tmpShort);
+        tmp=sum(tmp,2);
+        IND=find(tmp==0);    
+    end
+
 end %mFind
 
 %% Set up context menus to change markers
@@ -1584,7 +1592,7 @@ end
 function setUpSettingBox(displayName, settingName, yPosition, parentPanel, parentObject)
     fn=gbSetting('font.name');
     fs=gbSetting('font.size');
-    
+
     hEdit=uicontrol(...
         'Style', 'edit', ...
         'Parent', parentPanel, ...
@@ -1595,10 +1603,10 @@ function setUpSettingBox(displayName, settingName, yPosition, parentPanel, paren
         'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
         'ForegroundColor', gbSetting('viewer.textMainColor'), ...
         'UserData', settingName);
-    
+
     hEdit.String=num2str(gbSetting(settingName));
     hEdit.Callback={@checkAndUpdateNewNumericSetting, parentObject};
-    
+
     uicontrol(...
         'Style', 'text', ...
         'Parent', parentPanel, ...
