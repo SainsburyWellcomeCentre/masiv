@@ -58,6 +58,14 @@ classdef goggleViewer<handle
               error('%s requires MATLAB 2014b or newer',mfilename)
             end
             
+            %Add goggleViewer directories to the path
+            goggleViewerPath = fileparts(which('goggleViewer'));
+            goggleViewerDirs = fullfile(goggleViewerPath,'code');
+            if isempty(strmatch(goggleViewerDirs,path)) %only add to path if dirs aren't already present
+                fprintf('Adding goggleViewer to path for this session\n')
+                addpath(genpath(goggleViewerDirs))
+            end
+
 
             if nargin<1 ||isempty(mosaicInfoIn)
                 fp=uigetdir(gbSetting('defaultDirectory'), 'Please select base directory of the stitched mosaic');
@@ -106,14 +114,14 @@ classdef goggleViewer<handle
                     uimenu(obj.mnuImage, 'Label', 'Adjust precise XY position', ...
                                      'Callback', {@adjustXYPosClick, obj});
                                 
-            addPlugins(obj.mnuImage, obj, 'resources/corePlugins', 1);
+            addPlugins(obj.mnuImage, obj, ['code',filesep,'resources',filesep,'corePlugins'], 1);
 
             
             obj.mnuPlugins=uimenu(obj.hFig, 'Label', 'Plugins');
-                    addPlugins(obj.mnuPlugins, obj,'plugins');
+                    addPlugins(obj.mnuPlugins, obj,['code',filesep,'plugins']);
                     
             obj.mnuTutPlugins=uimenu(obj.mnuPlugins,'label','Tutorials');
-                    addPlugins(obj.mnuTutPlugins, obj,['plugins',filesep,'tutorials'])
+                    addPlugins(obj.mnuTutPlugins, obj,['code',filesep,'plugins',filesep,'tutorials'])
 
             %% Contrast adjustment object definitions
             obj.hAxContrastHist=axes(...
