@@ -19,7 +19,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
     % Keyboard shortcuts:
     % ctrl+a - switch to add mode
     % ctrl+d - switch to delete mode
-    %
+    % r      - go to layer that contains the root node
     % 
     % REQUIRES:
     % https://github.com/raacampbell13/matlab-tree.git
@@ -1080,8 +1080,9 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             selectedIDX = obj.userSelectedTreeIdx;
 
             deltaZ=obj.neuriteTrees{selectedIDX}.Node{1}.zVoxel-obj.goggleViewer.mainDisplay.currentIndex;
-            stdout=obj.goggleViewer.mainDisplay.seekZ(deltaZ); %Seek to this z-depth TODO: is this the best way?
 
+            %Seek to this z-depth TODO: is this the best way?
+            stdout=obj.goggleViewer.mainDisplay.seekZ(deltaZ); 
             if stdout
                 obj.goggleViewer.mainDisplay.updateZoomedView;
             end
