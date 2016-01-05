@@ -1087,7 +1087,10 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 obj.goggleViewer.mainDisplay.updateZoomedView;
             end
 
-            %TODO: Now ensure we are zoom out to zoom of 1 [how?]
+            %TODO: pan in x/y to centre on it
+            rootNode_XY = [obj.neuriteTrees{selectedIDX}.Node{1}.xVoxel, obj.neuriteTrees{selectedIDX}.Node{1}.yVoxel];
+            %Now what? The executePan method in goggleViewer is protected and I can't see how to access it.
+
             obj.drawAllTrees
         end
 
