@@ -663,7 +663,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 for thisLeaf=1:length(leaves)
                     thisPath =  obj.neuriteTrees{obj.currentTree}.findpath(leaves(thisLeaf),1);
 
-                    if ~isempty(mFind(thisPath,visibleNodeIdx)) %Does this branch contain indices that are in this z-plane?
+                    if any(ismember(thisPath,visibleNodeIdx)) %Does this branch contain indices that are in this z-plane?
                         paths{n}=thisPath; 
                         n=n+1;
                     end
@@ -673,7 +673,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 segments = obj.neuriteTrees{obj.currentTree}.getsegments;
                 for ii=1:length(segments)
                     thisPath = segments{ii};
-                    if ~isempty(mFind(thisPath,visibleNodeIdx)) %Does this branch contain indices that are in this z-plane?
+                    if any(ismember(thisPath,visibleNodeIdx)) %Does this branch contain indices that are in this z-plane?
                         paths{n}=thisPath; 
                         n=n+1;
                     end
@@ -775,7 +775,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
                 %node indices from the *current* branch (path) that are visible in this z-plane
                 %Note: any jumps in the indexing of visiblePathIdx indicate nodes that are not visible from the current plane.
-                visiblePathIdx=mFind(paths{ii},visibleNodeIdx);
+                visiblePathIdx=find(ismember(paths{ii},visibleNodeIdx));
                 if isempty(visiblePathIdx)
                     continue %Do not proceed if no nodes are visible from this path
                 end
@@ -1469,61 +1469,6 @@ function [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ)
     end
 
 end
-
-
-function IND = mFind(long,short)
-    % function IND = mFind(long,short)
-    %
-    % vectorised multiple find for numeric vectors.
-    %
-    % A. If long and short are numeric vectors (usually of different lengths),
-    % finds the occurance of any of the numbers present in short in the vector
-    % long. Returns a vector of indecies with the results.
-    %
-    % e.g.
-    %
-    %   long = round(rand(1,20)*10);
-    %   short = [1,5,7];
-    %   F = mFind(long,short)
-    %
-    %  F =
-    %
-    %    15     6    19     8
-    %
-    % B. If long is an N-by-M matrix and short is a 1-by-M column vector then
-    % finds all the rows of long which match the columns in short.
-    %  
-    % 
-    %  Rob Campbell - December 2006
-
-
-    %short should be a column vector for both find operations
-    short=short(:)';
-
-
-    if size(long,1)*size(long,2) == length(long)
-
-        %make sure long is row vector
-        long=long(:);
-
-        %expand these into two arrays of the same size and subtract
-        tmpLong=repmat(long,1,length(short));
-        tmpShort=repmat(short,length(long),1);
-        tmp=tmpLong-tmpShort;
-
-        %Rows with zeros are matches
-        [M,N]=find(tmp==0);
-        IND = M' ;
-
-
-    elseif size(long,2)==size(short,2)
-        tmpShort=repmat(short,size(long,1),1);
-        tmp=abs(long-tmpShort);
-        tmp=sum(tmp,2);
-        IND=find(tmp==0);    
-    end
-
-end %mFind
 
 %% Set up context menus to change markers
 function setNameChangeContextMenu(h, obj)
