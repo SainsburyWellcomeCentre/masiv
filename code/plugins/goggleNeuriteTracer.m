@@ -1159,7 +1159,29 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             obj.lastNode(obj.selectedTreeIdx)=obj.currentLeaf; %highlight the leaf
             pos=obj.goToNode(obj.currentLeaf); %go to the leaf
 
-            fprintf('Gone to leaf %d/%d at %d,%d,%d\n',f,length(leaves),pos)
+            fprintf('Gone to leaf %d/%d at x=%d, y=%d, z=%d\n',f,length(leaves),pos)
+            
+            %Distance to the nearest parent node
+            pathToNode=obj.goToNearestPreviousBranch(1); %path to the node
+            pos=ones(length(pathToNode),3);
+            for ii=1:length(pathToNode)
+                n=obj.neuriteTrees{selectedIDX}.Node{pathToNode(ii)};
+                pos(ii,:)=[n.xVoxel,n.yVoxel,n.zVoxel];
+            end
+            totalDistance=0;
+            pos(:,3)=pos(:,3)*10; %TODO: BAD! z-distance is hard-coded
+            for ii=1:size(pos,1)-1
+                eucD=pdist(pos(ii:ii+1,:));
+                totalDistance=eucD+totalDistance;
+            end
+
+            if totalDistance>1E3
+                totalDistance=totalDistance/1E3;
+                fprintf('Total distance to nearest branch: %d mm\n',round(totalDistance))
+            else
+                fprintf('Total distance to nearest branch: %d microns\n',round(totalDistance))
+            end
+
         end
 
         function goToParentNode(obj)
@@ -1192,17 +1214,23 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             pos=obj.goToNode(childNode); %go to the leaf
         end
 
-        function goToNearestPreviousBranch(obj)
+        function varargout=goToNearestPreviousBranch(obj,onlyReturnIndex)
             % h key searches backwards (towards soma) to the nearest branch point and centres on this
+            % if onlyReturnIndex is true, then the path to the previous branch is returned but we don't go there
             % see also: obj.keyPress
+            if nargin<2
+                onlyReturnIndex=0;
+            end
             selectedIDX = obj.userSelectedTreeIdx;
             selectedNode = obj.lastNode(obj.selectedTreeIdx);
             if selectedNode==1
                 return
             end
 
+            pathToBranch=selectedNode; %store the path to the previous branch in case the user asks for this
             while 1
                 nextBranch = obj.neuriteTrees{selectedIDX}.Parent(selectedNode);
+                pathToBranch=[pathToBranch,nextBranch];
                 if length(obj.neuriteTrees{obj.selectedTreeIdx}.getchildren(nextBranch))>1
                     break
                 end
@@ -1211,11 +1239,17 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                     break
                 end
                 selectedNode=nextBranch;
+
             end
 
-            %move the highlight
-            obj.lastNode(obj.selectedTreeIdx)=nextBranch; %highlight the node
-            pos=obj.goToNode(nextBranch); %go to the node
+            if ~onlyReturnIndex
+                %move the highlight
+                obj.lastNode(obj.selectedTreeIdx)=nextBranch; %highlight the node
+                pos=obj.goToNode(nextBranch); %go to the node
+            end
+            if nargout>0
+                varargout{1}=pathToBranch;
+            end
 
         end
 
@@ -1228,10 +1262,11 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             origNextBranch = selectedNode;
             nextBranch=[];
             finished=0;
+            verbose=1;
             while ~finished
                 childNodes = obj.neuriteTrees{selectedIDX}.getchildren(selectedNode);
                 for ii=1:length(childNodes) %loop through these because the current node is likely a branch node
-
+                    if verbose, fprintf('Looking in child node %d\n',ii), end
                     thisChild = childNodes(ii);
                     while 1
                         nChildren = length(obj.neuriteTrees{obj.selectedTreeIdx}.getchildren(thisChild));
@@ -1547,6 +1582,7 @@ function ms=defaultMarkerTypes(nTypes)
         ms(ii).color=cols(ii, :);
     end
 end
+
 
 %which points are in the x/y view (may still be in a different z plane)
 function varargout = pointsInView(obj,xPoints,yPoints)
