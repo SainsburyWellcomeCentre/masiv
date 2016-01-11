@@ -339,6 +339,23 @@ classdef goggleViewer<handle
                 yMove=obj.mainDisplay.imageYLimOriginalCoords(2) - yl(2);
             end
         end
+
+        function pos=updateMouseCoordsInPanel(obj)
+            %updates the position of the mouse and the pixel value in the right-hand panel
+            C = get (obj.hMainImgAx, 'CurrentPoint');
+            xl=xlim(obj.hMainImgAx);
+            yl=ylim(obj.hMainImgAx);
+            x=C(1, 1);
+            y=C(2, 2);
+            if x>=xl(1) && x<=xl(2) && y>=yl(1) && y<=yl(2)
+                v=getPixelValueAtCoordinate(obj, x, y);
+                notify(obj, 'CursorPositionChangedWithinImageAxes', CursorPositionData(C, v));
+            else
+                notify(obj, 'CursorPositionChangedOutsideImageAxes')
+            end 
+    
+            pos=[x,y];
+        end
         
         %% --- Zooming
         function executeZoom(obj, zoomfactor)
@@ -386,6 +403,7 @@ classdef goggleViewer<handle
                 goggleDebugTimingInfo(0, 'GV: additional display updateZoomedView complete',toc, 's')
             end
             goggleDebugTimingInfo(0, 'GV: Firing ViewChanged Event',toc, 's')
+            obj.updateMouseCoordsInPanel;
             notify(obj, 'ViewChanged')
         end
         
@@ -432,6 +450,20 @@ classdef goggleViewer<handle
         end
         function idx=getCloseReqRegistrationIndexOfPlugin(obj, plg)
             idx=cellfun(@(x) eq(plg, x), obj.openPluginsOverridingCloseReq);
+        end
+
+        %public method for allowing plugins to centre the image on any desired locaion
+        function centreViewOnCoordinate(obj,xPos,yPos)
+            C=zeros(2);
+            C(1,1)=xPos;
+            C(2,2)=yPos
+
+            obj.centreView(C)
+
+            obj.changeAxes;
+            notify(obj, 'Panned')                
+
+
         end
     end
     
@@ -508,19 +540,7 @@ function hFigMain_BtnUp(~, ~, obj)
 end
 
 function pos=mouseMove (~, ~, obj)
-    C = get (obj.hMainImgAx, 'CurrentPoint');
-    xl=xlim(obj.hMainImgAx);
-    yl=ylim(obj.hMainImgAx);
-    x=C(1, 1);
-    y=C(2, 2);
-    if x>=xl(1) && x<=xl(2) && y>=yl(1) && y<=yl(2)
-        v=getPixelValueAtCoordinate(obj, x, y);
-        notify(obj, 'CursorPositionChangedWithinImageAxes', CursorPositionData(C, v));
-    else
-        notify(obj, 'CursorPositionChangedOutsideImageAxes')
-    end 
-    
-    pos=[x,y];
+    pos=obj.updateMouseCoordsInPanel;
     
     if obj.contrastMode && ~any(isnan(obj.dragOrigin))
         %% Contrast
