@@ -369,7 +369,7 @@ classdef goggleViewer<handle
             notify(obj, 'Zoomed')
 
         end
-        function centreView(obj, pointToCenterUpon)
+        function moved=centreView(obj, pointToCenterUpon)
             xl=xlim(obj.hMainImgAx);
             yl=ylim(obj.hMainImgAx);
             x=pointToCenterUpon(1, 1);
@@ -389,6 +389,12 @@ classdef goggleViewer<handle
             for ii=obj.additionalDisplays
                 xlim(ii.axes, xl+xMove);
                 ylim(ii.axes, yl+yMove);
+            end
+
+            if yMove~=0 | xMove~=0
+                moved=1;
+            else
+                moved=0;
             end
         end
         
@@ -453,15 +459,22 @@ classdef goggleViewer<handle
         end
 
         %public method for allowing plugins to centre the image on any desired locaion
-        function centreViewOnCoordinate(obj,xPos,yPos)
+        function varargout=centreViewOnCoordinate(obj,xPos,yPos)
             C=zeros(2);
             C(1,1)=xPos;
-            C(2,2)=yPos
+            C(2,2)=yPos;
 
-            obj.centreView(C)
+            moved=obj.centreView(C);
 
-            obj.changeAxes;
-            notify(obj, 'Panned')                
+            if moved
+                obj.changeAxes;
+                notify(obj, 'Panned')
+                fprintf( sprintf('Centred on x=%d y=%d\n', round(xPos), round(yPos)) )
+            end
+
+            if nargout>0
+                varargout{1}=moved;
+            end
 
 
         end
