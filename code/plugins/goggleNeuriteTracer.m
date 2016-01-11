@@ -20,7 +20,12 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
     % ctrl+a - switch to add mode
     % ctrl+d - switch to delete mode
     % r      - go to layer that contains the root node
+    % l      - go to next leaf
+    % k      - go to previous leaf
+    % n      - move highlight to parent node and centre
+    % m      - move highlight to first child node and centre
     % 
+    %
     % REQUIRES:
     % https://github.com/raacampbell13/matlab-tree.git
     %
@@ -62,7 +67,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         markerTypes
         neuriteTrees %Stores the neurite traces in a tree structure
         currentTree %The current neuron
-        lastNode % index of the last node in tree. Can be re-set to add branches, etc. vector same length as neuriteTrees
+        lastNode    %index of the last node in tree. Can be re-set to add branches, etc. vector same length as neuriteTrees
+        currentLeaf %When cycling between leaves, this is the node id of the currently highlighted leaf (see leafCycle)
 
         %consider replacing the handles with a structure of handles (TODO)
         neuriteTraceHandles
@@ -1074,23 +1080,115 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
         %------------------------------------------------------------------------------------------
         % Navigation functions
-        function goToCurrentRootNode(obj,~,~)
-            %Go to the layer that contains the root node of the currently selected tree
+        function varargout=goToNode(obj,nodeId)
+            %Center on a given node
             %see also: obj.keyPress
+
             selectedIDX = obj.userSelectedTreeIdx;
 
-            deltaZ=obj.neuriteTrees{selectedIDX}.Node{1}.zVoxel-obj.goggleViewer.mainDisplay.currentIndex;
+            xVoxel = obj.neuriteTrees{selectedIDX}.Node{nodeId}.xVoxel;
+            yVoxel = obj.neuriteTrees{selectedIDX}.Node{nodeId}.yVoxel;
+            zVoxel = obj.neuriteTrees{selectedIDX}.Node{nodeId}.zVoxel;
+
+            moved=obj.goggleViewer.centreViewOnCoordinate(xVoxel,yVoxel);
+
+            deltaZ=zVoxel-obj.goggleViewer.mainDisplay.currentIndex;
 
             %Seek to this z-depth TODO: is this the best way?
-            stdout=obj.goggleViewer.mainDisplay.seekZ(deltaZ); 
+            stdout=obj.goggleViewer.mainDisplay.seekZ(deltaZ);
             if stdout
                 obj.goggleViewer.mainDisplay.updateZoomedView;
             end
 
-            obj.goggleViewer.centreViewOnCoordinate(obj.neuriteTrees{selectedIDX}.Node{1}.xVoxel, obj.neuriteTrees{selectedIDX}.Node{1}.yVoxel);
+            %By not having an if statement here to check for changes, we slow things down a little.
+            %however, I've noticed that with the statement (e.g. if moved) it doesn't plot a new tree 
+            %when the tree radiobutton has been changed. Have to press R twice. 
+            obj.drawAllTrees
+            if nargout>0
+                varargout{1}=round([xVoxel,yVoxel,zVoxel]);
+            end
+        end
+
+        function goToCurrentRootNode(obj,~,~)
+            %Go to the layer that contains the root of the currently selected tree and centre it
+            %see also: obj.keyPress
+            obj.lastNode(obj.selectedTreeIdx)=1;
+            obj.goToNode(1)
+            fprintf('Gone to root of tree %d\n',obj.userSelectedTreeIdx)
+        end
+
+        function leafCycle(obj,key)
+            %Cycle through the leaves, centering on each in  turn. 
+            %The L key moves to the next leaf and the K key to the previous leaf. 
+            %see also: obj.keyPress
+
+            selectedIDX = obj.userSelectedTreeIdx;
+            leaves = obj.neuriteTrees{selectedIDX}.findleaves;
+            if isempty(leaves)
+                return
+            end
+
+            if isempty(obj.currentLeaf)
+                obj.currentLeaf = leaves(1);
+            end
+
+            f=find(leaves==obj.currentLeaf);
+            if isempty(f)
+                obj.currentLeaf = leaves(1);
+            else
+                switch key
+                case 'l'
+                    f=f+1;
+                    if f>length(leaves)
+                        obj.currentLeaf = leaves(1);
+                    else
+                        obj.currentLeaf = leaves(f);
+                    end
+                case 'k'
+                    f=f-1;
+                    if f<1
+                        obj.currentLeaf = leaves(end);
+                    else
+                        obj.currentLeaf = leaves(f);
+                    end
+                end
+            end
+
+            obj.lastNode(obj.selectedTreeIdx)=obj.currentLeaf; %highlight the leaf
+            pos=obj.goToNode(obj.currentLeaf); %go to the leaf
+
+            fprintf('Gone to leaf %d/%d at %d,%d,%d\n',f,length(leaves),pos)
+        end
+
+        function goToParentNode(obj)
+            % n key goes to parent node
+            % see also: obj.keyPress
+            selectedIDX = obj.userSelectedTreeIdx;
+            selectedNode = obj.lastNode(obj.selectedTreeIdx);
+            parentNode = obj.neuriteTrees{selectedIDX}.Parent(selectedNode);
+            if parentNode<1
+                return
+            end
+            %move the highlight
+            obj.lastNode(obj.selectedTreeIdx)=parentNode; %highlight the leaf
+            pos=obj.goToNode(parentNode); %go to the leaf
 
         end
 
+        function goToChildNode(obj) 
+            % m key goes to first child node
+            % see also: obj.keyPressselectedIDX = obj.userSelectedTreeIdx;
+            selectedNode = obj.lastNode(obj.selectedTreeIdx);
+            childNode = obj.neuriteTrees{obj.selectedTreeIdx}.getchildren(selectedNode);
+            if isempty(childNode)
+                return
+            else
+                childNode=childNode(1);
+            end
+            %move the highlight
+            obj.lastNode(obj.selectedTreeIdx)=childNode; %highlight the leaf
+            pos=obj.goToNode(childNode); %go to the leaf
+        end
 
         %------------------------------------------------------------------------------------------
         %Marker count functions
@@ -1437,6 +1535,12 @@ function keyPress(~, eventdata, obj)
             end
         case 'r' %go to root node of currently selected tree
             obj.goToCurrentRootNode
+        case {'l','k'} %go to root node of currently selected tree
+            obj.leafCycle(key)
+        case 'n'
+            obj.goToParentNode
+        case 'm'
+            obj.goToChildNode
     end %switch key
 
 end
