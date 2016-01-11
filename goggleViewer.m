@@ -303,18 +303,14 @@ classdef goggleViewer<handle
             
             if xMove~=0
                 newLim=xlim(obj.hMainImgAx)+xMove;
-                xlim(obj.hMainImgAx,newLim);
-                for ii=obj.additionalDisplays
-                    xlim(ii.axes, newLim);
-                end
+                xlim(obj.hMainImgAx,newLim)
+                arrayfun(@(thisAxis) xlim(thisAxis.axes,newLim), obj.additionalDisplays)
                 movedFlag=1;
             end
             if yMove~=0
                 newLim=ylim(obj.hMainImgAx)+yMove;
-                ylim(obj.hMainImgAx,newLim);
-                for ii=obj.additionalDisplays
-                    ylim(ii.axes, newLim);
-                end
+                ylim(obj.hMainImgAx,newLim)
+                arrayfun(@(thisAxis) ylim(thisAxis.axes,newLim), obj.additionalDisplays)
                 movedFlag=1;
             end
             
@@ -419,9 +415,10 @@ classdef goggleViewer<handle
                 obj.infoPanels(idx)=[];
             end
         end
-    end
+    end  %methods(Access=protected)
     
-    methods % Keep track of open plugins that want the viewer to cancel close requests
+    methods 
+        % Keep track of open plugins that want the viewer to cancel close requests
         function registerOpenPluginForCloseReqs(obj, plg)
             if isempty(obj.getCloseReqRegistrationIndexOfPlugin(plg))
                 obj.openPluginsOverridingCloseReq{end+1}=plg;
