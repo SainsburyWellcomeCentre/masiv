@@ -24,7 +24,9 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
     % k      - go to previous leaf
     % n      - move highlight to parent node and centre
     % m      - move highlight to first child node and centre
-    % 
+    % j key searches forward along the tree to the nearest branch point and centres on this
+    % h key searches backwards (towards soma) to the nearest branch point and centres on this
+    %
     %
     % REQUIRES:
     % https://github.com/raacampbell13/matlab-tree.git
@@ -1190,6 +1192,76 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
             pos=obj.goToNode(childNode); %go to the leaf
         end
 
+        function goToNearestPreviousBranch(obj)
+            % h key searches backwards (towards soma) to the nearest branch point and centres on this
+            % see also: obj.keyPress
+            selectedIDX = obj.userSelectedTreeIdx;
+            selectedNode = obj.lastNode(obj.selectedTreeIdx);
+            if selectedNode==1
+                return
+            end
+
+            while 1
+                nextBranch = obj.neuriteTrees{selectedIDX}.Parent(selectedNode);
+                if length(obj.neuriteTrees{obj.selectedTreeIdx}.getchildren(nextBranch))>1
+                    break
+                end
+                if nextBranch<1
+                    nextBranch=1;
+                    break
+                end
+                selectedNode=nextBranch;
+            end
+
+            %move the highlight
+            obj.lastNode(obj.selectedTreeIdx)=nextBranch; %highlight the node
+            pos=obj.goToNode(nextBranch); %go to the node
+
+        end
+
+        function goToNearestNextBranch(obj) 
+            % j key searches forward along the tree to the nearest branch point and centres on this
+            % see also: obj.keyPressselectedIDX = obj.userSelectedTreeIdx; 
+            selectedIDX = obj.userSelectedTreeIdx;
+            selectedNode = obj.lastNode(obj.selectedTreeIdx);
+
+            origNextBranch = selectedNode;
+            nextBranch=[];
+            finished=0;
+            while ~finished
+                childNodes = obj.neuriteTrees{selectedIDX}.getchildren(selectedNode);
+                for ii=1:length(childNodes) %loop through these because the current node is likely a branch node
+
+                    thisChild = childNodes(ii);
+                    while 1
+                        nChildren = length(obj.neuriteTrees{obj.selectedTreeIdx}.getchildren(thisChild));
+                        if nChildren>1
+                            finished=1;
+                            nextBranch = thisChild;
+                            break
+                        elseif nChildren==0
+                            finished=1;
+                            break
+                        end
+                        thisChild = obj.neuriteTrees{obj.selectedTreeIdx}.getchildren(thisChild);
+                    end
+                    if finished, break, end
+                    if ii==length(childNodes), finished=1; end
+                end
+            end
+
+
+            if isempty(nextBranch)
+                %disp('No next branch')
+                return
+            end
+
+            %move the highlight
+            obj.lastNode(obj.selectedTreeIdx)=nextBranch; %highlight the node
+            pos=obj.goToNode(nextBranch); %go to the node
+           
+        end
+
         %------------------------------------------------------------------------------------------
         %Marker count functions
         function updateMarkerCount(obj, markerTypeToUpdate)
@@ -1540,7 +1612,11 @@ function keyPress(~, eventdata, obj)
         case 'n'
             obj.goToParentNode
         case 'm'
-            obj.goToChildNode
+            obj.goToChildNode       
+        case 'h'
+            obj.goToNearestPreviousBranch
+        case 'j'
+            obj.goToNearestNextBranch
     end %switch key
 
 end
