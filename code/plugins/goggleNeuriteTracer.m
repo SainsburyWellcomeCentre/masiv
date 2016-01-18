@@ -24,8 +24,8 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
     % k      - go to previous leaf
     % n      - move highlight to parent node and centre
     % m      - move highlight to first child node and centre
-    % j key searches forward along the tree to the nearest branch point and centres on this
-    % h key searches backwards (towards soma) to the nearest branch point and centres on this
+    % j      - searches forward along the tree to the nearest branch point and centres on this
+    % h      - searches backwards (towards soma) to the nearest branch point and centres on this
     %
     %
     % REQUIRES:

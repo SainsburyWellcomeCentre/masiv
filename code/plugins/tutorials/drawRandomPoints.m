@@ -162,7 +162,7 @@ classdef drawRandomPoints<goggleBoxPlugin %drawRandomPoints inherits goggleBoxPl
 
         function clearMarkers(obj)
             if ~isempty(obj.hDisplayedMarkers)
-                delete(findobj(obj.goggleViewer.hImgAx, 'Tag', 'drawRandomPoints'))
+                delete(findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'drawRandomPoints'))
             end
         end
         
@@ -182,7 +182,7 @@ classdef drawRandomPoints<goggleBoxPlugin %drawRandomPoints inherits goggleBoxPl
                 
                 markerCol=cat(1, obj.markers.color);
                 
-                hImgAx=obj.goggleViewer.hImgAx; 
+                hImgAx=obj.goggleViewer.hMainImgAx; 
                 prevhold=ishold(hImgAx);
                 hold(hImgAx, 'on')
 
@@ -201,7 +201,7 @@ classdef drawRandomPoints<goggleBoxPlugin %drawRandomPoints inherits goggleBoxPl
 
                 %% Draw markers
                 goggleDebugTimingInfo(2, 'drawRandomPoints.drawMarkers: Beginning drawing',toc,'s')
-                obj.hDisplayedMarkers=scatter(obj.goggleViewer.hImgAx, markerX , markerY, markerSz, markerCol, 'filled', 'HitTest', 'off', 'Tag', 'drawRandomPoints');
+                obj.hDisplayedMarkers=scatter(hImgAx, markerX , markerY, markerSz, markerCol, 'filled', 'HitTest', 'off', 'Tag', 'drawRandomPoints');
                 goggleDebugTimingInfo(2, 'drawRandomPoints.drawMarkers: Drawing complete',toc,'s')
 
                 goggleDebugTimingInfo(2, 'drawRandomPoints.drawMarkers: Complete',toc,'s')
