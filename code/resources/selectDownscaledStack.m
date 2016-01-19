@@ -1,6 +1,9 @@
 function selectedDSS = selectDownscaledStack(mosaicInfo)
-%SELECTDOWNSCALEDSTACK Displays information about downscaled stacks to the
-%user, in order to get them to choose one!
+% Displays information about downscaled stacks to the user, in order to get them to choose one
+%
+% function selectedDSS = selectDownscaledStack(mosaicInfo)
+%
+%
 
 %#ok<*AGROW>
 
@@ -93,8 +96,8 @@ dss=mosaicInfo.downscaledStacks;
     if ishandle(hFig)
     close(hFig)
     end
-% end
-%% Callbacks
+
+    %% Callbacks
     function selectedChannelChanged(~,~)
         stacksWithMatchingChannelIdx=find(stacksWhichMatchChannel(dss, hChannels));
         hStackInfoBox.Value=1;
@@ -144,15 +147,15 @@ dss=mosaicInfo.downscaledStacks;
     function newButtonClick(~, ~)
         a=TVDownscaledStack(mosaicInfo);
         if ~isempty(a.channel)
-        if a.fileOnDisk
-            msgbox('A stack matching this specification already exists. Cancelling stack creation', 'Generate Downsampled Stack')
-            selectMatchingStack(a)
-        else
-            a.generateStack;
-            a.writeStackToDisk;
-            dss=mosaicInfo.downscaledStacks;
-            selectMatchingStack(a)
-        end
+            if a.fileOnDisk
+                msgbox('A stack matching this specification already exists. Cancelling stack creation', 'Generate Downsampled Stack')
+                selectMatchingStack(a)
+            else
+                a.generateStack;
+                a.writeStackToDisk;
+                dss=mosaicInfo.downscaledStacks;
+                selectMatchingStack(a)
+            end
         end
     end
 
@@ -190,7 +193,7 @@ dss=mosaicInfo.downscaledStacks;
         
     end
    
-end
+end %function selectedDSS = selectDownscaledStack(mosaicInfo)
 
 
 function updateAvailableChannels(hChannels, dss)
@@ -206,6 +209,7 @@ function updateAvailableChannels(hChannels, dss)
     hChannels.String=availableChannels;
 
 end
+
 function availableChannels=getAvailableChannels(dss)
   if ~isempty(dss)
         availableChannels=unique({dss.channel});
@@ -215,11 +219,11 @@ function availableChannels=getAvailableChannels(dss)
 end
 
 function matchIdx=stacksWhichMatchChannel(dss, hChannels)
-% returns the index of stack objects in dss which match a given channel
-if isempty(dss)||isempty(hChannels.String)
-    matchIdx=[];
-else
-    channelString=hChannels.String(hChannels.Value);
-    matchIdx=(strcmp({dss.channel}, channelString));
-end
+    % returns the index of stack objects in dss which match a given channel
+    if isempty(dss)||isempty(hChannels.String)
+        matchIdx=[];
+    else
+        channelString=hChannels.String(hChannels.Value);
+        matchIdx=(strcmp({dss.channel}, channelString));
+    end
 end

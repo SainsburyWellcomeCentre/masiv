@@ -76,6 +76,7 @@ classdef TVDownscaledStack<handle
             obj.updateFilePathMetaData(obj.mosaicInfo)
             
         end
+
         %% Methods
         function generateStack(obj)
             if obj.imageInMemory
@@ -83,12 +84,14 @@ classdef TVDownscaledStack<handle
             end
             obj.I_internal = createDownscaledStack(obj.mosaicInfo, obj.channel, obj.idx, obj.xyds);         
         end
+
         function loadStackFromDisk(obj)
              if obj.imageInMemory
                 error('Image already in memory')
              end
             obj.I_internal=loadTiffStack(obj.fileName, [], 'g');
         end
+
         function writeStackToDisk(obj)
             if obj.fileOnDisk
                 error('File already exists on disk')
@@ -101,6 +104,7 @@ classdef TVDownscaledStack<handle
             swb.progress();delete(swb);clear swb
             writeObjToMetadataFile(obj)
         end
+
         function stdout=deleteStackFromDisk(obj)
             button=questdlg(sprintf('Are you sure you want to delete stack %s?\nThis CANNOT be undone!', obj.name), ...
                 'Confirm Stack Deletion', 'OK', 'Cancel', 'Cancel');
@@ -112,6 +116,7 @@ classdef TVDownscaledStack<handle
                 stdout=0;
             end
         end
+
         function l=list(obj)
             l=cell(size(obj));
             for ii=1:numel(obj)
@@ -123,19 +128,24 @@ classdef TVDownscaledStack<handle
             obj.experimentName=TVMosaicInfoObj.experimentName;
             obj.sampleName=TVMosaicInfoObj.sampleName;
             obj.baseDirectory=TVMosaicInfoObj.baseDirectory;
+
             %% Get base directory for stacks and fileName for this stack
             obj.gbStackDirectory=getGBStackPath(TVMosaicInfoObj);
             obj.fileName=createGBStackFileNameForOutput(obj);
         end
        
+
+
         %% Getters 
         function g=get.downscaledStackObjectCollectionPath(obj)
              g=fullfile(obj.gbStackDirectory, [obj.sampleName '_GBStackInfo.mat']);
         end
+
         function nm=get.name(obj)
             [~, f]=fileparts(obj.fileName);
             nm=matlab.lang.makeValidName(f);
         end
+
         function I=get.I(obj)
             if ~obj.imageInMemory
                 if ~obj.fileOnDisk
@@ -148,9 +158,11 @@ classdef TVDownscaledStack<handle
             end    
             I=obj.I_internal;
         end
+
         function inMem=get.imageInMemory(obj)
             inMem=~isempty(obj.I_internal);
         end
+
         function onDisk=get.fileOnDisk(obj)
             onDisk=exist(obj.fileName, 'file')~=0;
         end
@@ -165,6 +177,7 @@ classdef TVDownscaledStack<handle
             end
             x=obj.xInternal;
         end
+
         function y=get.yCoordsVoxels(obj)
            if isempty(obj.yInternal)
                 if isempty(obj.I_internal)
@@ -175,18 +188,22 @@ classdef TVDownscaledStack<handle
             end
             y=obj.yInternal;
         end
+
         function z=get.zCoordsVoxels(obj)
             if isempty(obj.zInternal)
                 obj.zInternal=obj.idx;
             end
            z=obj.zInternal;
         end
-         function x=get.xCoordsUnits(obj)
+
+        function x=get.xCoordsUnits(obj)
             x=(obj.xCoordsVoxels-0.5)*obj.voxelSizeInUnits(1);
          end 
-         function y=get.yCoordsUnits(obj)
+
+        function y=get.yCoordsUnits(obj)
            y=(obj.yCoordsVoxels-0.5)*obj.voxelSizeInUnits(2);
         end
+
         function z=get.zCoordsUnits(obj)
             z=(obj.zCoordsVoxels-0.5)*obj.voxelSizeInUnits(3);
         end
@@ -195,33 +212,33 @@ classdef TVDownscaledStack<handle
            osfp= obj.mosaicInfo.stitchedImagePaths.(obj.channel);
         end
        
+    end %methods
+end %classdef TVDownscaledStack<handle
+
+function gbStackDirPath=getGBStackPath(obj)
+    gbStackDirPath=fullfile(obj.baseDirectory, [obj.sampleName '_GBStacks']);
+    if ~exist(gbStackDirPath, 'dir')
+        mkdir(gbStackDirPath)
     end
 end
 
-function gbStackDirPath=getGBStackPath(obj)
-gbStackDirPath=fullfile(obj.baseDirectory, [obj.sampleName '_GBStacks']);
-if ~exist(gbStackDirPath, 'dir')
-    mkdir(gbStackDirPath)
-end
-end
-
 function fName=createGBStackFileNameForOutput(obj)
-fName=fullfile(obj.gbStackDirectory, sprintf('%s_%s_Stack[%u-%u]_DS%u.tif', obj.sampleName, obj.channel, min(obj.idx), max(obj.idx), obj.xyds));
+    fName=fullfile(obj.gbStackDirectory, sprintf('%s_%s_Stack[%u-%u]_DS%u.tif', obj.sampleName, obj.channel, min(obj.idx), max(obj.idx), obj.xyds));
 end
 
 function writeObjToMetadataFile(obj)
-if ~isempty(obj.I)
+    if ~isempty(obj.I)
         obj.I_internal=[];
-end
-if ~exist(obj.downscaledStackObjectCollectionPath, 'file')
-    stacks=obj; %#ok<NASGU>
-    save(obj.downscaledStackObjectCollectionPath, 'stacks')
-else
-    a=load(obj.downscaledStackObjectCollectionPath);
-    stacks=a.stacks;
-    stacks(end+1)=obj; %#ok<NASGU>
-    save(obj.downscaledStackObjectCollectionPath, 'stacks');
-end
+    end
+    if ~exist(obj.downscaledStackObjectCollectionPath, 'file')
+        stacks=obj; %#ok<NASGU>
+        save(obj.downscaledStackObjectCollectionPath, 'stacks')
+    else
+        a=load(obj.downscaledStackObjectCollectionPath);
+        stacks=a.stacks;
+        stacks(end+1)=obj; %#ok<NASGU>
+        save(obj.downscaledStackObjectCollectionPath, 'stacks');
+    end
 end
 
 function deleteObjFromMetadataFile(obj)
@@ -299,7 +316,6 @@ function I = createDownscaledStack( mosaicInfo, channel, idx, varargin )
 end
 
 function [channel, idx, xyds]=getDSStackSpec(mosaicInfo)
-
     %% Channel
     availableChannels=fieldnames(mosaicInfo.stitchedImagePaths);
     resp=menu('Select channel to create stack from:', availableChannels{:}, 'Cancel');
@@ -316,7 +332,6 @@ function [channel, idx, xyds]=getDSStackSpec(mosaicInfo)
     passFlag=0;
     
     while passFlag~=1
-        
         idxStr=inputdlg({'Start', 'Increment', 'End'},'Use slices:', 1, ...
             {'1', '10', num2str(numel(mosaicInfo.stitchedImagePaths.(channel)))});
         

@@ -104,7 +104,7 @@ classdef goggleViewer<handle
             
             %% Menu Object declarations
             obj.mnuMain=uimenu(obj.hFig, 'Label', 'Main');
-                    uimenu(obj.mnuMain, 'Label', 'Quit', 'Callback', {@closeRequest, obj})
+            uimenu(obj.mnuMain, 'Label', 'Quit', 'Callback', {@closeRequest, obj})
                     
             obj.mnuImage=uimenu(obj.hFig, 'Label', 'Image');
             uimenu(obj.mnuImage, 'Label', 'Export Current View to Workspace', ...
@@ -179,6 +179,7 @@ classdef goggleViewer<handle
              ppos=getpixelposition(sliderPanel);
              border=ppos(3:4)./[100 20]; border=[border border*2];
              
+
              obj.hjSliderContrast = com.jidesoft.swing.RangeSlider(-5000,15000,0,1000);  % min,max,low,high
              obj.hjSliderContrast = javacomponent(obj.hjSliderContrast, [border(1),border(2),ppos(3)-border(3),ppos(4)-border(4)], sliderPanel);
              
@@ -201,7 +202,7 @@ classdef goggleViewer<handle
             obj.mainDisplay.drawNewZ();
             adjustContrast([], [], obj);
             axis(obj.hMainImgAx, 'equal')
-            
+
             %% Info boxes
             obj.addInfoPanel(goggleViewInfoPanel(obj, obj.hFig, [0.83 0.49 0.16 0.31], obj.mainDisplay));
             obj.addInfoPanel(gogglePreLoader(obj, [0.83 0.39 0.16 0.09]));
@@ -210,8 +211,10 @@ classdef goggleViewer<handle
             if ~ispc %TODO: fix the memory functions on Windows. Until this happens we can't run this (ISSUE #17)
                 obj.addInfoPanel(goggleSystemMemoryUsageInfoPanel(obj.hFig, [0.83 0.03 0.16 0.15], obj.mainDisplay.zoomedViewManager));
             end
+
             %% Set fonts to something nice
-            set(findall(gcf, '-property','FontName'), 'FontName', gbSetting('font.name'))
+            set(findall(gcf, '-property','FontName'), 'FontName', gbSetting('font.name'));
+
             
             %% Load and set icon 
             try
@@ -225,7 +228,6 @@ classdef goggleViewer<handle
             drawnow;
             G=gcp;
             G.IdleTimeout=inf;
-
             delete(h);
             %% Show the figure, we're done here!
             obj.hFig.Visible='on';
@@ -599,7 +601,7 @@ function hFigMain_BtnUp(~, ~, obj)
     obj.dragOrigin=NaN;
 end
 
-function pos=mouseMove (~, ~, obj)
+function pos=mouseMove(~, ~, obj)
     pos=obj.updateMouseCoordsInPanel;
     
     if obj.contrastMode && ~any(isnan(obj.dragOrigin))
@@ -611,7 +613,7 @@ function pos=mouseMove (~, ~, obj)
         m=obj.hjSliderContrast.getLowValue();
         rng=obj.hjSliderContrast.getHighValue-m;
         newVal=obj.hjSliderContrast.getHighValue()+delta(2)*rng; % scales quite nicely
-        
+
         if newVal>m
             obj.hjSliderContrast.setHighValue(newVal);
         else
@@ -667,19 +669,19 @@ function hFigMain_ScrollWheel(~, eventdata, obj)
 end
 
 function adjustContrast(~, ~, obj)
-%     if nargin<1
-%         hContrastLim=[];
-%     end
-%     if ~isempty(hContrastLim)&&~all(isstrprop(hContrastLim.String, 'digit')) %it's invalid, use the previous value
-%         if hContrastLim==obj.hAxContrastMin
-%             hContrastLim.String=obj.mainDisplay.contrastLims(1);
-%         elseif hContrastLim==obj.hAxContrastMax
-%             hContrastLim.String=obj.mainDisplay.contrastLims(2);
-%         end
-%     else
-%         obj.mainDisplay.contrastLims=[str2double(obj.hAxContrastMin.String) str2double(obj.hAxContrastMax.String)];
-%     end
-obj.mainDisplay.contrastLims=[obj.hjSliderContrast.getLowValue(), obj.hjSliderContrast.getHighValue()];
+    %     if nargin<1
+    %         hContrastLim=[];
+    %     end
+    %     if ~isempty(hContrastLim)&&~all(isstrprop(hContrastLim.String, 'digit')) %it's invalid, use the previous value
+    %         if hContrastLim==obj.hAxContrastMin
+    %             hContrastLim.String=obj.mainDisplay.contrastLims(1);
+    %         elseif hContrastLim==obj.hAxContrastMax
+    %             hContrastLim.String=obj.mainDisplay.contrastLims(2);
+    %         end
+    %     else
+    %         obj.mainDisplay.contrastLims=[str2double(obj.hAxContrastMin.String) str2double(obj.hAxContrastMax.String)];
+    %     end
+    obj.mainDisplay.contrastLims=[obj.hjSliderContrast.getLowValue(), obj.hjSliderContrast.getHighValue()];
 end
 
 function closeRequest(~,~,obj)
