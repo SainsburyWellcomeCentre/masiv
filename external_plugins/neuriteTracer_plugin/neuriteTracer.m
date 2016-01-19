@@ -1175,7 +1175,12 @@ classdef neuriteTracer<goggleBoxPlugin
                 pos(ii,:)=[n.xVoxel,n.yVoxel,n.zVoxel];
             end
             totalDistance=0;
-            pos(:,3)=pos(:,3)*10; %TODO: BAD! z-distance is hard-coded
+
+            distanceBetweenPlanes = obj.goggleViewer.mosaicInfo.metaData.zres * 2;
+            if distanceBetweenPlanes==0
+                fprintf('\n\n\t WARNING! distance between planes is zero. There is a bug in the code!\n\n')
+            end
+            pos(:,3)=pos(:,3)*distanceBetweenPlanes; 
             for ii=1:size(pos,1)-1
                 eucD=pdist(pos(ii:ii+1,:));
                 totalDistance=eucD+totalDistance;
