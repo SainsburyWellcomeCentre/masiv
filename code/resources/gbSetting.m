@@ -149,7 +149,7 @@ function s=returnDefaultSettings
     %% Plugins directory
     s.plugins.hideTutorialPlugins=0; %is 1 we hide tutorial plugins
     s.plugins.externalPluginsDirs={'my hat is pink','my hat is an aardvark'}; %allows for paths to external plugins to be added
-    s.plugins.internalSetting.corePluginsDir={'code','plugins'}; %this evaluates to the path via fullfile(s.plugins.internalSetting.corePluginsDir{:})
+    s.plugins.corePluginsDirPath=fullfile('code','plugins');
 end
 
 
