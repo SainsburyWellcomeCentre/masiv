@@ -107,21 +107,23 @@ classdef goggleViewer<handle
                     uimenu(obj.mnuMain, 'Label', 'Quit', 'Callback', {@closeRequest, obj})
                     
             obj.mnuImage=uimenu(obj.hFig, 'Label', 'Image');
-                    uimenu(obj.mnuImage, 'Label', 'Export Current View to Workspace', ...
-                                     'Callback', {@exportViewToWorkspace, obj})
-                    uimenu(obj.mnuImage, 'Label', 'Detailed image processing steps...', ...
-                                     'Callback', {@changeProcessingSteps, obj});
-                    uimenu(obj.mnuImage, 'Label', 'Adjust precise XY position', ...
-                                     'Callback', {@adjustXYPosClick, obj});
+            uimenu(obj.mnuImage, 'Label', 'Export Current View to Workspace', ...
+                   'Callback', {@exportViewToWorkspace, obj})
+            uimenu(obj.mnuImage, 'Label', 'Detailed image processing steps...', ...
+                   'Callback', {@changeProcessingSteps, obj});
+            uimenu(obj.mnuImage, 'Label', 'Adjust precise XY position', ...
+                   'Callback', {@adjustXYPosClick, obj});
                                 
-            addPlugins(obj.mnuImage, obj, ['code',filesep,'resources',filesep,'corePlugins'], 1);
+            addPlugins(obj.mnuImage, obj, fullfile('code','resources','corePlugins'), 1);
 
             
             obj.mnuPlugins=uimenu(obj.hFig, 'Label', 'Plugins');
-                    addPlugins(obj.mnuPlugins, obj,['code',filesep,'plugins']);
+            addPlugins(obj.mnuPlugins, obj, gbSetting('plugins.bundledPluginsDirPath'));
                     
-            obj.mnuTutPlugins=uimenu(obj.mnuPlugins,'label','Tutorials');
-                    addPlugins(obj.mnuTutPlugins, obj,['code',filesep,'plugins',filesep,'tutorials'])
+            if ~gbSetting('plugins.hideTutorialPlugins') %TODO: automate this
+                obj.mnuTutPlugins=uimenu(obj.mnuPlugins,'label','Tutorials');
+                addPlugins(obj.mnuTutPlugins, obj, fullfile(gbSetting('plugins.bundledPluginsDirPath'),'tutorials'))
+            end
 
             %% Contrast adjustment object definitions
             obj.hAxContrastHist=axes(...
