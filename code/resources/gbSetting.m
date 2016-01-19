@@ -25,22 +25,34 @@ function valOut=gbSetting(prefName, val) %#ok<INUSD>
 persistent r fName fileInfo
 
 if isempty(r)
-    [r, fName, fileInfo]=doInitialReadOfSettingsFile();
+    [r, fName, fileInfo]=doInitialReadOfSettingsFile;
 end
     
     if nargin<2
-        %% Read mode
-       
+        %% Read preference from file or from default list (missing preferences are added)
         [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo, fName);
 
         if nargin<1||isempty(prefName) % return all
             valOut=r;
         else
-            valOut=eval(sprintf('r.%s', prefName));
-        end
+            %Check is requested preference is missing from the settings YML but present in the defaults
+            defaultSettings = returnDefaultSettings;
+            valOut = getThisSetting(r,prefName);
+            if isempty(valOut) %setting not found in YML
+                thisDefaultSetting = getThisSetting(defaultSettings,prefName); %is this a missing setting?
+                if isempty(thisDefaultSetting) %setting not found in default list
+                    error('Can not find setting %s',prefName) %TODO: do we want this to generate an error?
+                else
+                    %add new default preference to file
+                    fprintf('Adding default value for %s to the settings YML file\n', prefName)
+                    gbSetting(prefName,thisDefaultSetting); %add the setting by writing to the preferences file
+                end %if isinf(thisDefaultSetting)
+            end %if isinf(valOut)
+        end %nargin<1||isempty(prefName) % return all
+
     else
-        %% Write mode
-        
+
+        %% Write preference
         [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo, fName);
         
         eval(sprintf('r.%s=val;', prefName));
@@ -56,21 +68,45 @@ end %function valOut=gbSetting(prefName, val)
 
 
 %----------------------------------------------------------
-function [r, fName, fileInfo]=doInitialReadOfSettingsFile()
-    fName=getPrefsFilePath();
+function [r, fName, fileInfo]=doInitialReadOfSettingsFile
+    fName=getPrefsFilePath;
     r=readSimpleYAML(fName);
     fileInfo=dir(fName);
 end
 
-function fName=getPrefsFilePath()
+
+function fName=getPrefsFilePath
     fName=which('gogglePrefs.yml');
     if isempty(fName)
-        createDefaultPrefsFile()
+        createDefaultPrefsFile
         fName=which('gogglePrefs.yml');
     end
 end
 
-function createDefaultPrefsFile()
+function thisSetting = getThisSetting(thisStruct,settingName)
+    %Read setting defined by string settingName from from structure thisStruct
+    %e.g. settingName has the form 'defaultDirectory' or 'font.size'
+    %NOTE: If the setting is missing, getThisSetting returns empty
+
+    for settingField=strsplit(settingName,'.')
+        settingField = settingField{1};
+        if isfield(thisStruct,settingField)
+            thisStruct=thisStruct.(settingField); %descend down the tree
+        else
+            %bail out: we can't find the setting
+            thisSetting=[];
+            return
+        end
+    end
+
+    thisSetting = thisStruct; %we have descended all the way to the variable
+
+end
+
+
+function s=returnDefaultSettings
+    %% Returns a structure containing the default settings
+
     %% Global settings
     s.defaultDirectory='/';
     s.font.name='Helvetica';
@@ -109,14 +145,23 @@ function createDefaultPrefsFile()
     %% Debug output
     s.debug.logging=1;
     s.debug.outputSpacing=12;
-    %Write to disk
-    baseDir=fileparts(which('goggleViewer'));
-    writeSimpleYAML(s, fullfile(baseDir, 'gogglePrefs.yml'));
-    
+
+    %% Plugins directory
+    s.plugins.hideTutorialPlugins=0; %is 1 we hide tutorial plugins
+    s.plugins.externalPluginsDirs={'my hat is pink','my hat is an aardvark'}; %allows for paths to external plugins to be added
+    s.plugins.internalSetting.corePluginsDir={'code','plugins'}; %this evaluates to the path via fullfile(s.plugins.internalSetting.corePluginsDir{:})
 end
 
+
+function createDefaultPrefsFile
+    %% Load the default settings and write these to disk
+    baseDir=fileparts(which('goggleViewer'));
+    writeSimpleYAML(returnDefaultSettings, fullfile(baseDir, 'gogglePrefs.yml')); 
+end
+
+
 function [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo, fName)
- %% Check the file hasn't been modified
+    %% Check the file hasn't been modified
     newFileInfo=dir(fName);
     if (numel(newFileInfo.date)~=numel(fileInfo.date)) || any(newFileInfo.date~=fileInfo.date)
         %% And reload it if it has
