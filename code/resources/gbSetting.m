@@ -46,6 +46,7 @@ end
                     %add new default preference to file
                     fprintf('Adding default value for %s to the settings YML file\n', prefName)
                     gbSetting(prefName,thisDefaultSetting); %add the setting by writing to the preferences file
+                    valOut=gbSetting(prefName); %read the setting
                 end %if isinf(thisDefaultSetting)
             end %if isinf(valOut)
         end %nargin<1||isempty(prefName) % return all
@@ -147,7 +148,7 @@ function s=returnDefaultSettings
     %Contrast slider
     s.contrastSlider.highThresh=0.225; %should go between zero and 1
     s.contrastSlider.doAutoContrast=1;
-    
+
     %% Debug output
     s.debug.logging=1;
     s.debug.outputSpacing=12;
