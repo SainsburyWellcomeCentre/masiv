@@ -101,7 +101,13 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
     methods
         %% Constructor
-        function obj=goggleNeuriteTracer(caller, ~)
+        function obj=goggleNeuriteTracer(caller, ~)   
+
+            if ~exist('tree','file')
+                agree=errordlg(sprintf('The matlab-tree package is not installed.\nInstall from:\nhttps://github.com/raacampbell13/matlab-tree'));
+                fprintf('\n\n\tThe matlab-tree package is not installed. \n\tPlease install from: https://github.com/raacampbell13/matlab-tree\n\n\n')
+                return
+            end
             obj=obj@goggleBoxPlugin(caller); %call constructor of goggleBoxPlugin
             obj.goggleViewer=caller.UserData;
 
