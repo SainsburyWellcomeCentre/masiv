@@ -207,7 +207,7 @@ classdef goggleViewer<handle
             obj.addInfoPanel(gogglePreLoader(obj, [0.83 0.39 0.16 0.09]));
             obj.addInfoPanel(goggleReadQueueInfoPanel(obj.hFig, [0.83 0.29 0.16 0.09], obj.mainDisplay.zoomedViewManager));
             obj.addInfoPanel(goggleCacheInfoPanel(obj, [0.83 0.19 0.16 0.09]));
-            if ~ispc %TODO: fix the memory functions on Windows. Until this happens we can't run this
+            if ~ispc %TODO: fix the memory functions on Windows. Until this happens we can't run this (ISSUE #17)
                 obj.addInfoPanel(goggleSystemMemoryUsageInfoPanel(obj.hFig, [0.83 0.03 0.16 0.15], obj.mainDisplay.zoomedViewManager));
             end
             %% Set fonts to something nice
@@ -578,6 +578,7 @@ function hFigMain_KeyPress (~, eventdata, obj)
     end
         
 end
+
 function hFigMain_KeyRelease(~, eventdata, obj)
 shiftMod=ismember('shift', eventdata.Modifier);
     if ~shiftMod
@@ -587,11 +588,13 @@ shiftMod=ismember('shift', eventdata.Modifier);
             end
     end
 end
+
 function hFigMain_BtnDown(~, ~, obj)
     if obj.contrastMode;
         obj.dragOrigin=mouseMove([],[],obj);
     end
 end
+
 function hFigMain_BtnUp(~, ~, obj)
     obj.dragOrigin=NaN;
 end
@@ -639,9 +642,8 @@ function pos=mouseMove (~, ~, obj)
         obj.dragOrigin=pos;
     end
     
-    
-    
 end
+
 function hFigMain_ScrollWheel(~, eventdata, obj)
     startDebugOutput
 
@@ -663,6 +665,7 @@ function hFigMain_ScrollWheel(~, eventdata, obj)
     obj.executeScroll(p*eventdata.VerticalScrollCount,'zAxisScroll'); %scroll through z-stack
 
 end
+
 function adjustContrast(~, ~, obj)
 %     if nargin<1
 %         hContrastLim=[];
@@ -678,19 +681,22 @@ function adjustContrast(~, ~, obj)
 %     end
 obj.mainDisplay.contrastLims=[obj.hjSliderContrast.getLowValue(), obj.hjSliderContrast.getHighValue()];
 end
+
 function closeRequest(~,~,obj)
-if isempty(obj.openPluginsOverridingCloseReq)
-    delete(obj)
-else
-    msgbox('One or more plugins are open that require your attention before closing')
+    if isempty(obj.openPluginsOverridingCloseReq)
+        delete(obj)
+    else
+        msgbox('One or more plugins are open that require your attention before closing')
+    end
 end
-end
+
 function changeProcessingSteps(~, ~, obj)
     zvm=obj.mainDisplay.zoomedViewManager;
     newPipeline=setImageProcessingPipeline(zvm.imageProcessingPipeline);
     zvm.imageProcessingPipeline=newPipeline;
     zvm.clearCache;
 end
+
 function handleMouseClick(~,~, obj)
     notify(obj, 'ViewClicked');
 end
@@ -713,29 +719,30 @@ end
 
 %% Utilities
 function updateContrastHistogram(dsStack,hContrastHist_Axes)
-data=dsStack.hImg.CData;
-n=hist(double(data(:)), numel(data)/100);n=n/max(n);
-bar(linspace(0, 1, length(n)), n, 'Parent', hContrastHist_Axes, 'FaceColor', [0.8 0.8 0.8])
-hContrastHist_Axes.Color=[0.1 0.1 0.1];
-hold(hContrastHist_Axes, 'on')
+    data=dsStack.hImg.CData;
+    n=hist(double(data(:)), numel(data)/100);n=n/max(n);
+    bar(linspace(0, 1, length(n)), n, 'Parent', hContrastHist_Axes, 'FaceColor', [0.8 0.8 0.8])
+    hContrastHist_Axes.Color=[0.1 0.1 0.1];
+    hold(hContrastHist_Axes, 'on')
 
-% Overlay fake axes
-line([0 0], [-0.08 1.1], 'Color', [0.8 0.8 0.8],'Parent', hContrastHist_Axes) %y axis
-line([-0.05 0.01], [1 1],  'Color', [0.8 0.8 0.8],'Parent', hContrastHist_Axes) %top y axis tick
-line([1 1], [-0.08 0.001], 'Color', [0.8 0.8 0.8],'Parent', hContrastHist_Axes) %end x tick
-%        rectangles cover any funny error pixels
-rectangle('Position', [-0.08 1 2 1], 'FaceColor',[0.1 0.1 0.1], 'EdgeColor', 'none','Parent', hContrastHist_Axes)
-rectangle('Position', [-1.001 -1.001 1 1], 'FaceColor', [0.1 0.1 0.1], 'EdgeColor', 'none','Parent', hContrastHist_Axes)
-rectangle('Position', [1.01 -1.001 1 1], 'FaceColor', [0.1 0.1 0.1],'EdgeColor', 'none','Parent', hContrastHist_Axes)
+    % Overlay fake axes
+    line([0 0], [-0.08 1.1], 'Color', [0.8 0.8 0.8],'Parent', hContrastHist_Axes) %y axis
+    line([-0.05 0.01], [1 1],  'Color', [0.8 0.8 0.8],'Parent', hContrastHist_Axes) %top y axis tick
+    line([1 1], [-0.08 0.001], 'Color', [0.8 0.8 0.8],'Parent', hContrastHist_Axes) %end x tick
 
-% Ovelay limit lines
-%        line(ones(2, 1)*contrastMin, [-0.05 1], 'Parent', hContrastHist_Axes)
-%        line(ones(2, 1)*contrastMax, [-0.05 1], 'Parent', hContrastHist_Axes)
-hold(hContrastHist_Axes, 'off')
-set(hContrastHist_Axes, 'XTick', [], 'XColor', get(0, 'defaultuicontrolbackgroundcolor'))
-set(hContrastHist_Axes, 'YTick', [], 'YColor', get(0, 'defaultuicontrolbackgroundcolor'))
-xlim(hContrastHist_Axes, [-0.05 1.1])
-ylim(hContrastHist_Axes, [-0.1 1.1])
+    % rectangles cover any funny error pixels
+    rectangle('Position', [-0.08 1 2 1], 'FaceColor',[0.1 0.1 0.1], 'EdgeColor', 'none','Parent', hContrastHist_Axes)
+    rectangle('Position', [-1.001 -1.001 1 1], 'FaceColor', [0.1 0.1 0.1], 'EdgeColor', 'none','Parent', hContrastHist_Axes)
+    rectangle('Position', [1.01 -1.001 1 1], 'FaceColor', [0.1 0.1 0.1],'EdgeColor', 'none','Parent', hContrastHist_Axes)
+
+    % Ovelay limit lines
+    %        line(ones(2, 1)*contrastMin, [-0.05 1], 'Parent', hContrastHist_Axes)
+    %        line(ones(2, 1)*contrastMax, [-0.05 1], 'Parent', hContrastHist_Axes)
+    hold(hContrastHist_Axes, 'off')
+    set(hContrastHist_Axes, 'XTick', [], 'XColor', get(0, 'defaultuicontrolbackgroundcolor'))
+    set(hContrastHist_Axes, 'YTick', [], 'YColor', get(0, 'defaultuicontrolbackgroundcolor'))
+    xlim(hContrastHist_Axes, [-0.05 1.1])
+    ylim(hContrastHist_Axes, [-0.1 1.1])
 end
 
 function exportViewToWorkspace(~,~,obj)
@@ -785,16 +792,16 @@ function zProfile=loadXYAlignmentProfile
 end
 
 function v=getPixelValueAtCoordinate(obj, x, y)
-zoomedViewStatus=obj.mainDisplay.zoomedViewNeeded&&obj.mainDisplay.zoomedViewManager.currentSliceFileExistsOnDisk;
-if zoomedViewStatus
-    [~, xIdx]=min(abs(x-obj.mainDisplay.zoomedViewManager.hImg.XData));
-    [~, yIdx]=min(abs(y-obj.mainDisplay.zoomedViewManager.hImg.YData));
-    v=obj.mainDisplay.zoomedViewManager.hImg.CData(yIdx, xIdx);
-else
-    [~, xIdx]=min(abs(x-obj.mainDisplay.overviewStack.xCoordsVoxels));
-    [~, yIdx]=min(abs(y-obj.mainDisplay.overviewStack.yCoordsVoxels));
-    v=obj.mainDisplay.hImg.CData(yIdx, xIdx);
-end
+    zoomedViewStatus=obj.mainDisplay.zoomedViewNeeded&&obj.mainDisplay.zoomedViewManager.currentSliceFileExistsOnDisk;
+    if zoomedViewStatus
+        [~, xIdx]=min(abs(x-obj.mainDisplay.zoomedViewManager.hImg.XData));
+        [~, yIdx]=min(abs(y-obj.mainDisplay.zoomedViewManager.hImg.YData));
+        v=obj.mainDisplay.zoomedViewManager.hImg.CData(yIdx, xIdx);
+    else
+        [~, xIdx]=min(abs(x-obj.mainDisplay.overviewStack.xCoordsVoxels));
+        [~, yIdx]=min(abs(y-obj.mainDisplay.overviewStack.yCoordsVoxels));
+        v=obj.mainDisplay.hImg.CData(yIdx, xIdx);
+    end
 end
 
 %% Plugins menu creation
@@ -829,7 +836,6 @@ function addPlugins(hMenuBase, obj, pluginsDir, separateFirstEntry)
     end
 end
 
-
 function isGBPlugin=isValidGoggleBoxPlugin(pluginsDir, pluginsFile)
     fName=fullfile(pluginsDir, pluginsFile);
     if isdir(fName)
@@ -848,32 +854,16 @@ function isGBPlugin=isValidGoggleBoxPlugin(pluginsDir, pluginsFile)
 end
 
 function abstractPluginFlag=isAbstractCode(codeStr)
-   
     abstractPluginFlag=strfind(lower(codeStr), 'abstract');
     if isempty(abstractPluginFlag)
         abstractPluginFlag=0;
     else
         abstractPluginFlag=1;
     end
-   
 end
 
 function [pluginDisplayString, pluginStartCallback]=getPluginInfo(pluginFile)
-pluginDisplayString=eval(strrep(pluginFile.name, '.m', '.displayString;'));
-pluginStartCallback={eval(['@', strrep(pluginFile.name, '.m', '')])};
+    pluginDisplayString=eval(strrep(pluginFile.name, '.m', '.displayString;'));
+    pluginStartCallback={eval(['@', strrep(pluginFile.name, '.m', '')])};
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
