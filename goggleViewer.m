@@ -223,6 +223,36 @@ classdef goggleViewer<handle
             catch
                 warning('Unable to load custom brightness/contrast icon')
             end
+
+            %Set some reasonable value for the contrast maximum;
+            if gbSetting('contrastSlider.doAutoContrast')
+                fprintf('Choosing a reasonable value for the contrast scale...\n')
+                numValues=100E3; %make histogram with this many values
+                arraySize=prod(size(obj.overviewDSS.I));
+                decimateBy=round(arraySize/numValues);
+                if decimateBy<1
+                    decimateBy=1;
+                end
+    
+                [n,x]=hist(single(obj.overviewDSS.I(1:decimateBy:end)),500);
+        
+                y=log10(n+0.5);
+                y=y-min(y(:)); %in case of negative numbers
+                m=y.*x;
+                vals=cumsum(m)/sum(m);
+
+                thresh = gbSetting('contrastSlider.highThresh');
+                if thresh>1 | thresh<0
+                    thresh=0.225;
+                end
+
+                f=find(vals>thresh);
+                threshVal=round(x(f(1)));
+                fprintf('High contrast slider set to %d\n',threshVal)
+                set(obj.hjSliderContrast,'High',threshVal)
+            end
+
+
             %% Start parallel pool
             h=splashWindow('Starting Parallel Pool', 'goggleViewer');
             drawnow;
