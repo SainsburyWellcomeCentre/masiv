@@ -1,6 +1,13 @@
 function writeSimpleYAML(s, filePath)
-% WRITESIMPLEYAML Converts a simple, entirely scalar struct (which can have
-% fields which are themselves structs) in to a YAML file
+% Write a structure as a YAML file
+%
+% function writeSimpleYAML(s, filePath)
+%
+% Purpose
+% Converts a simple, entirely scalar struct (which can have
+% fields which are themselves structs) in to a YAML file.
+
+
 
 if ~isstruct(s)||numel(s)>1
     error('Must be a structure scalar')
