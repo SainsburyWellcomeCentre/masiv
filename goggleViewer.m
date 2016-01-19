@@ -272,6 +272,9 @@ classdef goggleViewer<handle
             
             switch scrollAction
             case 'zAxisScroll'
+                if gbSetting('navigation.scrollLayerInvert')
+                    nScrolls=nScrolls*-1;
+                end
                 stdout=obj.mainDisplay.seekZ(nScrolls);
                 if stdout
                     for ii=obj.additionalDisplays
@@ -284,6 +287,9 @@ classdef goggleViewer<handle
                 end
             case 'zoomScroll'
                 zoomRate=gbSetting('navigation.zoomRate'); %to zoom out
+                if gbSetting('navigation.scrollZoomInvert')
+                    nScrolls=nScrolls*-1;
+                end
                 if nScrolls<0
                     zoomRate=1/zoomRate; %to zoom out
                 end

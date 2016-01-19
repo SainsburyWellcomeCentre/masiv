@@ -126,6 +126,8 @@ function s=returnDefaultSettings
     s.navigation.scrollIncrement=[10 1]; %shift and non shift; number of images to move view by
     s.navigation.zoomRate=1.5;
     s.navigation.panModeInvert=0;
+    s.navigation.scrollZoomInvert=0;
+    s.navigation.scrollLayerInvert=0;
     s.navigation.keyboardUpdatePeriod=0.02; %20ms keyboard polling
 
     %% GVD Settings
