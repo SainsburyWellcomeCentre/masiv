@@ -38,17 +38,27 @@ function writeYamlEntry(fid,s, indentLevel)
             fprintf(fid, repmat(' ', 1,4*indentLevel));
         end
         
-        if isstruct(s.(f{ii}))
+        thisVal=s.(f{ii});
+        if isstruct(thisVal)
             fprintf(fid, sprintf('%s:\n', f{ii}));
-            if isscalar(s.(f{ii}))
-                writeYamlEntry(fid,s.(f{ii}), indentLevel+1)
+            if isscalar(thisVal)
+                writeYamlEntry(fid, thisVal, indentLevel+1)
             else
-                writeYamlStructArrayEntry(fid, s.(f{ii}), indentLevel+1)
+                writeYamlStructArrayEntry(fid, thisVal, indentLevel+1)
             end
-        elseif ischar(s.(f{ii}))
-            fprintf(fid, '%s: %s', f{ii}, s.(f{ii}));
-        elseif isnumeric(s.(f{ii}))
-            fprintf(fid, '%s: %s', f{ii}, mat2str(s.(f{ii})));
+        elseif ischar(thisVal)
+            fprintf(fid, '%s: %s', f{ii}, thisVal);
+        elseif isnumeric(thisVal)
+            fprintf(fid, '%s: %s', f{ii}, mat2str(thisVal));
+        elseif iscell(thisVal)
+            if all(cellfun(@isstr,thisVal)) %hand a cell array of strings
+                tmp=sprintf('%s,',thisVal{:});
+                tmp(end)=[];
+                tmp=['{',tmp,'}'];
+                fprintf(fid,'%s: %s', f{ii}, tmp);
+            else
+                error('Can only handle cell array of strings if value is a cell array')
+            end                
         else
             error('Unknown field type:%s', f{ii})
         end
