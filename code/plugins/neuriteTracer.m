@@ -1,9 +1,9 @@
-classdef goggleNeuriteTracer<goggleBoxPlugin
+classdef neuriteTracer<goggleBoxPlugin
 
-    % goggleNeuriteTracer
+    % neuriteTracer
     %
     % Purpose 
-    % goggleNeuriteTracer is a plugin for goggleViewer that implements 
+    % neuriteTracer is a plugin for goggleViewer that implements 
     % a trakEM-style neurite tracer. 
     % The first point is the "root" node. It can have more than one child
     % node but can not have a parent node. The point from which we will 
@@ -101,7 +101,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
     methods
         %% Constructor
-        function obj=goggleNeuriteTracer(caller, ~)   
+        function obj=neuriteTracer(caller, ~)   
 
             if ~exist('tree','file')
                 agree=errordlg(sprintf('The matlab-tree package is not installed.\nInstall from:\nhttps://github.com/raacampbell13/matlab-tree'));
