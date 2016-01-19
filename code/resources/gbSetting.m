@@ -1,8 +1,25 @@
-function valOut=gbSetting(nm, val) %#ok<INUSD>
-%gbSetting 
+function valOut=gbSetting(prefName, val) %#ok<INUSD>
+% Get or set preferences in goggleViewer YAML file 
+%
+% function valOut=gbSetting(prefName, val) %#ok<INUSD>
+%
+% Purpose
 % Gets or sets settings (preferences) for goggleViewer from a YAML prefs file.
 % gbSetting also stores the default preferences and creates the YAML prefs 
 % file if it's missing. 
+%
+% Inputs
+% prefName - string of preference name to access 
+% val - the value that this preference should be set to
+%
+% Examples
+% >> gbSetting('debug.logging')
+% ans = 1
+% >> gbSetting('debug.logging',0);
+% >> gbSetting('debug.logging')
+% ans = 0
+%
+%
 
 
 persistent r fName fileInfo
@@ -16,17 +33,17 @@ end
        
         [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo, fName);
 
-        if nargin<1||isempty(nm) % return all
+        if nargin<1||isempty(prefName) % return all
             valOut=r;
         else
-            valOut=eval(sprintf('r.%s', nm));
+            valOut=eval(sprintf('r.%s', prefName));
         end
     else
         %% Write mode
         
         [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo, fName);
         
-        eval(sprintf('r.%s=val;', nm));
+        eval(sprintf('r.%s=val;', prefName));
         %% write first to a new file, then rename. Should prevent corruption. 
         tmpFname=strrep(fName, '.yml', 'tmp.yml');
         writeSimpleYAML(r, tmpFname);
@@ -35,8 +52,10 @@ end
     end
     
     
-end
+end %function valOut=gbSetting(prefName, val)
 
+
+%----------------------------------------------------------
 function [r, fName, fileInfo]=doInitialReadOfSettingsFile()
     fName=getPrefsFilePath();
     r=readSimpleYAML(fName);
@@ -90,7 +109,7 @@ function createDefaultPrefsFile()
     %% Debug output
     s.debug.logging=1;
     s.debug.outputSpacing=12;
-%%
+    %Write to disk
     baseDir=fileparts(which('goggleViewer'));
     writeSimpleYAML(s, fullfile(baseDir, 'gogglePrefs.yml'));
     
@@ -98,10 +117,10 @@ end
 
 function [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo, fName)
  %% Check the file hasn't been modified
-        newFileInfo=dir(fName);
-        if (numel(newFileInfo.date)~=numel(fileInfo.date)) || any(newFileInfo.date~=fileInfo.date)
-            %% And reload it if it has
-            r=readSimpleYAML(fName);
-            fileInfo=dir(fName);
-        end
+    newFileInfo=dir(fName);
+    if (numel(newFileInfo.date)~=numel(fileInfo.date)) || any(newFileInfo.date~=fileInfo.date)
+        %% And reload it if it has
+        r=readSimpleYAML(fName);
+        fileInfo=dir(fName);
+    end
 end
