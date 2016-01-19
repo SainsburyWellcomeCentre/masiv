@@ -64,6 +64,14 @@ function s=scanYamlFile(fid, currentDepth)
                     else
                         val=strtrim(val);
                     end
+                    %Handle cell array of strings
+                    if isstr(val)
+                        tok=regexp(val,'{(.*)}','tokens');
+                        if ~isempty(tok) 
+                            val = strsplit(tok{1}{1},',');
+                        end
+                    end
+
                     s.(nm)=val;
                 end
             end
@@ -90,8 +98,8 @@ function s=yaml2structarray(fid, currentDepth)
             s(end+1)=scanYamlFile(fid, currentDepth+1);
         end
         
-         oldPos=ftell(fid);
-         newL=fgetl(fid);
+        oldPos=ftell(fid);
+        newL=fgetl(fid);
     end
 
 end

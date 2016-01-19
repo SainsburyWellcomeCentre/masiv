@@ -148,8 +148,10 @@ function s=returnDefaultSettings
 
     %% Plugins directory
     s.plugins.hideTutorialPlugins=0; %is 1 we hide tutorial plugins
-    s.plugins.externalPluginsDirs={'my hat is pink','my hat is an aardvark'}; %allows for paths to external plugins to be added
     s.plugins.bundledPluginsDirPath=fullfile('code','plugins');
+    %TODO: following line assumes that "external_plugins" is located in the repository root. Likely this will change and so code using this setting will also need to change
+    %      the .goggle_plugins is currently just there for testing
+    s.plugins.externalPluginsDirs={'external_plugins','~/.goggle_plugins'}; 
 end
 
 

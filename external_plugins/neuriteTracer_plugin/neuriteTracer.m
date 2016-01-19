@@ -1,9 +1,9 @@
-classdef goggleNeuriteTracer<goggleBoxPlugin
+classdef neuriteTracer<goggleBoxPlugin
 
-    % goggleNeuriteTracer
+    % neuriteTracer
     %
     % Purpose 
-    % goggleNeuriteTracer is a plugin for goggleViewer that implements 
+    % neuriteTracer is a plugin for goggleViewer that implements 
     % a trakEM-style neurite tracer. 
     % The first point is the "root" node. It can have more than one child
     % node but can not have a parent node. The point from which we will 
@@ -101,7 +101,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
     methods
         %% Constructor
-        function obj=goggleNeuriteTracer(caller, ~)   
+        function obj=neuriteTracer(caller, ~)   
 
             if ~exist('tree','file')
                 agree=errordlg(sprintf('The matlab-tree package is not installed.\nInstall from:\nhttps://github.com/raacampbell13/matlab-tree'));
@@ -516,7 +516,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         %Marker addition and deletion
         function UIaddMarker(obj) %Adds a marker to the currently selected tree
             goggleDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Beginning',toc,'s')
-            newMarker=goggleTreeNode(obj.currentType, obj.deCorrectedCursorX, obj.deCorrectedCursorY, obj.cursorZVoxels);
+            newMarker=neuriteTracerNode(obj.currentType, obj.deCorrectedCursorX, obj.deCorrectedCursorY, obj.cursorZVoxels);
 
             goggleDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: New marker created',toc,'s')
 
@@ -999,7 +999,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                         'Tag','LastNode','HitTest', 'off'); 
 
                     % If possible, enable the meta-data boxes so the user can edit the properties of the selected tree node
-                    if isa(rootNode,'goggleTreeNode') & obj.lastNode(obj.selectedTreeIdx)>1
+                    if isa(rootNode,'neuriteTracerNode') & obj.lastNode(obj.selectedTreeIdx)>1
                         obj.toggleNodeModifers('on')
                     else
                         obj.toggleNodeModifers('off')
@@ -1035,7 +1035,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
                 if verbose, goggleDebugTimingInfo(2, sprintf('Moved lastnode marker to node %d',idx),toc,'s'), end
 
                 % If possible, enable the meta-data boxes so the user can edit the properties of the selected tree node
-                if isa(obj.neuriteTrees{obj.selectedTreeIdx}.Node{1},'goggleTreeNode') & idx>1
+                if isa(obj.neuriteTrees{obj.selectedTreeIdx}.Node{1},'neuriteTracerNode') & idx>1
                     obj.toggleNodeModifers('on')
                 else
                     obj.toggleNodeModifers('off')
@@ -1047,7 +1047,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
 
             %If the class of the node is appropriate and it's a not a root node, we should update the UI
             %to reflect the node properties
-            if isa(obj.neuriteTrees{obj.selectedTreeIdx}.Node{1},'goggleTreeNode') & idx>1
+            if isa(obj.neuriteTrees{obj.selectedTreeIdx}.Node{1},'neuriteTracerNode') & idx>1
                 set(obj.hIsTerminated,'Value', obj.neuriteTrees{obj.selectedTreeIdx}.Node{idx}.isPrematureTermination);
                 bT=obj.neuriteTrees{obj.selectedTreeIdx}.Node{idx}.branchType;
                 if strcmp(bT,'axon')
@@ -1360,7 +1360,7 @@ classdef goggleNeuriteTracer<goggleBoxPlugin
         function toggleNodeModifers(obj,enable)
             %whether to enable or disable the node modifer UI elements. 
             %they should only be enabled if we've selected a node that has meta-data that can be set.
-            %i.e. that it's a goggleTreeNode and not a root node
+            %i.e. that it's a neuriteTracerNode and not a root node
 
             if ~isstr(enable)
                 error('enable should be a string')
@@ -1545,7 +1545,7 @@ end
 
 function prematureCallback(~,~,obj)
     % Set this node as being a premature termination 
-    % The checkbox is disabled if the tree is not composed of goggleTreeNodes 
+    % The checkbox is disabled if the tree is not composed of neuriteTracerNodes 
     % or if the selected node is the root node
     selectedNode = obj.lastNode(obj.selectedTreeIdx);
     obj.neuriteTrees{obj.selectedTreeIdx}.Node{selectedNode}.isPrematureTermination = get(obj.hIsTerminated,'Value');
@@ -1581,7 +1581,7 @@ end
 
 %% Utilities
 function ms=defaultMarkerTypes(nTypes)
-    ms(nTypes)=goggleMarkerType;
+    ms(nTypes)=neuriteTracerMarkerType;
     cols=lines(nTypes);
     for ii=1:nTypes
         ms(ii).name=sprintf('Tree%u', ii);
