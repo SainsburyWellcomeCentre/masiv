@@ -113,16 +113,52 @@ classdef goggleViewer<handle
                    'Callback', {@changeProcessingSteps, obj});
             uimenu(obj.mnuImage, 'Label', 'Adjust precise XY position', ...
                    'Callback', {@adjustXYPosClick, obj});
-                                
-            addPlugins(obj.mnuImage, obj, fullfile('code','resources','corePlugins'), 1);
 
-            
+            baseDir=fileparts(which('goggleViewer')); %viewer installation base directory
+            addPlugins(obj.mnuImage, obj, fullfile(baseDir,'code','resources','corePlugins'), 1);
             obj.mnuPlugins=uimenu(obj.hFig, 'Label', 'Plugins');
-            addPlugins(obj.mnuPlugins, obj, gbSetting('plugins.bundledPluginsDirPath'));
-                    
-            if ~gbSetting('plugins.hideTutorialPlugins') %TODO: automate this
+
+            %Optionally add tutorial plugins
+            if ~gbSetting('plugins.hideTutorialPlugins')
                 obj.mnuTutPlugins=uimenu(obj.mnuPlugins,'label','Tutorials');
-                addPlugins(obj.mnuTutPlugins, obj, fullfile(gbSetting('plugins.bundledPluginsDirPath'),'tutorials'))
+                addPlugins(obj.mnuTutPlugins, obj, fullfile(baseDir,gbSetting('plugins.bundledPluginsDirPath'),'tutorials'))
+            else
+                fprintf('Skipping addition of tutorial plugins\n')
+            end
+
+            %Add bundled plugins
+            addPlugins(obj.mnuPlugins, obj, fullfile(baseDir,gbSetting('plugins.bundledPluginsDirPath')));
+
+            %Add external plugins            
+            for externalPluginDir = gbSetting('plugins.externalPluginsDirs')
+                externalPluginDir=externalPluginDir{1};
+
+                if isempty(strfind(externalPluginDir,'~')) %TODO: hack. fix when we know where the plugins will be
+                    externalPluginDir=fullfile(baseDir,externalPluginDir);
+                end
+                     
+                if ~exist(externalPluginDir,'dir')
+                    fprintf('Skipping missing plugin directory %s\n', externalPluginDir)
+                    continue
+                else
+                    fprintf('Searching for plugins in %s\n',externalPluginDir)
+                end
+                P=strsplit(genpath(externalPluginDir),':'); %all sub-directories within externalPluginDir
+
+                %Loop through P and add all directories to the path that end with '_plugin' and also add all sub-directories they contain
+                for ii=1:length(P)
+                    if ~isempty(regexp(P{ii},'_plugin$'))
+                        if ~exist(P{ii},'dir')
+                            fprintf('Expected to find plugin directory %s but failed to do so\n',P{ii})
+                            continue
+                        end
+                        [~,thisPluginDir]=fileparts(P{ii});
+                        thisPluginName=strrep(thisPluginDir,'_plugin',''); %a coarse way of getting the plugin name
+                        fprintf('Adding plugin %s in directory %s\n', thisPluginName, P{ii});
+                        addpath(genpath(P{ii})) %add plugin directory to path
+                        addPlugins(obj.mnuPlugins, obj, P{ii}); %register plugin in viewer
+                    end
+                end
             end
 
             %% Contrast adjustment object definitions
@@ -756,20 +792,23 @@ end
 end
 
 %% Plugins menu creation
-function addPlugins(hMenuBase, obj, pluginsDirName, separateFirstEntry)
+function addPlugins(hMenuBase, obj, pluginsDir, separateFirstEntry)
+    %Add plugins in a directory to the menu
     if nargin<4||isempty(separateFirstEntry)
         separateFirstEntry=0;
     end
-    pluginsDir=fullfile(fileparts(which('goggleViewer')), pluginsDirName);
     
     if ~exist(pluginsDir, 'dir')
         error('plugins directory not found')
     else
-        fprintf('Adding plugins in directory %s to menu\n',pluginsDirName)
-        
+        fprintf('Adding plugins in directory %s to menu\n',pluginsDir)       
     end
     
     filesInPluginsDirectory=dir(fullfile(pluginsDir, '*.m'));
+    if isempty(filesInPluginsDirectory)
+        fprintf('Found no .m files that could be plugins in directory %s\n',pluginsDir)
+        return
+    end
     
     for ii=1:numel(filesInPluginsDirectory)
         if isValidGoggleBoxPlugin(pluginsDir, filesInPluginsDirectory(ii).name)
