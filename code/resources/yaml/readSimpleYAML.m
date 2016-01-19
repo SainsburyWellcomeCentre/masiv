@@ -1,6 +1,12 @@
 function s=readSimpleYAML(filePath)
-% READSIMPLEYAML Reads in a yaml file, containing no arrays and only
+% Read YAML from a file into a structure
+%
+% function s=readSimpleYAML(filePath)
+%
+% Purpose
+% Reads in a yaml file, containing no arrays and only
 % numerical or string values, in to a structure
+
  %#ok<*ST2NM>
 
 if isempty(strfind(filePath, '.yml'))
