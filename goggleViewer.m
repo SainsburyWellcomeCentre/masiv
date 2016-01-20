@@ -52,213 +52,35 @@ classdef goggleViewer<handle
    
     methods % Constructor
         function obj=goggleViewer(mosaicInfoIn, idx)
-            obj=obj@handle;
-            %% Get mosaic info if none provided
-            if verLessThan('matlab', '8.4.0')
-              error('%s requires MATLAB 2014b or newer',mfilename)
-            end
+            obj=obj@handle; % base class initialisation
             
-            %Add goggleViewer directories to the path
-            goggleViewerPath = fileparts(which('goggleViewer'));
-            goggleViewerDirs = fullfile(goggleViewerPath,'code');
-            if isempty(strfind(path, goggleViewerDirs)) %only add to path if dirs aren't already present
-                fprintf('Adding goggleViewer to path for this session\n')
-                addpath(genpath(goggleViewerDirs))
-            end
-
-
+            runStartupTests();
+            setupPath();
+            
             if nargin<1 ||isempty(mosaicInfoIn)
-                fp=uigetdir(gbSetting('defaultDirectory'), 'Please select base directory of the stitched mosaic');
-                if isempty(fp) || isnumeric(fp)
-                    return
-                end
-                gbSetting('defaultDirectory', fileparts(fp))
-                obj.mosaicInfo=TVStitchedMosaicInfo(fp);
+                chooseDataset(obj)
             else
                 obj.mosaicInfo=mosaicInfoIn;
             end
             
-            %% Main UI object definitions
-            obj.hFig=figure(...
-                'Name', sprintf('GoggleBox: %s', obj.mosaicInfo.experimentName), ...
-                'NumberTItle', 'off', ...
-                'MenuBar', 'none', ...
-                'Position', gbSetting('viewer.mainFigurePosition'), ...
-                'Color', gbSetting('viewer.mainBkgdColor'), ...
-                'ColorMap', gray(256), ...
-                'KeyPressFcn', {@hFigMain_KeyPress, obj}, ...
-                'KeyReleaseFcn', {@hFigMain_KeyRelease, obj}, ...
-                'WindowButtonMotionFcn', {@mouseMove, obj}, ...
-                'WindowScrollWheelFcn', {@hFigMain_ScrollWheel, obj}, ...
-                'WindowButtonDownFcn', {@hFigMain_BtnDown, obj}, ...
-                'WindowButtonUpFcn', {@hFigMain_BtnUp, obj}, ...
-                'CloseRequestFcn', {@closeRequest, obj}, ...
-                'BusyAction', 'cancel', 'Visible', 'off');
-            obj.hMainImgAx=axes(...
-                'Box', 'on', ...
-                'YDir', 'reverse', ...
-                'Color', [0 0 0], ...
-                'XTick', [], 'YTick', [], ...
-                'Position', [0.02 0.02 0.8 0.96], ...
-                'ButtonDownFcn', {@handleMouseClick, obj});
-            
-            %% Menu Object declarations
-            obj.mnuMain=uimenu(obj.hFig, 'Label', 'Main');
-            uimenu(obj.mnuMain, 'Label', 'Quit', 'Callback', {@closeRequest, obj})
-                    
-            obj.mnuImage=uimenu(obj.hFig, 'Label', 'Image');
-            uimenu(obj.mnuImage, 'Label', 'Export Current View to Workspace', ...
-                   'Callback', {@exportViewToWorkspace, obj})
-            uimenu(obj.mnuImage, 'Label', 'Detailed image processing steps...', ...
-                   'Callback', {@changeProcessingSteps, obj});
-            uimenu(obj.mnuImage, 'Label', 'Adjust precise XY position', ...
-                   'Callback', {@adjustXYPosClick, obj});
-
-            baseDir=fileparts(which('goggleViewer')); %viewer installation base directory
-            addPlugins(obj.mnuImage, obj, fullfile(baseDir,'code','resources','corePlugins'), 1);
-            obj.mnuPlugins=uimenu(obj.hFig, 'Label', 'Plugins');
-
-            %Optionally add tutorial plugins
-            if ~gbSetting('plugins.hideTutorialPlugins')
-                obj.mnuTutPlugins=uimenu(obj.mnuPlugins,'label','Tutorials');
-                addPlugins(obj.mnuTutPlugins, obj, fullfile(baseDir,gbSetting('plugins.bundledPluginsDirPath'),'tutorials'))
-            else
-                fprintf('Skipping addition of tutorial plugins\n')
-            end
-
-            %Add bundled plugins
-            addPlugins(obj.mnuPlugins, obj, fullfile(baseDir,gbSetting('plugins.bundledPluginsDirPath')));
-
-            %Add external plugins            
-            for externalPlugin = gbSetting('plugins.externalPluginsDirs')
-                thisExternalPlugin=externalPlugin{1};
-
-                if isempty(strfind(thisExternalPlugin,'~')) %TODO: hack. fix when we know where the plugins will be
-                    thisExternalPlugin=fullfile(baseDir,thisExternalPlugin);
-                end
-                     
-                if ~exist(thisExternalPlugin,'dir')
-                    fprintf('Skipping missing plugin directory %s\n', thisExternalPlugin)
-                    continue
-                else
-                    fprintf('Searching for plugins in %s\n',thisExternalPlugin)
-                end
-                P=strsplit(genpath(thisExternalPlugin),':'); %all sub-directories within externalPluginDir
-
-                %Loop through P and add all directories to the path that end with '_plugin' and also add all sub-directories they contain
-                for ii=1:length(P)
-                    if ~isempty(regexp(P{ii},'_plugin$', 'ONCE'))
-                        if ~exist(P{ii},'dir')
-                            fprintf('Expected to find plugin directory %s but failed to do so\n',P{ii})
-                            continue
-                        end
-                        [~,thisPluginDir]=fileparts(P{ii});
-                        thisPluginName=strrep(thisPluginDir,'_plugin',''); %a coarse way of getting the plugin name
-                        fprintf('Adding plugin %s in directory %s\n', thisPluginName, P{ii});
-                        addpath(genpath(P{ii})) %add plugin directory to path
-                        addPlugins(obj.mnuPlugins, obj, P{ii}); %register plugin in viewer
-                    end
-                end
-            end
-
-            %% Contrast adjustment object definitions
-            obj.hAxContrastHist=axes(...
-                'Box', 'on', ...
-                'Color', gbSetting('viewer.panelBkgdColor'), ...
-                'XTick', [], 'YTick', [], ...
-                'Position', [0.83 0.89 0.16 0.09], ...
-                'Color', [0.1 0.1 0.1]);
-           
-            sliderPanel=uipanel(...
-                'Parent', obj.hFig, ...
-                'Units', 'normalized', ...
-                'Position', [0.83 0.81 0.16 0.07], ...
-                'BackgroundColor', [0.1 0.1 0.1], ...
-                'ForegroundColor', [0.8 0.8 0.8]);
-            
-             ppos=getpixelposition(sliderPanel);
-             border=ppos(3:4)./[100 20]; border=[border border*2];
-             
-
-             obj.hjSliderContrast = com.jidesoft.swing.RangeSlider(-5000,15000,0,1000);  % min,max,low,high
-             obj.hjSliderContrast = javacomponent(obj.hjSliderContrast, [border(1),border(2),ppos(3)-border(3),ppos(4)-border(4)], sliderPanel);
-             
-             set(obj.hjSliderContrast, 'MajorTickSpacing',5000, 'MinorTickSpacing',1000, 'PaintTicks',true, 'PaintLabels',true, ...
-                 'Background',java.awt.Color(0.1, 0.1, 0.1), 'Foreground', java.awt.Color(0.8, 0.8, 0.8), ...
-                 'StateChangedCallback',@(h,e) adjustContrast(h,e,obj));
-            
-            %% Get DSS if not specified. Load up and display
             if nargin<2||isempty(idx)
-                obj.overviewDSS=selectDownscaledStack(obj.mosaicInfo);
-                if isempty(obj.overviewDSS)
-                    close(obj.hFig)
-                    return
-                end
+                getDownsampledStackChoice(obj)
             else
                 obj.overviewDSS=obj.mosaicInfo.downscaledStacks(idx);
             end
-            startDebugOutput;
-            obj.mainDisplay=goggleViewerDisplay(obj, obj.overviewDSS, obj.hMainImgAx);
-            obj.mainDisplay.drawNewZ();
-            adjustContrast([], [], obj);
-            axis(obj.hMainImgAx, 'equal')
-
-            %% Info boxes
-            obj.addInfoPanel(goggleViewInfoPanel(obj, obj.hFig, [0.83 0.49 0.16 0.31], obj.mainDisplay));
-            obj.addInfoPanel(gogglePreLoader(obj, [0.83 0.39 0.16 0.09]));
-            obj.addInfoPanel(goggleReadQueueInfoPanel(obj.hFig, [0.83 0.29 0.16 0.09], obj.mainDisplay.zoomedViewManager));
-            obj.addInfoPanel(goggleCacheInfoPanel(obj, [0.83 0.19 0.16 0.09]));
-            if ~ispc %TODO: fix the memory functions on Windows. Until this happens we can't run this (ISSUE #17)
-                obj.addInfoPanel(goggleSystemMemoryUsageInfoPanel(obj.hFig, [0.83 0.03 0.16 0.15], obj.mainDisplay.zoomedViewManager));
-            end
-
-            %% Set fonts to something nice
-            set(findall(gcf, '-property','FontName'), 'FontName', gbSetting('font.name'));
-
             
-            %% Load and set icon 
-            try
-                load bc.mat
-                obj.hFig.PointerShapeCData=bcIco;
-            catch
-                warning('Unable to load custom brightness/contrast icon')
-            end
-
-            %Set some reasonable value for the contrast maximum;
-            if gbSetting('contrastSlider.doAutoContrast')
-                fprintf('Choosing a reasonable value for the contrast scale...\n')
-                numValues=100E3; %make histogram with this many values
-                arraySize=numel(obj.overviewDSS.I);
-                decimateBy=round(arraySize/numValues);
-                if decimateBy<1
-                    decimateBy=1;
-                end
-    
-                [n,x]=hist(single(obj.overviewDSS.I(1:decimateBy:end)),500);
-        
-                y=log10(n+0.5);
-                y=y-min(y(:)); %in case of negative numbers
-                m=y.*x;
-                vals=cumsum(m)/sum(m);
-
-                thresh = gbSetting('contrastSlider.highThresh');
-                if thresh>1 || thresh<0
-                    thresh=0.5; %TODO: get this from default settings
-                end
-
-                f=find(vals>thresh);
-                threshVal=round(x(f(1)));
-                fprintf('High contrast slider set to %d\n',threshVal)
-                set(obj.hjSliderContrast,'High',threshVal)
-            end
-
-
-            %% Start parallel pool
-            h=splashWindow('Starting Parallel Pool', 'goggleViewer');
-            drawnow;
-            G=gcp;
-            G.IdleTimeout=inf;
-            delete(h);
+            
+            setupGUI(obj)
+            setupMenus(obj)
+            setupPlugins(obj)
+            setupContrastController(obj)
+            initialiseDisplay(obj)
+            setupInfoBoxes(obj)          
+            setupResources(obj)
+            setupContrast(obj)
+            startParallelPool()
+            startDebugOutput();
+            
             %% Show the figure, we're done here!
             obj.hFig.Visible='on';
         end 
@@ -467,7 +289,7 @@ classdef goggleViewer<handle
                 ylim(ii.axes, yl+yMove);
             end
 
-            if yMove~=0 | xMove~=0
+            if yMove~=0 || xMove~=0
                 moved=1;
             else
                 moved=0;
@@ -899,3 +721,213 @@ function [pluginDisplayString, pluginStartCallback]=getPluginInfo(pluginFile)
     pluginStartCallback={eval(['@', strrep(pluginFile.name, '.m', '')])};
 end
 
+%% Constructor functions
+function runStartupTests()
+    if verLessThan('matlab', '8.4.0')
+        error('%s requires MATLAB 2014b or newer',mfilename)
+    end
+end
+
+function setupPath()
+    goggleViewerPath = fileparts(which('goggleViewer'));
+    goggleViewerDirs = fullfile(goggleViewerPath,'code');
+    if isempty(strfind(path, goggleViewerDirs)) %only add to path if dirs aren't already present
+        fprintf('Adding goggleViewer to path for this session\n')
+        addpath(genpath(goggleViewerDirs))
+    end
+end
+
+function chooseDataset(obj)
+     fp=uigetdir(gbSetting('defaultDirectory'), 'Please select base directory of the stitched mosaic');
+     if isempty(fp) || isnumeric(fp)
+         return
+     end
+     gbSetting('defaultDirectory', fileparts(fp))
+     obj.mosaicInfo=TVStitchedMosaicInfo(fp);
+end
+
+function setupGUI(obj)
+    obj.hFig=figure(...
+                'Name', sprintf('GoggleBox: %s', obj.mosaicInfo.experimentName), ...
+                'NumberTItle', 'off', ...
+                'MenuBar', 'none', ...
+                'Position', gbSetting('viewer.mainFigurePosition'), ...
+                'Color', gbSetting('viewer.mainBkgdColor'), ...
+                'ColorMap', gray(256), ...
+                'KeyPressFcn', {@hFigMain_KeyPress, obj}, ...
+                'KeyReleaseFcn', {@hFigMain_KeyRelease, obj}, ...
+                'WindowButtonMotionFcn', {@mouseMove, obj}, ...
+                'WindowScrollWheelFcn', {@hFigMain_ScrollWheel, obj}, ...
+                'WindowButtonDownFcn', {@hFigMain_BtnDown, obj}, ...
+                'WindowButtonUpFcn', {@hFigMain_BtnUp, obj}, ...
+                'CloseRequestFcn', {@closeRequest, obj}, ...
+                'BusyAction', 'cancel', 'Visible', 'off');
+    obj.hMainImgAx=axes(...
+                'Box', 'on', ...
+                'YDir', 'reverse', ...
+                'Color', [0 0 0], ...
+                'XTick', [], 'YTick', [], ...
+                'Position', [0.02 0.02 0.8 0.96], ...
+                'ButtonDownFcn', {@handleMouseClick, obj});
+end
+
+function setupMenus(obj)
+    obj.mnuMain=uimenu(obj.hFig, 'Label', 'Main');
+    uimenu(obj.mnuMain, 'Label', 'Quit', 'Callback', {@closeRequest, obj})
+    
+    obj.mnuImage=uimenu(obj.hFig, 'Label', 'Image');
+    uimenu(obj.mnuImage, 'Label', 'Export Current View to Workspace', ...
+        'Callback', {@exportViewToWorkspace, obj})
+    uimenu(obj.mnuImage, 'Label', 'Detailed image processing steps...', ...
+        'Callback', {@changeProcessingSteps, obj});
+    uimenu(obj.mnuImage, 'Label', 'Adjust precise XY position', ...
+        'Callback', {@adjustXYPosClick, obj});
+end
+
+function setupPlugins(obj)
+     baseDir=fileparts(which('goggleViewer')); %viewer installation base directory
+     addPlugins(obj.mnuImage, obj, fullfile(baseDir,'code','resources','corePlugins'), 1);
+     obj.mnuPlugins=uimenu(obj.hFig, 'Label', 'Plugins');
+     
+     %Optionally add tutorial plugins
+     if ~gbSetting('plugins.hideTutorialPlugins')
+         obj.mnuTutPlugins=uimenu(obj.mnuPlugins,'label','Tutorials');
+         addPlugins(obj.mnuTutPlugins, obj, fullfile(baseDir,gbSetting('plugins.bundledPluginsDirPath'),'tutorials'))
+     else
+         fprintf('Skipping addition of tutorial plugins\n')
+     end
+     
+     %Add bundled plugins
+     addPlugins(obj.mnuPlugins, obj, fullfile(baseDir,gbSetting('plugins.bundledPluginsDirPath')));
+     
+     %Add external plugins
+     for externalPlugin = gbSetting('plugins.externalPluginsDirs')
+         thisExternalPlugin=externalPlugin{1};
+         
+         if isempty(strfind(thisExternalPlugin,'~')) %TODO: hack. fix when we know where the plugins will be
+             thisExternalPlugin=fullfile(baseDir,thisExternalPlugin);
+         end
+         
+         if ~exist(thisExternalPlugin,'dir')
+             fprintf('Skipping missing plugin directory %s\n', thisExternalPlugin)
+             continue
+         else
+             fprintf('Searching for plugins in %s\n',thisExternalPlugin)
+         end
+         P=strsplit(genpath(thisExternalPlugin),':'); %all sub-directories within externalPluginDir
+         
+         %Loop through P and add all directories to the path that end with '_plugin' and also add all sub-directories they contain
+         for ii=1:length(P)
+             if ~isempty(regexp(P{ii},'_plugin$', 'ONCE'))
+                 if ~exist(P{ii},'dir')
+                     fprintf('Expected to find plugin directory %s but failed to do so\n',P{ii})
+                     continue
+                 end
+                 [~,thisPluginDir]=fileparts(P{ii});
+                 thisPluginName=strrep(thisPluginDir,'_plugin',''); %a coarse way of getting the plugin name
+                 fprintf('Adding plugin %s in directory %s\n', thisPluginName, P{ii});
+                 addpath(genpath(P{ii})) %add plugin directory to path
+                 addPlugins(obj.mnuPlugins, obj, P{ii}); %register plugin in viewer
+             end
+         end
+     end
+end
+
+function setupContrastController(obj)
+    obj.hAxContrastHist=axes(...
+                'Box', 'on', ...
+                'Color', gbSetting('viewer.panelBkgdColor'), ...
+                'XTick', [], 'YTick', [], ...
+                'Position', [0.83 0.89 0.16 0.09], ...
+                'Color', [0.1 0.1 0.1]);
+           
+    sliderPanel=uipanel(...
+                'Parent', obj.hFig, ...
+                'Units', 'normalized', ...
+                'Position', [0.83 0.81 0.16 0.07], ...
+                'BackgroundColor', [0.1 0.1 0.1], ...
+                'ForegroundColor', [0.8 0.8 0.8]);
+            
+    ppos=getpixelposition(sliderPanel);
+    border=ppos(3:4)./[100 20]; border=[border border*2];
+    
+    
+    obj.hjSliderContrast = com.jidesoft.swing.RangeSlider(-5000,15000,0,1000);  % min,max,low,high
+    obj.hjSliderContrast = javacomponent(obj.hjSliderContrast, [border(1),border(2),ppos(3)-border(3),ppos(4)-border(4)], sliderPanel);
+    
+    set(obj.hjSliderContrast, 'MajorTickSpacing',5000, 'MinorTickSpacing',1000, 'PaintTicks',true, 'PaintLabels',true, ...
+        'Background',java.awt.Color(0.1, 0.1, 0.1), 'Foreground', java.awt.Color(0.8, 0.8, 0.8), ...
+        'StateChangedCallback',@(h,e) adjustContrast(h,e,obj));
+end
+
+function setupResources(obj)
+    %% Setup Brightness / contrast icon
+    try
+        load bc.mat
+        obj.hFig.PointerShapeCData=bcIco;
+    catch
+        warning('Unable to load custom brightness/contrast icon')
+    end
+end
+
+function setupContrast(obj)
+    if gbSetting('contrastSlider.doAutoContrast')
+        fprintf('Choosing a reasonable value for the contrast scale...\n')
+        numValues=100E3; %make histogram with this many values
+        arraySize=numel(obj.overviewDSS.I);
+        decimateBy=round(arraySize/numValues);
+        if decimateBy<1
+            decimateBy=1;
+        end
+        
+        [n,x]=hist(single(obj.overviewDSS.I(1:decimateBy:end)),500);
+        
+        y=log10(n+0.5);
+        y=y-min(y(:)); %in case of negative numbers
+        m=y.*x;
+        vals=cumsum(m)/sum(m);
+        
+        thresh = gbSetting('contrastSlider.highThresh');
+        if thresh>1 || thresh<0
+            thresh=0.5; %TODO: get this from default settings
+        end
+        
+        f=find(vals>thresh);
+        threshVal=round(x(f(1)));
+        fprintf('High contrast slider set to %d\n',threshVal)
+        set(obj.hjSliderContrast,'High',threshVal)
+    end
+end
+
+function getDownsampledStackChoice(obj)
+    obj.overviewDSS=selectDownscaledStack(obj.mosaicInfo);
+    if isempty(obj.overviewDSS)
+        close(obj.hFig)
+        return
+    end
+end
+
+function setupInfoBoxes(obj)
+    obj.addInfoPanel(goggleViewInfoPanel(obj, obj.hFig, [0.83 0.49 0.16 0.31], obj.mainDisplay));
+    obj.addInfoPanel(gogglePreLoader(obj, [0.83 0.39 0.16 0.09]));
+    obj.addInfoPanel(goggleReadQueueInfoPanel(obj.hFig, [0.83 0.29 0.16 0.09], obj.mainDisplay.zoomedViewManager));
+    obj.addInfoPanel(goggleCacheInfoPanel(obj, [0.83 0.19 0.16 0.09]));
+    if ~ispc %TODO: fix the memory functions on Windows. Until this happens we can't run this (ISSUE #17)
+        obj.addInfoPanel(goggleSystemMemoryUsageInfoPanel(obj.hFig, [0.83 0.03 0.16 0.15], obj.mainDisplay.zoomedViewManager));
+    end
+end
+
+function startParallelPool()
+     h=splashWindow('Starting Parallel Pool', 'goggleViewer');
+     drawnow;
+     G=gcp;
+     G.IdleTimeout=inf;
+     delete(h);
+end
+
+function initialiseDisplay(obj) 
+    obj.mainDisplay=goggleViewerDisplay(obj, obj.overviewDSS, obj.hMainImgAx);
+    obj.mainDisplay.drawNewZ();
+    axis(obj.hMainImgAx, 'equal')
+    set(findall(gcf, '-property','FontName'), 'FontName', gbSetting('font.name'));
+end
