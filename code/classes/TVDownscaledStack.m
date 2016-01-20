@@ -333,7 +333,7 @@ function [channel, idx, xyds]=getDSStackSpec(mosaicInfo)
     
     while passFlag~=1
         idxStr=inputdlg({'Start', 'Increment', 'End'},'Use slices:', 1, ...
-            {'1', '10', num2str(numel(mosaicInfo.stitchedImagePaths.(channel)))});
+            {'1', '1', num2str(numel(mosaicInfo.stitchedImagePaths.(channel)))});
         
         if isempty(idxStr)
             channel=[];

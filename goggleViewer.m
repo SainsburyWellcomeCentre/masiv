@@ -69,6 +69,9 @@ classdef goggleViewer<handle
                 obj.overviewDSS=obj.mosaicInfo.downscaledStacks(idx);
             end
             
+            if isempty(obj.overviewDSS)
+                return
+            end
             
             setupGUI(obj)
             setupMenus(obj)
@@ -757,6 +760,10 @@ function chooseDataset(obj)
      obj.mosaicInfo=TVStitchedMosaicInfo(fp);
 end
 
+function getDownsampledStackChoice(obj)
+    obj.overviewDSS=selectDownscaledStack(obj.mosaicInfo);
+end
+
 function setupGUI(obj)
     obj.hFig=figure(...
                 'Name', sprintf('GoggleBox: %s', obj.mosaicInfo.experimentName), ...
@@ -920,14 +927,6 @@ function setupContrast(obj)
     
     obj.hjSliderContrast.Minimum=min(-majorSpacing, double(roundToClosest(contrastLims(1), majorSpacing)));
     obj.hjSliderContrast.Maximum=roundToSingleSigFig(contrastLims(2));
-end
-
-function getDownsampledStackChoice(obj)
-    obj.overviewDSS=selectDownscaledStack(obj.mosaicInfo);
-    if isempty(obj.overviewDSS)
-        close(obj.hFig)
-        return
-    end
 end
 
 function setupInfoBoxes(obj)
