@@ -871,25 +871,26 @@ function setupResources(obj)
 end
 
 function setupContrast(obj)
-    if gbSetting('contrastSlider.doAutoContrast')
-        fprintf('Choosing a reasonable value for the contrast scale...\n')
-        numValues=100E3; %make histogram with this many values
-        arraySize=numel(obj.overviewDSS.I);
-        decimateBy=round(arraySize/numValues);
-        if decimateBy<1
-            decimateBy=1;
-        end
-        
-        [n,x]=hist(single(obj.overviewDSS.I(1:decimateBy:end)),500);
-        
-        y=log10(n+0.5);
-        y=y-min(y(:)); %in case of negative numbers
-        m=y.*x;
-        vals=cumsum(m)/sum(m);
-        
+    fprintf('Choosing a reasonable value for the contrast scale...\n')
+    numValues=1e5; %make histogram with this many values
+    arraySize=numel(obj.overviewDSS.I);
+    decimateBy=round(arraySize/numValues);
+    if decimateBy<1
+        decimateBy=1;
+    end
+    
+    [n,x]=hist(single(obj.overviewDSS.I(1:decimateBy:end)),500);
+    
+    y=log10(n+0.5);
+    y=y-min(y(:)); %in case of negative numbers
+    m=y.*x;
+    vals=cumsum(m)/sum(m);
+    %% Set up high value
+    if gbSetting('contrastSlider.doAutoContrast') 
         thresh = gbSetting('contrastSlider.highThresh');
         if thresh>1 || thresh<0
-            thresh=0.5; %TODO: get this from default settings
+            gbSetting('contrastSlider.highThresh', {}) %reset value to default
+            thresh=gbSetting('contrastSlider.highThresh');
         end
         
         f=find(vals>thresh);
@@ -897,6 +898,8 @@ function setupContrast(obj)
         fprintf('High contrast slider set to %d\n',threshVal)
         set(obj.hjSliderContrast,'High',threshVal)
     end
+    
+    %% Set up min/max
 end
 
 function getDownsampledStackChoice(obj)

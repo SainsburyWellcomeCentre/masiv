@@ -10,7 +10,8 @@ function valOut=gbSetting(prefName, val) %#ok<INUSD>
 %
 % Inputs
 % prefName - string of preference name to access 
-% val - the value that this preference should be set to
+% val - the value that this preference should be set to.
+%       To reset to default value, pass an empty cell array {}
 %
 % Examples
 % >> gbSetting('debug.logging')
@@ -35,33 +36,29 @@ end
         if nargin<1||isempty(prefName) % return all
             valOut=r;
         else
-            %Check is requested preference is missing from the settings YML but present in the defaults
-            defaultSettings = returnDefaultSettings;
             valOut = getThisSetting(r,prefName);
+            %Check if requested preference is missing from the settings YML but present in the defaults
             if isempty(valOut) %setting not found in YML
-                thisDefaultSetting = getThisSetting(defaultSettings,prefName); %is this a missing setting?
-                if isempty(thisDefaultSetting) %setting not found in default list
-                    error('Can not find setting %s',prefName) %TODO: do we want this to generate an error?
-                else
-                    %add new default preference to file
-                    fprintf('Adding default value for %s to the settings YML file\n', prefName)
-                    gbSetting(prefName,thisDefaultSetting); %add the setting by writing to the preferences file
-                    valOut=gbSetting(prefName); %read the setting
-                end %if isinf(thisDefaultSetting)
+                valOut=tryToSetToDefaultValue(prefName);
             end %if isinf(valOut)
         end %nargin<1||isempty(prefName) % return all
 
     else
-
-        %% Write preference
-        [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo, fName);
-        
-        eval(sprintf('r.%s=val;', prefName));
-        %% write first to a new file, then rename. Should prevent corruption. 
-        tmpFname=strrep(fName, '.yml', 'tmp.yml');
-        writeSimpleYAML(r, tmpFname);
-        movefile(tmpFname, fName);
-       
+        %% Check for reset
+        if isempty(val) && iscell(val)
+            fprintf('Attempting to reset value for %s to default.\n', prefName)
+            val=tryToSetToDefaultValue(prefName);
+            fprintf('Successful. Value set to:\n'), disp(val)
+        else
+            %% Write preference
+            [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo, fName);
+            
+            eval(sprintf('r.%s=val;', prefName));
+            %% write first to a new file, then rename. Should prevent corruption.
+            tmpFname=strrep(fName, '.yml', 'tmp.yml');
+            writeSimpleYAML(r, tmpFname);
+            movefile(tmpFname, fName);
+        end
     end
     
     
@@ -166,6 +163,19 @@ function createDefaultPrefsFile
     %% Load the default settings and write these to disk
     baseDir=fileparts(which('goggleViewer'));
     writeSimpleYAML(returnDefaultSettings, fullfile(baseDir, 'gogglePrefs.yml')); 
+end
+
+function valOut=tryToSetToDefaultValue(prefName)
+    defaultSettings = returnDefaultSettings;
+    thisDefaultSetting = getThisSetting(defaultSettings,prefName); %is this a missing setting?
+    if isempty(thisDefaultSetting) %setting not found in default list
+        error('Can not find setting %s',prefName) %TODO: do we want this to generate an error?
+    else
+        %add new default preference to file
+        fprintf('Adding default value for %s to the settings YML file\n', prefName)
+        gbSetting(prefName,thisDefaultSetting); %add the setting by writing to the preferences file
+        valOut=gbSetting(prefName); %read the setting
+    end %if isinf(thisDefaultSetting)
 end
 
 
