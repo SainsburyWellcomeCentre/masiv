@@ -158,7 +158,6 @@ function s=returnDefaultSettings
     s.plugins.externalPluginsDirs={'external_plugins','~/.goggle_plugins'}; 
 end
 
-
 function createDefaultPrefsFile
     %% Load the default settings and write these to disk
     baseDir=fileparts(which('goggleViewer'));

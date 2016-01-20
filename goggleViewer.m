@@ -658,6 +658,17 @@ function v=getPixelValueAtCoordinate(obj, x, y)
     end
 end
 
+function x=roundToSingleSigFig(x)
+    lg=log10(abs(x));
+    x= round(x/10^floor(lg))*10^floor(lg);
+end
+
+function y=roundToClosest(x, n)
+    x=int32(x);
+    n=int32(n);
+    y=idivide(x, n, 'round')*n;
+end
+
 %% Plugins menu creation
 function addPlugins(hMenuBase, obj, pluginsDir, separateFirstEntry)
     %Add plugins in a directory to the menu
@@ -855,7 +866,7 @@ function setupContrastController(obj)
     obj.hjSliderContrast = com.jidesoft.swing.RangeSlider(-5000,15000,0,1000);  % min,max,low,high
     obj.hjSliderContrast = javacomponent(obj.hjSliderContrast, [border(1),border(2),ppos(3)-border(3),ppos(4)-border(4)], sliderPanel);
     
-    set(obj.hjSliderContrast, 'MajorTickSpacing',5000, 'MinorTickSpacing',1000, 'PaintTicks',true, 'PaintLabels',true, ...
+    set(obj.hjSliderContrast,'PaintTicks',true, 'PaintLabels',true, ...
         'Background',java.awt.Color(0.1, 0.1, 0.1), 'Foreground', java.awt.Color(0.8, 0.8, 0.8), ...
         'StateChangedCallback',@(h,e) adjustContrast(h,e,obj));
 end
@@ -898,8 +909,17 @@ function setupContrast(obj)
         fprintf('High contrast slider set to %d\n',threshVal)
         set(obj.hjSliderContrast,'High',threshVal)
     end
+    %% Set up limits
+    contrastLims=[0 x(end)];
+    contrastLims=contrastLims+[-1 1]*0.1*range(contrastLims); % dilate the range by 10% either side for safety
     
-    %% Set up min/max
+    %% Set up markers
+    majorSpacing=roundToSingleSigFig(range(contrastLims/5)); % get 6 major ticks by default
+    minorSpacing=majorSpacing/5;
+    set(obj.hjSliderContrast,  'MajorTickSpacing',majorSpacing, 'MinorTickSpacing', minorSpacing)
+    
+    obj.hjSliderContrast.Minimum=min(-majorSpacing, double(roundToClosest(contrastLims(1), majorSpacing)));
+    obj.hjSliderContrast.Maximum=roundToSingleSigFig(contrastLims(2));
 end
 
 function getDownsampledStackChoice(obj)
@@ -934,3 +954,4 @@ function initialiseDisplay(obj)
     axis(obj.hMainImgAx, 'equal')
     set(findall(gcf, '-property','FontName'), 'FontName', gbSetting('font.name'));
 end
+
