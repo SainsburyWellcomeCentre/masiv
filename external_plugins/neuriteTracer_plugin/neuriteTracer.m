@@ -1322,7 +1322,6 @@ classdef neuriteTracer<goggleBoxPlugin
                 thisTree=obj.neuriteTrees{ii};
                 if isempty(thisTree), continue, end
                 thisType = thisTree.Node{1}.type;
-
                 if thisType == markerTypeToUpdate
                     num = length(thisTree.Node);           
                 end
@@ -1492,8 +1491,9 @@ function importData(~, ~, obj)
     [f,p]=uigetfile('*.mat', 'Import Markers', gbSetting('neuriteTracer.importExportDefault'));
 
 
+    fileToLoad = fullfile(p, f);
     try
-        m=load(fullfile(p, f));
+        m=load(fileToLoad);
         f=fields(m);
         if length(f)>1
             fprintf('Loading variable %s\n',f{1})
@@ -1504,9 +1504,27 @@ function importData(~, ~, obj)
         rethrow(lasterror)
     end
 
-    updateMarkerTypeUISelections(obj); %Confirm that we need this. 
+    %Update to new objects if needed TODO: get rid of this code once everything is converted
+    [NN,c]=upgradeNeuriteTraces(m);
+    if c 
+        fprintf('\n\n ===> UPGRADING IMPORTED DATA TO NEW OBJECT NAMES.\n')
+        fprintf('Loaded file with old object names %s\n',fileToLoad)
+        %Make a copy of the file we just loaded and replace it with the one having the new object names
+        BAK = [fileToLoad,'.ORIG_OBJECT_NAMES'];
+        copyfile(fileToLoad,BAK)
+        fprintf('Backed up file to %s\n',BAK)
 
-    obj.neuriteTrees=m;
+        %replace the data we just loaded with the updated version
+        neurite_markers=NN;
+        save(fileToLoad,'neurite_markers')
+        fprintf('Replaced %s with the updated version\n',fileToLoad)
+
+        m=NN; %replace loaded object
+    end
+
+    updateMarkerTypeUISelections(obj); %TODO: confirm that we need to do this
+
+    obj.neuriteTrees=m; %Store loaded data in the object
     for ii=1:length(obj.neuriteTrees)
         if ~isempty(obj.neuriteTrees{ii}) %if neurite tree is present
             obj.lastNode(ii)=length(obj.neuriteTrees{ii}.Node); %set highlight (append) node to last point in tree
