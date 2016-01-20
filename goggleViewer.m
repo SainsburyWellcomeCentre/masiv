@@ -61,7 +61,7 @@ classdef goggleViewer<handle
             %Add goggleViewer directories to the path
             goggleViewerPath = fileparts(which('goggleViewer'));
             goggleViewerDirs = fullfile(goggleViewerPath,'code');
-            if isempty(strmatch(goggleViewerDirs,path)) %only add to path if dirs aren't already present
+            if isempty(strfind(path, goggleViewerDirs)) %only add to path if dirs aren't already present
                 fprintf('Adding goggleViewer to path for this session\n')
                 addpath(genpath(goggleViewerDirs))
             end
@@ -130,24 +130,24 @@ classdef goggleViewer<handle
             addPlugins(obj.mnuPlugins, obj, fullfile(baseDir,gbSetting('plugins.bundledPluginsDirPath')));
 
             %Add external plugins            
-            for externalPluginDir = gbSetting('plugins.externalPluginsDirs')
-                externalPluginDir=externalPluginDir{1};
+            for externalPlugin = gbSetting('plugins.externalPluginsDirs')
+                thisExternalPlugin=externalPlugin{1};
 
-                if isempty(strfind(externalPluginDir,'~')) %TODO: hack. fix when we know where the plugins will be
-                    externalPluginDir=fullfile(baseDir,externalPluginDir);
+                if isempty(strfind(thisExternalPlugin,'~')) %TODO: hack. fix when we know where the plugins will be
+                    thisExternalPlugin=fullfile(baseDir,thisExternalPlugin);
                 end
                      
-                if ~exist(externalPluginDir,'dir')
-                    fprintf('Skipping missing plugin directory %s\n', externalPluginDir)
+                if ~exist(thisExternalPlugin,'dir')
+                    fprintf('Skipping missing plugin directory %s\n', thisExternalPlugin)
                     continue
                 else
-                    fprintf('Searching for plugins in %s\n',externalPluginDir)
+                    fprintf('Searching for plugins in %s\n',thisExternalPlugin)
                 end
-                P=strsplit(genpath(externalPluginDir),':'); %all sub-directories within externalPluginDir
+                P=strsplit(genpath(thisExternalPlugin),':'); %all sub-directories within externalPluginDir
 
                 %Loop through P and add all directories to the path that end with '_plugin' and also add all sub-directories they contain
                 for ii=1:length(P)
-                    if ~isempty(regexp(P{ii},'_plugin$'))
+                    if ~isempty(regexp(P{ii},'_plugin$', 'ONCE'))
                         if ~exist(P{ii},'dir')
                             fprintf('Expected to find plugin directory %s but failed to do so\n',P{ii})
                             continue
@@ -228,7 +228,7 @@ classdef goggleViewer<handle
             if gbSetting('contrastSlider.doAutoContrast')
                 fprintf('Choosing a reasonable value for the contrast scale...\n')
                 numValues=100E3; %make histogram with this many values
-                arraySize=prod(size(obj.overviewDSS.I));
+                arraySize=numel(obj.overviewDSS.I);
                 decimateBy=round(arraySize/numValues);
                 if decimateBy<1
                     decimateBy=1;
@@ -242,7 +242,7 @@ classdef goggleViewer<handle
                 vals=cumsum(m)/sum(m);
 
                 thresh = gbSetting('contrastSlider.highThresh');
-                if thresh>1 | thresh<0
+                if thresh>1 || thresh<0
                     thresh=0.5; %TODO: get this from default settings
                 end
 
