@@ -243,7 +243,7 @@ classdef goggleViewer<handle
 
                 thresh = gbSetting('contrastSlider.highThresh');
                 if thresh>1 | thresh<0
-                    thresh=0.225;
+                    thresh=0.5; %TODO: get this from default settings
                 end
 
                 f=find(vals>thresh);

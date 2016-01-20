@@ -146,7 +146,7 @@ function s=returnDefaultSettings
     s.readQueueInfoPanel.max=50;
     
     %Contrast slider
-    s.contrastSlider.highThresh=0.225; %should go between zero and 1
+    s.contrastSlider.highThresh=0.5; %should go between zero and 1
     s.contrastSlider.doAutoContrast=1;
 
     %% Debug output
