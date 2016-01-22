@@ -54,9 +54,9 @@ classdef goggleViewer<handle
         function obj=goggleViewer(mosaicInfoIn, idx)
             obj=obj@handle; % base class initialisation
             
+            startDebugOutput();
             runStartupTests();
             setupPath();
-            startDebugOutput();
             
             if nargin<1 ||isempty(mosaicInfoIn)
                 chooseDataset(obj)
