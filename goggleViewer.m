@@ -56,6 +56,7 @@ classdef goggleViewer<handle
             
             runStartupTests();
             setupPath();
+            startDebugOutput();
             
             if nargin<1 ||isempty(mosaicInfoIn)
                 chooseDataset(obj)
@@ -82,7 +83,6 @@ classdef goggleViewer<handle
             setupResources(obj)
             setupContrast(obj)
             startParallelPool()
-            startDebugOutput();
             
             %% Show the figure, we're done here!
             obj.hFig.Visible='on';
