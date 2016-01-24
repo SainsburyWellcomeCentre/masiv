@@ -21,10 +21,10 @@ switch computer
 
         freeMem=convertPagesToKiB(f+spec);
         totalMem=convertGBToKiB(str2num(evalc('system(''hostinfo | grep memory | awk '''' { print $4 } '''''');')));
-    otherwise
-        freeMem=NaN;
-        totalMem=NaN;
-        warning('Memory functions currently only supported for 64-bit Mac and Linux platforms')
+    otherwise %It's windows
+        [~,RAM]=memory;
+        freeMem=RAM.PhysicalMemory.Available/1024;
+        totalMem=RAM.PhysicalMemory.Total/1024;
 end
 
 

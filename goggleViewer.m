@@ -934,9 +934,7 @@ function setupInfoBoxes(obj)
     obj.addInfoPanel(gogglePreLoader(obj, [0.83 0.39 0.16 0.09]));
     obj.addInfoPanel(goggleReadQueueInfoPanel(obj.hFig, [0.83 0.29 0.16 0.09], obj.mainDisplay.zoomedViewManager));
     obj.addInfoPanel(goggleCacheInfoPanel(obj, [0.83 0.19 0.16 0.09]));
-    if ~ispc %TODO: fix the memory functions on Windows. Until this happens we can't run this (ISSUE #17)
-        obj.addInfoPanel(goggleSystemMemoryUsageInfoPanel(obj.hFig, [0.83 0.03 0.16 0.15], obj.mainDisplay.zoomedViewManager));
-    end
+    obj.addInfoPanel(goggleSystemMemoryUsageInfoPanel(obj.hFig, [0.83 0.03 0.16 0.15], obj.mainDisplay.zoomedViewManager));
 end
 
 function startParallelPool()

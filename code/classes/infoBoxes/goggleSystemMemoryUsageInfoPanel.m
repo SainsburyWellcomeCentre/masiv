@@ -191,7 +191,7 @@ function updateMemoryUsage(~, ~, obj)
     usedMemMiB=totalMemMiB-freeMemMiB;
     
     cacheMem=obj.gzvm.cacheMemoryUsed;
-    otherMatMem=matlabMemUsageMiB-cacheMem;               % these will be used more than once, so run query once and re-use variable
+    otherMatMem=matlabMemUsageMiB-cacheMem; % these will be used more than once, so run query once and re-use variable
     try
         obj.rectUsedMem.Position=[0 0 usedMemMiB 1];
         obj.rectMatMem.Position=[0 0 otherMatMem 1];

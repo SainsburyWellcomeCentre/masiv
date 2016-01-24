@@ -19,7 +19,9 @@ switch computer
         
         n=sum(cellfun(@str2double, s(isValidNum)))/1024;
     otherwise
-        n=NaN;
-        warning('Memory functions currently only supported for 64-bit Mac and Linux platforms')
-end
+        M=memory;
+        n=M.MemUsedMATLAB; %in bytes
+        n=n/1024^2;
+        
+ end
 end
