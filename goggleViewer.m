@@ -747,7 +747,7 @@ function setupPath()
     goggleViewerDirs = fullfile(goggleViewerPath,'code');
     if isempty(strfind(path, goggleViewerDirs)) %only add to path if dirs aren't already present
         fprintf('Adding goggleViewer to path for this session\n')
-        addpath(genpath(goggleViewerDirs))
+        addpath(genpath(goggleViewerDirs),'-end')
     end
 end
 
