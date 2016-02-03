@@ -61,6 +61,16 @@ function [data,changed] = convertIt(data)
 
 			data.Node{ii}=newNode;
 			changed=1;
+		elseif isa(N,'goggleMarker') 
+			newNode=neuriteTracerNode(new,N.xVoxel,N.yVoxel,N.zVoxel);
+
+			newNode.branchType = '';
+			newNode.isPrematureTermination = 0;
+            newNode.isBouton = 0;
+			newNode.data = struct;
+
+			data.Node{ii}=newNode;
+			changed=1;
 		else
 			N.type=new;			
 			data.Node{ii}=N;
