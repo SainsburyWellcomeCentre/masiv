@@ -136,8 +136,10 @@ end %function obj=getMosaicMetaData(obj)
 function obj=getStitchedImagePaths(obj)
     %Get paths to stitched (full-resolution) images from text files
     delimiterInTextFile='\r\n';
-    searchPattern=[obj.sampleName, '_StitchedImagesPaths_'];
-    listFilePaths=dir(fullfile(obj.baseDirectory, [searchPattern '*.txt']));
+    searchPattern=[obj.sampleName, '_ImageList_'];
+    baseDir=getMasivDirPath(obj);
+    listFilePaths=dir(fullfile(baseDir, [searchPattern '*.txt']));
+    
     if isempty(listFilePaths)
         fprintf('\n\n\t*****\n\tCan not find text files listing the relative paths to the full resolution images.\n\tYou need to create these text files. Please see the documentation on the web.\n\tQUITING.\n\t*****\n\n\n')
         error('No %s*.txt files found.\n',searchPattern)
@@ -146,21 +148,21 @@ function obj=getStitchedImagePaths(obj)
     obj.stitchedImagePaths=struct;
 
     for ii=1:numel(listFilePaths)
-        %% Open txt file
-        fp=fullfile(obj.baseDirectory, listFilePaths(ii).name);
-        fh=fopen(fp);
-    
-        %% Read in file paths
-        channelFilePaths=textscan(fh, '%s', 'Delimiter', delimiterInTextFile);
+        
+        fh=fopen(fullfile(baseDir, listFilePaths(ii).name));
+            channelFilePaths=textscan(fh, '%s', 'Delimiter', delimiterInTextFile);
         fclose(fh);
-    
-        %% strip out absolute path to get relative file paths
-        channelFilePaths=strrep(channelFilePaths{1}, [obj.baseDirectory,filesep], '');
-
-        %% Get channel name
+        checkForAbsolutePaths(channelFilePaths{:})
         channelName=strrep(strrep(listFilePaths(ii).name, searchPattern, ''), '.txt', '');
-
-        %% Assign
-        obj.stitchedImagePaths.(channelName)=channelFilePaths;
+        obj.stitchedImagePaths.(channelName)=channelFilePaths{:};
     end
 end %function obj=getStitchedImagePaths(obj)
+
+function checkForAbsolutePaths(strList)
+    for ii = 1:numel(strList)
+        s=strList{ii};
+        if s(1)=='/' || ~isempty(regexp(s, '[A-Z]:/', 'ONCE'))
+            error('File List appears to be absolute. ImageList files must contain relative paths, to prevent data loss')
+        end
+    end
+end
