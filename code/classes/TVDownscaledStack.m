@@ -197,15 +197,15 @@ classdef TVDownscaledStack<handle
         end
 
         function x=get.xCoordsUnits(obj)
-            x=(obj.xCoordsVoxels-0.5)*obj.voxelSizeInUnits(1);
+            x=(obj.xCoordsVoxels-1)*obj.voxelSizeInUnits(1);
          end 
 
         function y=get.yCoordsUnits(obj)
-           y=(obj.yCoordsVoxels-0.5)*obj.voxelSizeInUnits(2);
+           y=(obj.yCoordsVoxels-1)*obj.voxelSizeInUnits(2);
         end
 
         function z=get.zCoordsUnits(obj)
-            z=(obj.zCoordsVoxels-0.5)*obj.voxelSizeInUnits(3);
+            z=(obj.zCoordsVoxels-1)*obj.voxelSizeInUnits(3);
         end
         
         function osfp=get.originalStitchedFileNames(obj)

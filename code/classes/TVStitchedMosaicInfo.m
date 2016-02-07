@@ -29,11 +29,8 @@ classdef TVStitchedMosaicInfo
             obj.baseDirectory=baseDirectory;
 
             %% Get metadata
-            obj=getMosaicMetaData(obj);
-            obj.sampleName=obj.metaData.SampleID;
-            
+            obj=getMetaData(obj);            
             obj=getStitchedImagePaths(obj);
-            %% Get available downscaled stacks
         end
 
         function ds=get.downscaledStacks(obj)
@@ -79,59 +76,6 @@ classdef TVStitchedMosaicInfo
     
 end
 
-function obj=getMosaicMetaData(obj)
-    %Get meta-data from TissueVision Mosaic file
-    delimiterInTextFile='\r\n';
-
-    %% Get matching files
-    metaDataFileName=dir(fullfile(obj.baseDirectory,'Mosaic*.txt'));
-    if isempty(metaDataFileName)
-        error('Mosaic metadata file not found')
-    elseif numel(metaDataFileName)>1
-        error('Multiple metadata files found. There should only be one matching ''Mosaic*.txt''')
-    end
-
-    metaDataFullPath=fullfile(obj.baseDirectory, metaDataFileName.name);
-
-    %% Open
-    fh=fopen(metaDataFullPath);
-    
-    %% Read
-    txtFileContents=textscan(fh, '%s', 'Delimiter', delimiterInTextFile);
-    txtFileContents=txtFileContents{1};
-    
-    %% Parse
-    info=struct;
-    for ii=1:length(txtFileContents)
-        spl=strsplit(txtFileContents{ii}, ':');
-    
-        if numel(spl)<2
-            error('Invalid name/value pair: %s', txtFileContents{ii})
-        elseif numel(spl)>2
-            spl{2}=strjoin(spl(2:end), ':');
-            spl=spl(1:2);
-        end
-        nm=strrep(spl{1}, ' ', '');
-        val=spl{2};
-        valNum=str2double(val);
-        if ~isempty(valNum)&&~isnan(valNum)
-            val=valNum;
-        end
-    
-        info.(nm)=val;
-    end
-
-    fclose(fh); 
-
-    %% Assign
-    if isempty(info)||~isstruct(info)
-        error('Invalid metadata file')
-    else
-        obj.metaData=info;
-    end
-end %function obj=getMosaicMetaData(obj)
-
-
 
 function obj=getStitchedImagePaths(obj)
     %Get paths to stitched (full-resolution) images from text files
@@ -165,4 +109,17 @@ function checkForAbsolutePaths(strList)
             error('File List appears to be absolute. ImageList files must contain relative paths, to prevent data loss')
         end
     end
+end
+
+function obj=getMetaData(obj)
+    d = getMasivDirPath(obj);
+    ymlFile=dir(fullfile(d, '*Meta.yml'));
+    if isempty(ymlFile)
+        error('No metadata file found')
+    elseif numel(ymlFile)>1
+        error('Multiple possible metadata files found. Ensure that there is only one file matching the pattern ''*Meta.yml'' in the MaSIV directory for this dataset')
+    end
+    ymlFileFullPath=fullfile(d, ymlFile.name);
+    obj.metaData=readSimpleYAML(ymlFileFullPath);
+    obj.sampleName=obj.metaData.sampleName;
 end
