@@ -130,7 +130,7 @@ classdef TVDownscaledStack<handle
             obj.baseDirectory=TVMosaicInfoObj.baseDirectory;
 
             %% Get base directory for stacks and fileName for this stack
-            obj.gbStackDirectory=getGBStackPath(TVMosaicInfoObj);
+            obj.gbStackDirectory=getMasivDirPath(TVMosaicInfoObj);
             obj.fileName=createGBStackFileNameForOutput(obj);
         end
        
@@ -214,13 +214,6 @@ classdef TVDownscaledStack<handle
        
     end %methods
 end %classdef TVDownscaledStack<handle
-
-function gbStackDirPath=getGBStackPath(obj)
-    gbStackDirPath=fullfile(obj.baseDirectory, [obj.sampleName '_GBStacks']);
-    if ~exist(gbStackDirPath, 'dir')
-        mkdir(gbStackDirPath)
-    end
-end
 
 function fName=createGBStackFileNameForOutput(obj)
     fName=fullfile(obj.gbStackDirectory, sprintf('%s_%s_Stack[%u-%u]_DS%u.tif', obj.sampleName, obj.channel, min(obj.idx), max(obj.idx), obj.xyds));

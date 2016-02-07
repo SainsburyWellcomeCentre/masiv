@@ -37,7 +37,8 @@ classdef TVStitchedMosaicInfo
         end
 
         function ds=get.downscaledStacks(obj)
-            pathToDSObjsFile=fullfile(obj.baseDirectory, [obj.sampleName '_GBStacks'], [obj.sampleName '_GBStackInfo.mat']);
+            masivDir=getMasivDirPath(obj);
+            pathToDSObjsFile=fullfile(masivDir, [obj.sampleName '_MaSIVInfo.mat']);
             if ~exist(pathToDSObjsFile, 'file')
                 ds=[];
                 fprintf('\n\n\t=====>  Directory %s contains no down-scaled image stacks  <=====\n',obj.baseDirectory)
