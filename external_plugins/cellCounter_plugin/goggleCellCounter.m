@@ -372,12 +372,14 @@ classdef goggleCellCounter<goggleBoxPlugin
                     idxToDelete=matchIdx(closestIdx);
                     obj.markers(idxToDelete)=[];
                     obj.drawMarkers;
+                    
+                    %% Update count
+                    obj.decrementMarkerCount(obj.currentType);
+                    %% Set change flag
+                    obj.changeFlag=1;
                 end
             end
-            %% Update count
-            obj.decrementMarkerCount(obj.currentType);
-            %% Set change flag
-            obj.changeFlag=1;
+           
         end
         
         function drawMarkers(obj, ~, ~)
