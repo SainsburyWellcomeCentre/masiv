@@ -32,8 +32,8 @@ function s=scanYamlFile(fid, currentDepth)
     while ~feof(fid)
         beginningPos=ftell(fid);
         wholeLine=fgetl(fid);
-        l=strsplit(wholeLine, ':');
         if ~isempty(wholeLine)
+            l=strsplit(wholeLine, ':');
             nm=l{1};
             indentLevel=sum(nm==' ')/4;
             nm=strtrim(nm);

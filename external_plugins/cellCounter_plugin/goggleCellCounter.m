@@ -623,7 +623,7 @@ function exportData(~, ~, obj)
     gbSetting('cellCounter.importExportDefault', fullfile(p, f))
     %% Read it back in to check it's OK
     try
-        s=readSimpleYAML(fullfile(p,f));
+        s=YAML.read(fullfile(p,f));
         [m,t]=convertStructArrayToMarkerAndTypeArrays(s);
         if any(sort(m)~=sort(obj.markers))||any(sort(t)~=sort(obj.markerTypes))
             error('YAML file validation failed')
@@ -646,7 +646,7 @@ function importData(~, ~, obj)
     [f,p]=uigetfile('*.yml', 'Import Markers', gbSetting('cellCounter.importExportDefault'));
     
     try
-        s=readSimpleYAML(fullfile(p, f));
+        s=YAML.read(fullfile(p, f));
     catch
         errordlg('Import error', 'Cell Counter')
         rethrow(err)

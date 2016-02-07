@@ -1,4 +1,4 @@
-function valOut=gbSetting(prefName, val) %#ok<INUSD>
+function valOut=gbSetting(prefName, val)
 % Get or set preferences in goggleViewer YAML file 
 %
 % function valOut=gbSetting(prefName, val) %#ok<INUSD>
@@ -24,6 +24,7 @@ function valOut=gbSetting(prefName, val) %#ok<INUSD>
 
 
 persistent r fName fileInfo
+
 
 if isempty(r)
     [r, fName, fileInfo]=doInitialReadOfSettingsFile;

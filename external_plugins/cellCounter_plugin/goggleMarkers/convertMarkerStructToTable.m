@@ -4,7 +4,7 @@ function T=convertMarkerStructToTable(yml) %#ok<*AGROW>
 % function T=convertMarkerStructToTable(yml) 
 %
 % e.g.
-%  Y=readSimpleYAML('my_points.yml')
+%  Y=YAML.read('my_points.yml')
 %  T=convertMarkerStructToTable(T)
 
 ML=[];
