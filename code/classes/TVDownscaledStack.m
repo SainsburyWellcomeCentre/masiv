@@ -125,12 +125,12 @@ classdef TVDownscaledStack<handle
         end
         
         function updateFilePathMetaData(obj, TVMosaicInfoObj)
-            obj.experimentName=TVMosaicInfoObj.experimentName;
-            obj.sampleName=TVMosaicInfoObj.sampleName;
+            obj.experimentName=TVMosaicInfoObj.imageName;
+            obj.sampleName=TVMosaicInfoObj.imageName;
             obj.baseDirectory=TVMosaicInfoObj.baseDirectory;
 
             %% Get base directory for stacks and fileName for this stack
-            obj.gbStackDirectory=getMasivDirPath(TVMosaicInfoObj);
+            obj.gbStackDirectory=TVMosaicInfoObj.baseDirectory;
             obj.fileName=createGBStackFileNameForOutput(obj);
         end
        

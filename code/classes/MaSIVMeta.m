@@ -26,10 +26,12 @@ classdef MaSIVMeta
             if isempty(filePath) || ~exist(filePath, 'file')
                 return
             end
-            
+            %% Set MaSIV Directory and file name
+            [obj.masivDirectory, obj.metaFileName]=obj.splitPathFile(filePath); 
+            %% Set Metadata, including base directory and image name
             obj.metadata=obj.getMeta(filePath);
-            [obj.masivDirectory, obj.metaFileName]=obj.splitPathFile(filePath);
-            
+            %% Get image paths
+            obj=getImagePaths(obj);
         end
         %% Getters & Setters
         function val=get.baseDirectory(obj)
@@ -40,10 +42,41 @@ classdef MaSIVMeta
             end
         end
         
-        function val=get.experimentName(obj)
-            return '' %TODO: Set this!
+        function val=get.imageName(obj)
+            if isfield(obj.metadata, 'imageName') && ~isempty(obj.metadata.imageName)
+                val=obj.metadata.imageName;
+            else
+                val=obj.baseDirectory;
+            end
         end
         
+        function ds=get.downscaledStacks(obj)
+            pathToDSObjsFile=fullfile(obj.masivDirectory, [obj.imageName '_MaSIVStacks.mat']);
+            if ~exist(pathToDSObjsFile, 'file')
+                ds=[];
+                fprintf('\n\n\t=====>  Directory %s contains no down-scaled image stacks  <=====\n',obj.baseDirectory)
+                fprintf('\n\n\t\tINSTRUCTIONS')
+                fprintf('\n\n\tYou will need to generate down-scaled image stacks in order to proceed.')
+                fprintf('\n\tClick "New", then the channel you want to build, then the section range.')
+                fprintf('\n\tSee documention on the web for more information.\n\n\n')
+            else
+                a=load(pathToDSObjsFile);
+                ds=a.stacks;
+                for ii=1:numel(ds)
+                    ds(ii).updateFilePathMetaData(obj)
+                end
+            end
+        end
+        
+        function dsl=get.downscaledStackList(obj)
+            ds=obj.downscaledStacks;
+            if ~isempty(ds)
+                dsl=ds.list;
+            else
+                dsl=[];
+            end
+            dsl=dsl(:);
+        end
     end
     
     methods(Static)      
@@ -68,6 +101,40 @@ classdef MaSIVMeta
                 
     end
     
+end
+
+
+function obj=getImagePaths(obj)
+    %Get paths to stitched (full-resolution) images from text files
+    delimiterInTextFile='\r\n';
+    searchPattern=[obj.imageName, '_ImageList_'];
+    listFilePaths=dir(fullfile(obj.masivDirectory, [searchPattern '*.txt']));
+    
+    if isempty(listFilePaths)
+        fprintf('\n\n\t*****\n\tCan not find text files listing the relative paths to the full resolution images.\n\tYou need to create these text files. Please see the documentation on the web.\n\tQUITING.\n\t*****\n\n\n')
+        error('No %s*.txt files found.\n',searchPattern)
+    end
+
+    obj.stitchedImagePaths=struct;
+
+    for ii=1:numel(listFilePaths)
+        
+        fh=fopen(fullfile(obj.masivDirectory, listFilePaths(ii).name));
+            channelFilePaths=textscan(fh, '%s', 'Delimiter', delimiterInTextFile);
+        fclose(fh);
+        checkForAbsolutePaths(channelFilePaths{:})
+        channelName=strrep(strrep(listFilePaths(ii).name, searchPattern, ''), '.txt', '');
+        obj.stitchedImagePaths.(channelName)=channelFilePaths{:};
+    end
+end 
+
+function checkForAbsolutePaths(strList)
+    for ii = 1:numel(strList)
+        s=strList{ii};
+        if s(1)=='/' || ~isempty(regexp(s, '[A-Z]:/', 'ONCE'))
+            error('File List appears to be absolute. ImageList files must contain relative paths, to prevent data loss')
+        end
+    end
 end
 
 function a=isrelpath(p)
