@@ -6,12 +6,20 @@ classdef MaSIVMeta
         metadata
         masivDirectory
         metaFileName
-        stitchedImagePaths
+    end
+    
+    properties(SetAccess=protected, Dependent)
+        masivStackYMLFilePath
+    end
+    
+    properties(SetAccess=protected)
+        imagePaths
     end
     
     properties(Dependent, SetAccess=protected)
         baseDirectory
         imageName
+        channelNames
         downscaledStacks
         downscaledStackList
     end
@@ -77,6 +85,14 @@ classdef MaSIVMeta
             end
             dsl=dsl(:);
         end
+        
+        function c=get.channelNames(obj)
+            c=fieldnames(obj.imagePaths);
+        end
+        
+        function nm = get.masivStackYMLFilePath(obj)
+            nm=fullfile(obj.masivDirectory, [obj.imageName '_MaSIVStacks.yml']);
+        end
     end
     
     methods(Static)      
@@ -105,7 +121,7 @@ end
 
 
 function obj=getImagePaths(obj)
-    %Get paths to stitched (full-resolution) images from text files
+    %Get paths to full-resolution images from text files
     delimiterInTextFile='\r\n';
     searchPattern=[obj.imageName, '_ImageList_'];
     listFilePaths=dir(fullfile(obj.masivDirectory, [searchPattern '*.txt']));
@@ -115,7 +131,7 @@ function obj=getImagePaths(obj)
         error('No %s*.txt files found.\n',searchPattern)
     end
 
-    obj.stitchedImagePaths=struct;
+    obj.imagePaths=struct;
 
     for ii=1:numel(listFilePaths)
         
@@ -124,7 +140,7 @@ function obj=getImagePaths(obj)
         fclose(fh);
         checkForAbsolutePaths(channelFilePaths{:})
         channelName=strrep(strrep(listFilePaths(ii).name, searchPattern, ''), '.txt', '');
-        obj.stitchedImagePaths.(channelName)=channelFilePaths{:};
+        obj.imagePaths.(channelName)=channelFilePaths{:};
     end
 end 
 
