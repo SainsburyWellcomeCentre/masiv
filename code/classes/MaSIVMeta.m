@@ -6,7 +6,7 @@ classdef MaSIVMeta < handle
         imageName
     end
     
-     properties(Dependent, SetAccess=protected)
+    properties(Dependent, SetAccess=protected)
         channelNames
         masivStacks % to do
         masivStackList % to do
@@ -65,8 +65,8 @@ classdef MaSIVMeta < handle
             
             if isempty(masivStacks)
                 masivStacks=[];
-                fprintf('\n\n\t=====>  Directory %s contains no valid down-scaled image stacks  <=====\n',obj.imageBaseDirectory)
-                fprintf('\n\n\t\tINSTRUCTIONS')
+                fprintf('\n\n=====>  Directory %s contains no MaSIV down-scaled image stacks  <=====\n',obj.masivDirectory)
+                fprintf('\n\n\tINSTRUCTIONS')
                 fprintf('\n\n\tYou will need to generate down-scaled image stacks in order to proceed.')
                 fprintf('\n\tClick "New", then the channel you want to build, then the section range.')
                 fprintf('\n\tSee documention on the web for more information.\n\n\n')
