@@ -2,7 +2,7 @@ classdef MaSIVStack<handle
     properties(Dependent, SetAccess=protected)
         name
         imageName
-        fileName
+        fileFullPath
     end
     
     properties(SetAccess=protected)
@@ -32,9 +32,12 @@ classdef MaSIVStack<handle
         xCoordsUnits
         yCoordsUnits
         zCoordsUnits
+        
+        originalImageFilePaths
     end
     
     methods
+        %% Constructor
         function obj=MaSIVStack(metaObject, varargin)
             % There are two ways of creating a MaSIVStack
             %
@@ -46,7 +49,7 @@ classdef MaSIVStack<handle
             %       xyds should be a scalar, if specified, otherwise it will be set to 1
             
             if nargin < 1
-                error('Requires at least one input argument')
+               return
             else
                 if isa(metaObject, 'MaSIVMeta')
                     obj.meta=metaObject;
@@ -65,7 +68,7 @@ classdef MaSIVStack<handle
                                 error('Index specification should be a numeric vector')
                             end
                         else
-                            obj.idx=1:numel(obj.meta.imagePaths.(obj.channel));
+                            obj.idx=1:numel(obj.meta.imageFilePaths.(obj.channel));
                         end
                         
                         if nargin > 3
@@ -90,21 +93,7 @@ classdef MaSIVStack<handle
             end
             
         end
-        %% Methods
-        function generateStack(obj)
-            if obj.imageInMemory
-                error('Image already in memory')
-            end
-            obj.I_internal = createDownscaledStack(obj);
-        end
         
-        function loadStackFromDisk(obj)
-            if obj.imageInMemory
-                error('Image already in memory')
-            end
-            obj.I_internal=loadTiffStack(obj.fileName, [], 'g');
-        end
-
         %% Getters and Setters
         
         function nm=get.imageName(obj)
@@ -115,28 +104,26 @@ classdef MaSIVStack<handle
             nm=sprintf('%s_%s_Stack[%u-%u]_DS%u', obj.imageName, obj.channel, min(obj.idx), max(obj.idx), obj.xyds);
         end
         
-        function fnm=get.fileName(obj)
+        function fnm=get.fileFullPath(obj)
             fnm='';
             possibleMatchesForThisObject=dir(fullfile(obj.meta.masivDirectory, [obj.name '*.tif']));
             for ii=1:numel(possibleMatchesForThisObject)
                 fullFilePath=fullfile(obj.meta.masivDirectory, possibleMatchesForThisObject(ii).name);
-                inf=imfinfo(fullFilePath);
+
+                masivImageDescription=MaSIVStack.infoFromTifFile(fullFilePath);
                 
-                firstInf=inf(1); %only need the first
-                
-                if ~isfield(firstInf, 'ImageDescription') %no image description, so it can't be what we're looking for
-                    break
-                end
-                
-                [file_channel,file_idx,file_xyds]=MaSIVStack.paramsFromText(firstInf.ImageDescription);
-                
-                if strcmp(file_channel, obj.channel) && ...
-                   numel(file_idx)==numel(obj.idx) && ...
-                   all(file_idx==obj.idx) && ...
-                   file_xyds==obj.xyds
-               
+                if ~isempty(masivImageDescription)
+                    %% get parameters
+                    [file_channel,file_idx,file_xyds]=MaSIVStack.paramsFromText(masivImageDescription);
+                    %% check they match. If so, set file name and break
+                    if strcmp(file_channel, obj.channel) && ...
+                            numel(file_idx)==numel(obj.idx) && ...
+                            all(file_idx==obj.idx) && ...
+                            file_xyds==obj.xyds
+                        
                         fnm=fullFilePath;
                         break
+                    end
                 end
             end
         end
@@ -146,7 +133,7 @@ classdef MaSIVStack<handle
         end
         
         function onDisk=get.fileOnDisk(obj)
-            onDisk=~isempty(obj.fileName);
+            onDisk=~isempty(obj.fileFullPath);
         end
         
         function I=get.I(obj)
@@ -202,8 +189,19 @@ classdef MaSIVStack<handle
         function z=get.zCoordsUnits(obj)
             z=(obj.zCoordsVoxels-1)*obj.meta.VoxelSize.z;
         end
+        
+        function ofn=get.originalImageFilePaths(obj)
+            ofn=obj.meta.imageFilePaths.(obj.channel);
+        end
    
-        %% Serialisation / Deserialisation
+        %% Stack creation, writing, loading, deletion
+        
+        function generateStack(obj)
+            if obj.imageInMemory
+                error('Image already in memory')
+            end
+            obj.I_internal = createDownscaledStack(obj);
+        end
                
         function writeStackToDisk(obj)
             if obj.fileOnDisk
@@ -214,29 +212,42 @@ classdef MaSIVStack<handle
             %% Write file locally first to prevent network transport errors
             tempFileName=[tempname '.tif'];
             saveTiffStack(obj.I, tempFileName, 'g', tagList);
-            swb=SuperWaitBar(1, strrep(sprintf('Moving file in to place (%s)', obj.fileName), '_', '\_'));
-            movefile(tempFileName, obj.generateValidNewFileName)
+            swb=SuperWaitBar(1, strrep(sprintf('Moving file in to place (%s)', obj.fileFullPath), '_', '\_'));
+            movefile(tempFileName, generateValidNewFileName(obj))
             swb.progress();delete(swb);clear swb
         end
+        
+        function loadStackFromDisk(obj)
+             if obj.imageInMemory
+                error('Image already in memory')
+             end
+            obj.I_internal=loadTiffStack(obj.fileFullPath, [], 'g');
+        end
+        
+        function stdout=deleteStackFromDisk(obj)
+            if ~obj.fileOnDisk
+                stdout=0;
+                return
+            end
+            button=questdlg(sprintf('Are you sure you want to delete stack %s?\nThis CANNOT be undone!', obj.name), ...
+                'Confirm Stack Deletion', 'OK', 'Cancel', 'Cancel');
+            if strcmp(button, 'OK')
+                delete(obj.fileFullPath)
+                stdout=1;
+            else
+                stdout=0;
+            end
+        end
+        
+        %% Utils
         
         function t=toText(obj)
             t=sprintf('MaSIV Stack generated from %s\nChannel: %s\nIndex: %s\nXYDS: %u', obj.imageName, obj.channel, mat2str(obj.idx), obj.xyds);
         end
         
-        function fnm=generateValidNewFileName(obj)
-            baseName=fullfile(obj.meta.masivDirectory, obj.name);
-            filesThatMatch=dir([baseName, '*.tif']);
-            if isempty(filesThatMatch)
-                fnm=[baseName '.tif'];
-            else
-                suffix=getLastNumberSuffix({filesThatMatch.name}, obj.name);
-                fnm=[baseName '_' suffix '.tif'];                
-            end
-        end
     end
     
     methods(Static)
-        
         function [channel, idx, xyds]=paramsFromText(txt)
            txt=strsplit(txt, '\n');
            
@@ -245,21 +256,19 @@ classdef MaSIVStack<handle
            xyds    = getKeyPair(txt{4}, 'XYDS', @str2num);
            
         end
+        function masivImageDescription=infoFromTifFile(fullPathToFile)
+            T=Tiff(fullPathToFile, 'r');
+            try
+                masivImageDescription=T.getTag('ImageDescription');
+            catch
+                % no such tag, so set to empty
+                masivImageDescription='';
+            end
+            T.close;
+        end
     end
     
     
-end
-
-function t=getKeyPair(txt, expectedName, convertFun)
-    keyval=strsplit(txt, ':');
-    if ~strcmp(keyval{1}, expectedName)
-        error('Bad text specification')
-    else
-        t=strtrim(keyval{2});
-    end
-    if nargin > 2
-        t=convertFun(t);
-    end
 end
 
 function [channel, idx, xyds]=getStackSpec(metaObject)
@@ -280,7 +289,7 @@ function [channel, idx, xyds]=getStackSpec(metaObject)
     
     while passFlag~=1
         idxStr=inputdlg({'Start', 'Increment', 'End'},'Use slices:', 1, ...
-            {'1', '1', num2str(numel(metaObject.imagePaths.(channel)))});
+            {'1', '1', num2str(numel(metaObject.imageFilePaths.(channel)))});
         
         if isempty(idxStr)
             channel=[];
@@ -296,7 +305,7 @@ function [channel, idx, xyds]=getStackSpec(metaObject)
         passFlag=isscalar(startIdx)&&isnumeric(startIdx)&&...
             isscalar(increment)&&isnumeric(increment) &&...
             isscalar(endIdx)&&isnumeric(endIdx) &&...
-            startIdx>=1 && endIdx<=numel(metaObject.imagePaths.(channel)) && ...
+            startIdx>=1 && endIdx<=numel(metaObject.imageFilePaths.(channel)) && ...
             endIdx>startIdx;
     end
     
@@ -328,7 +337,7 @@ function I = createDownscaledStack(obj)
     gcp;
     
     %% Generate full file path
-    pths=fullfile(obj.meta.baseDirectory, obj.meta.imagePaths.(obj.channel)(obj.idx));
+    pths=fullfile(obj.meta.imageBaseDirectory, obj.meta.imageFilePaths.(obj.channel)(obj.idx));
     %% Get file information to determine crop
     info=cell(numel(obj.idx), 1);
     
@@ -351,19 +360,32 @@ function I = createDownscaledStack(obj)
     I=zeros(outputImageHeight, outputImageWidth, numel(obj.idx), 'uint16');
     if usejava('jvm')&&~feature('ShowFigureWindows') %Switch to console display if no graphics available
         parfor ii=1:numel(obj.idx)
-            fName=fullfile(obj.meta.baseDirectory, obj.meta.imagePaths.(obj.channel){obj.idx(ii)}); %#ok<PFBNS>
+            fName=fullfile(obj.meta.imageBaseDirectory, obj.meta.imageFilePaths.(obj.channel){obj.idx(ii)}); %#ok<PFBNS>
             I(:,:,ii)=openTiff(fName, [1 1 minWidth minHeight], obj.xyds);
             fprintf('Generating downscaledStack: processing image %u of %u', numel(idx), ii)
         end        
     else
         swb=SuperWaitBar(numel(obj.idx), 'Generating stack...');
         parfor ii=1:numel(obj.idx)
-            fName=fullfile(obj.meta.baseDirectory,obj.meta.imagePaths.(obj.channel){obj.idx(ii)}); %#ok<PFBNS>
+            fName=fullfile(obj.meta.imageBaseDirectory,obj.meta.imageFilePaths.(obj.channel){obj.idx(ii)}); %#ok<PFBNS>
             I(:,:,ii)=openTiff(fName, [1 1 minWidth minHeight], obj.xyds); 
             swb.progress(); %#ok<PFBNS>
         end
         delete(swb);
         clear swb
+    end
+end
+
+%% File name specification
+
+function fnm=generateValidNewFileName(obj)
+    baseName=fullfile(obj.meta.masivDirectory, obj.name);
+    filesThatMatch=dir([baseName, '*.tif']);
+    if isempty(filesThatMatch)
+        fnm=[baseName '.tif'];
+    else
+        suffix=getLastNumberSuffix({filesThatMatch.name}, obj.name);
+        fnm=[baseName '_' suffix '.tif'];
     end
 end
 
@@ -385,3 +407,16 @@ function suffix=getLastNumberSuffix(listOfFileNames, pattern)
     end
 end
 
+%% Utils
+
+function t=getKeyPair(txt, expectedName, convertFun)
+    keyval=strsplit(txt, ':');
+    if ~strcmp(keyval{1}, expectedName)
+        error('Bad text specification')
+    else
+        t=strtrim(keyval{2});
+    end
+    if nargin > 2
+        t=convertFun(t);
+    end
+end

@@ -2,26 +2,28 @@ classdef MaSIVMeta < handle
     %MASIV Summary of this class goes here
     %   Detailed explanation goes here
     
-    properties(SetAccess=protected)
-        metadata
-        masivDirectory
-        metaFileName
+    properties(Dependent, SetAccess=protected)
+        imageName
     end
     
-    properties(SetAccess=protected, Dependent)
-        masivStackYMLFilePath
-    end
-    
-    properties(SetAccess=protected)
-        imagePaths
+     properties(Dependent, SetAccess=protected)
+        channelNames
+        masivStacks % to do
+        masivStackList % to do
     end
     
     properties(Dependent, SetAccess=protected)
-        baseDirectory
-        imageName
-        channelNames
-        downscaledStacks
-        downscaledStackList
+        imageBaseDirectory
+    end
+    
+    properties(SetAccess=protected)
+        imageFilePaths
+    end
+    
+    properties(SetAccess=protected)
+        masivDirectory
+        metaFileName
+        metadata
     end
     
     methods
@@ -39,10 +41,10 @@ classdef MaSIVMeta < handle
             %% Set Metadata, including base directory and image name
             obj.metadata=obj.getMeta(filePath);
             %% Get image paths
-            obj=getImagePaths(obj);
+            obj=getimageFilePaths(obj);
         end
         %% Getters & Setters
-        function val=get.baseDirectory(obj)
+        function val=get.imageBaseDirectory(obj)
             if isrelpath(obj.metadata.baseDirectory)
                 val=fullfile(obj.masivDirectory, obj.metadata.baseDirectory);
             else
@@ -54,45 +56,36 @@ classdef MaSIVMeta < handle
             if isfield(obj.metadata, 'imageName') && ~isempty(obj.metadata.imageName)
                 val=obj.metadata.imageName;
             else
-                val=obj.baseDirectory;
+                val=obj.imageBaseDirectory;
             end
         end
         
-        function ds=get.downscaledStacks(obj)
-            pathToDSObjsFile=fullfile(obj.masivDirectory, [obj.imageName '_MaSIVStacks.mat']);
-            if ~exist(pathToDSObjsFile, 'file')
-                ds=[];
-                fprintf('\n\n\t=====>  Directory %s contains no down-scaled image stacks  <=====\n',obj.baseDirectory)
+        function masivStacks=get.masivStacks(obj)
+            masivStacks=getMasivStacks(obj);
+            
+            if isempty(masivStacks)
+                masivStacks=[];
+                fprintf('\n\n\t=====>  Directory %s contains no valid down-scaled image stacks  <=====\n',obj.imageBaseDirectory)
                 fprintf('\n\n\t\tINSTRUCTIONS')
                 fprintf('\n\n\tYou will need to generate down-scaled image stacks in order to proceed.')
                 fprintf('\n\tClick "New", then the channel you want to build, then the section range.')
                 fprintf('\n\tSee documention on the web for more information.\n\n\n')
-            else
-                a=load(pathToDSObjsFile);
-                ds=a.stacks;
-                for ii=1:numel(ds)
-                    ds(ii).updateFilePathMetaData(obj)
-                end
             end
         end
         
-        function dsl=get.downscaledStackList(obj)
-            ds=obj.downscaledStacks;
-            if ~isempty(ds)
-                dsl=ds.list;
+        function dsl=get.masivStackList(obj)
+            ms=obj.masivStacks;
+            if ~isempty(ms)
+                dsl={ms.name};
             else
                 dsl=[];
             end
-            dsl=dsl(:);
         end
         
         function c=get.channelNames(obj)
-            c=fieldnames(obj.imagePaths);
+            c=fieldnames(obj.imageFilePaths);
         end
         
-        function nm = get.masivStackYMLFilePath(obj)
-            nm=fullfile(obj.masivDirectory, [obj.imageName '_MaSIVStacks.yml']);
-        end
     end
     
     methods(Static)      
@@ -120,7 +113,7 @@ classdef MaSIVMeta < handle
 end
 
 
-function obj=getImagePaths(obj)
+function obj=getimageFilePaths(obj)
     %Get paths to full-resolution images from text files
     delimiterInTextFile='\r\n';
     searchPattern=[obj.imageName, '_ImageList_'];
@@ -131,7 +124,7 @@ function obj=getImagePaths(obj)
         error('No %s*.txt files found.\n',searchPattern)
     end
 
-    obj.imagePaths=struct;
+    obj.imageFilePaths=struct;
 
     for ii=1:numel(listFilePaths)
         
@@ -140,7 +133,7 @@ function obj=getImagePaths(obj)
         fclose(fh);
         checkForAbsolutePaths(channelFilePaths{:})
         channelName=strrep(strrep(listFilePaths(ii).name, searchPattern, ''), '.txt', '');
-        obj.imagePaths.(channelName)=channelFilePaths{:};
+        obj.imageFilePaths.(channelName)=channelFilePaths{:};
     end
 end 
 
@@ -158,5 +151,26 @@ function a=isrelpath(p)
         a=false;
     else
         a=true;
+    end
+end
+
+function stacks=getMasivStacks(obj)
+
+    stacks=[];
+
+    files=dir(fullfile(obj.masivDirectory, '*.tif'));
+    for ii=1:numel(files)
+        filePath=fullfile(obj.masivDirectory, files(ii).name);
+        msvInfo=MaSIVStack.infoFromTifFile(filePath);
+        if ~isempty(msvInfo)
+            [c, idx, xyds]=MaSIVStack.paramsFromText(msvInfo);
+            newStack=MaSIVStack(obj, c, idx, xyds);            
+            if isempty(stacks)
+                stacks=newStack;
+            else
+                stacks=[stacks newStack];
+            end
+        end
+        
     end
 end

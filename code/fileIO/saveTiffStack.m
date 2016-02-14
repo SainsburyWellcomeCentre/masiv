@@ -84,7 +84,7 @@ function writeTiff(I, filename, outputMode, mode, customTagList)
     tags.BitsPerSample          = getBitDepth(I);
     tags.SamplesPerPixel        = 1;
     tags.Compression            = Tiff.Compression.None;
-    tags.Software               =   'goggleBox';
+    tags.Software               = 'MaSIV';
     
     for ii=1:size(customTagList, 1)
         tags.(customTagList{ii, 1})=customTagList{ii, 2};
