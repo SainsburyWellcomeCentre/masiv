@@ -1,4 +1,4 @@
-classdef MaSIVMeta
+classdef MaSIVMeta < handle
     %MASIV Summary of this class goes here
     %   Detailed explanation goes here
     
