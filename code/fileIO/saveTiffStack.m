@@ -1,4 +1,7 @@
-function saveTiffStack(I, fileName, outputMode)
+function saveTiffStack(I, fileName, outputMode, customTagList)
+    if nargin < 4 || isempty(customTagList)
+        customTagList={};
+    end
     %% Check filename
     pth=fileparts(fileName);
     if ~isempty(pth)&&~exist(pth, 'dir')
@@ -23,40 +26,54 @@ function saveTiffStack(I, fileName, outputMode)
     end
     %% do the write
     if ~needBigTiff(I)% small tiff, use imwrite
-        switch outputMode
-            case 'c'
-                fprintf('File size: %uMB. Using standard imWrite...\n ', tiffStackSizeMB(I))
-                fprintf('Saving slice 1 of 1...\n')
-            case 'g'
-                swb=SuperWaitBar(size(I, 3), sprintf('File size:%uMB. Saving file to: %s with standard imwrite', tiffStackSizeMB(I),strrep(fileName, '_', '\_')));
-        end
-        imwrite(I(:,:,1), fileName);
-        if strcmp(outputMode, 'g');swb.progress();end
-        for ii=2:size(I, 3)
-            imwrite(I(:,:,ii), fileName, 'writemode', 'append');
-            switch outputMode
-                case 'c'
-                    fprintf('Saving slice %u of %u...\n', ii, size(I,3))
-                case 'g'
-                    swb.progress()
-            end
-            
-        end
-        switch outputMode
-            case 'c'
-                fprintf('Done. %u pages save to %s\n', size(I, 3), fileName)
-            case 'g'
-                delete(swb)
-                clear swb
-        end
+        %% % Edit AB Deb 2016: Always use Tiff object, allowing for custom
+        % % tags. 
+        
+%         switch outputMode
+%             case 'c'
+%                 fprintf('File size: %uMB. Using standard imWrite...\n ', tiffStackSizeMB(I))
+%                 fprintf('Saving slice 1 of 1...\n')
+%             case 'g'
+%                 swb=SuperWaitBar(size(I, 3), sprintf('File size:%uMB. Saving file to: %s with standard imwrite', tiffStackSizeMB(I),strrep(fileName, '_', '\_')));
+%         end
+%         imwrite(I(:,:,1), fileName);
+%         if strcmp(outputMode, 'g');swb.progress();end
+%         for ii=2:size(I, 3)
+%             imwrite(I(:,:,ii), fileName, 'writemode', 'append');
+%             switch outputMode
+%                 case 'c'
+%                     fprintf('Saving slice %u of %u...\n', ii, size(I,3))
+%                 case 'g'
+%                     swb.progress()
+%             end
+%             
+%         end
+%         switch outputMode
+%             case 'c'
+%                 fprintf('Done. %u pages save to %s\n', size(I, 3), fileName)
+%             case 'g'
+%                 delete(swb)
+%                 clear swb
+%         end
+%%
+        writeTiff(I, fileName, outputMode, 'regular', customTagList);
     else
-        writeBigTiff(I, fileName, outputMode)
+        writeTiff(I, fileName, outputMode, 'big', customTagList);
     end
 end
 
 
-function writeBigTiff(I, filename, outputMode)
-    bt=Tiff(filename, 'w8');
+function writeTiff(I, filename, outputMode, mode, customTagList)
+    if strcmp(mode, 'big')
+        T=Tiff(filename, 'w8');
+        fileTypeStr='BigTIFF';
+    elseif strcmp(mode, 'regular')
+        T=Tiff(filename, 'w');
+        fileTypeStr='Tiff';
+    else
+        error('Unknown mode')
+    end
+
     %% Set tags
     tags.ImageLength            = size(I,1);
     tags.ImageWidth             = size(I,2);
@@ -69,6 +86,10 @@ function writeBigTiff(I, filename, outputMode)
     tags.Compression            = Tiff.Compression.None;
     tags.Software               =   'goggleBox';
     
+    for ii=1:size(customTagList, 1)
+        tags.(customTagList{ii, 1})=customTagList{ii, 2};
+    end
+    
     switch class(I)
         
         case {'logical', 'uint8', 'uint16', 'uint32'}
@@ -80,16 +101,16 @@ function writeBigTiff(I, filename, outputMode)
         otherwise
             error('Unknown Image class type')
     end
-    setTag(bt, tags);
+    setTag(T, tags);
     %% Prepare output
     switch outputMode
         case 'c'
-            fprintf('File size: %uMB. Using Tiff class to create BigTIFF file...\n ', tiffStackSizeMB(I))
+            fprintf('File size: %uMB. Using Tiff class to create %s file...\n ', tiffStackSizeMB(I), fileTypeStr)
         case 'g'
-            swb=SuperWaitBar(size(I, 3), sprintf('File size:%uMB. Saving file to: %s using Tiff class to create BigTIFF file', tiffStackSizeMB(I),strrep(filename, '_', '\_')));
+            swb=SuperWaitBar(size(I, 3), sprintf('File size:%uMB. Saving file to: %s using Tiff class to create %s file', tiffStackSizeMB(I),strrep(filename, '_', '\_'), fileTypeStr));
     end
     %% Write the first slice
-    write(bt,  I(:,:,1));
+    write(T,  I(:,:,1));
     %% Output first slice done
     switch outputMode
         case 'c'
@@ -99,9 +120,9 @@ function writeBigTiff(I, filename, outputMode)
     end
     %% Write the rest
     for ii=2:size(I, 3)
-        bt.writeDirectory()
-        bt.setTag(tags)
-        bt.write(I(:,:,ii))
+        T.writeDirectory()
+        T.setTag(tags)
+        T.write(I(:,:,ii))
         %% Output
         switch outputMode
             case 'c'
@@ -118,9 +139,10 @@ function writeBigTiff(I, filename, outputMode)
             delete(swb)
             clear swb
     end
-    close(bt);
+    close(T);
 
 end
+
 
 function bitDepth=getBitDepth(I)
     pxStr=regexp(class(I), '[0-9]*', 'match');
