@@ -1,45 +1,51 @@
 classdef MaSIVStack<handle
+    % MASIVSTACKS represents a downscaled stack used by MaSIV
+    %
+    % This class handles the creation, use, and deletion of a particular
+    % MaSIV Stack. Stacks are stored in the MaSIV directory (the same
+    % directory as the meta file), and are pulled from disk if available,
+    % or created as needed
     properties(Dependent, SetAccess=protected)
-        name
-        stackName
-        fileFullPath
+        name            % The name of this particular stack
+        stackName       % The name of the MaSIV dataset, taken from the meta file (stackName)
+        fileFullPath    % The full path to the tif file of the stack. Blank if not on disk.
     end
     
     properties(SetAccess=protected)
-        meta
-        channel
-        idx
-        xyds
+        meta        % Reference to the MaSIVMeta object used to create this stack
+        channel     % The name of the channel on which this stack is generated
+        idx         % The index of each stack slice, in the original dataset
+        xyds        % The downsampling factor, in xy, for the stack
     end
     
     properties(Access=protected)
-        I_internal
-        xInternal
-        yInternal
-        zInternal
+        I_internal      % Image matrix, used internally
+        xInternal       % The x index (1-based) in the original data set of each pixel (used internally)
+        yInternal       % The y index in the original data set of each pixel (used internally)
+        zInternal       % The z index in the original data set of each pixel (used internally)
     end
     
     properties(Dependent, SetAccess=protected)
-        I
+        I               % Downscaled image data
         
-        imageInMemory
-        fileOnDisk
+        imageInMemory   % Boolean flag for whether the data has been loaded in to memory
+        fileOnDisk      % Boolean flag for whether the image has been saved to disk
         
-        xCoordsVoxels
-        yCoordsVoxels
-        zCoordsVoxels
+        xCoordsVoxels   % The x index (1-based) in the original data set of each pixel
+        yCoordsVoxels   % The y index (1-based) in the original data set of each pixel
+        zCoordsVoxels   % The z index (1-based) in the original data set of each pixel
         
-        xCoordsUnits
-        yCoordsUnits
-        zCoordsUnits
+        xCoordsUnits    % Distance from the origin of each pixel in the x coordinate, in units. The first voxel has distance 0
+        yCoordsUnits    % Distance from the origin of each pixel in the y coordinate, in units. The first voxel has distance 0
+        zCoordsUnits    % Distance from the origin of each pixel in the z coordinate, in units. The first voxel has distance 0
         
-        originalImageFilePaths
+        originalImageFilePaths % File path to original image files (relative to base directory)
     end
     
     methods
         %% Constructor
         function obj=MaSIVStack(metaObject, varargin)
-            % There are two ways of creating a MaSIVStack
+            % MaSIV Stacks can be created either interactively or by specifying channel and, optionally, index and downsampling
             %
             % 1. MaSIVStack(metaObject)
             %       Will create a MaSIVStack, prompting the user for the channel, indices, and downsampling
@@ -197,6 +203,7 @@ classdef MaSIVStack<handle
         %% Stack creation, writing, loading, deletion
         
         function generateStack(obj)
+            % GENERATESTACK Creates the stack (in memory) from original image files
             if obj.imageInMemory
                 error('Image already in memory')
             end
@@ -204,6 +211,13 @@ classdef MaSIVStack<handle
         end
                
         function writeStackToDisk(obj)
+            %WRITESTACKTODISK Writes the stack to a MaSIV tif file. 
+            % 
+            % If the stack does not already exist in memory, it will be
+            % generated
+            %
+            % Note that the file will first be written to your temp
+            % directory, to prevent network transport errors
             if obj.fileOnDisk
                 error('File already exists on disk')
             end
@@ -218,6 +232,7 @@ classdef MaSIVStack<handle
         end
         
         function loadStackFromDisk(obj)
+            % LOADSTACKFROMDISK Reads the stack from a MaSIV tif file
              if obj.imageInMemory
                 error('Image already in memory')
              end
@@ -225,6 +240,7 @@ classdef MaSIVStack<handle
         end
         
         function stdout=deleteStackFromDisk(obj)
+            % DELETESTACKFROMDISK Removes the MaSIV tif file for this stack
             if ~obj.fileOnDisk
                 stdout=0;
                 return
@@ -242,6 +258,9 @@ classdef MaSIVStack<handle
         %% Utils
         
         function t=toText(obj)
+            % TOTEXT Returns a text representation of the spec used to create this stack.
+            %
+            % Used by writeStackToDisk to embed metadata in the tif file
             t=sprintf('MaSIV Stack generated from %s\nChannel: %s\nIndex: %s\nXYDS: %u', obj.stackName, obj.channel, mat2str(obj.idx), obj.xyds);
         end
         
@@ -249,6 +268,10 @@ classdef MaSIVStack<handle
     
     methods(Static)
         function [channel, idx, xyds]=paramsFromText(txt)
+           %PARAMSFROMTEXT Converts a text specification in to specs
+           %
+           % Used when reading in a MaSIV tif file, to create an object, or
+           % check whether it matches a given object
            txt=strsplit(txt, '\n');
            
            channel = getKeyPair(txt{2}, 'Channel');
@@ -257,6 +280,10 @@ classdef MaSIVStack<handle
            
         end
         function masivImageDescription=infoFromTifFile(fullPathToFile)
+            % INFOFROMTEXTFILE Reads in the first ImageDescription tag of a tif file
+            %
+            % Used when interrogating tif files to determine if they are a
+            % MaSIV tif file, and if so, what the spec was
             T=Tiff(fullPathToFile, 'r');
             try
                 masivImageDescription=T.getTag('ImageDescription');
@@ -272,6 +299,7 @@ classdef MaSIVStack<handle
 end
 
 function [channel, idx, xyds]=getStackSpec(metaObject)
+    %GETSTACKSPEC Gets user-specified parameters to create a MaSIVStack
     %% Channel
     availableChannels=metaObject.channelNames;
     resp=menu('Select channel to create stack from:', availableChannels{:}, 'Cancel');
@@ -329,6 +357,9 @@ function [channel, idx, xyds]=getStackSpec(metaObject)
 end
 
 function I = createDownscaledStack(obj)
+    %CREATEDOWNSAMPLEDSTACK Generates the stack from original image files
+    %
+    % Uses parallel toolbox to perform generation in a reasonable time
     if nargin < 1 || isempty(obj) || ~isa(obj, 'MaSIVStack')
        error('Requires a valid MaSIVStack object')
     end
@@ -379,6 +410,11 @@ end
 %% File name specification
 
 function fnm=generateValidNewFileName(obj)
+    % GENERATEVALIDNEWFILENAME Returns a unique name appropriate for this stack
+    %
+    % This will be the object name, with a unique number if more than one
+    % MaSIV stack would exist with the same name e.g. from the same
+    % channel, same downsampling, and with identical first and last indices
     baseName=fullfile(obj.meta.masivDirectory, obj.name);
     filesThatMatch=dir([baseName, '*.tif']);
     if isempty(filesThatMatch)
@@ -390,6 +426,7 @@ function fnm=generateValidNewFileName(obj)
 end
 
 function suffix=getLastNumberSuffix(listOfFileNames, pattern)
+    % GETLASTNUMBERSUFFIX Scans a list of files to determine what the next unique suffix should be
     if numel(listOfFileNames)==1;
         suffix='1';
     else
@@ -410,6 +447,9 @@ end
 %% Utils
 
 function t=getKeyPair(txt, expectedName, convertFun)
+    % GETKEYPAIR Gets the value of a name-value pair with known name from a string of the form 'key: value'.
+    %
+    % Used in reading spec from MaSIV Stack ImageDescription tag
     keyval=strsplit(txt, ':');
     if ~strcmp(keyval{1}, expectedName)
         error('Bad text specification')
