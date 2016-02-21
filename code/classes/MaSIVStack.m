@@ -1,7 +1,7 @@
 classdef MaSIVStack<handle
     properties(Dependent, SetAccess=protected)
         name
-        imageName
+        stackName
         fileFullPath
     end
     
@@ -96,12 +96,12 @@ classdef MaSIVStack<handle
         
         %% Getters and Setters
         
-        function nm=get.imageName(obj)
-            nm=obj.meta.imageName;
+        function nm=get.stackName(obj)
+            nm=obj.meta.stackName;
         end
         
         function nm=get.name(obj)
-            nm=sprintf('%s_%s_Stack[%u-%u]_DS%u', obj.imageName, obj.channel, min(obj.idx), max(obj.idx), obj.xyds);
+            nm=sprintf('%s_%s_Stack[%u-%u]_DS%u', obj.stackName, obj.channel, min(obj.idx), max(obj.idx), obj.xyds);
         end
         
         function fnm=get.fileFullPath(obj)
@@ -242,7 +242,7 @@ classdef MaSIVStack<handle
         %% Utils
         
         function t=toText(obj)
-            t=sprintf('MaSIV Stack generated from %s\nChannel: %s\nIndex: %s\nXYDS: %u', obj.imageName, obj.channel, mat2str(obj.idx), obj.xyds);
+            t=sprintf('MaSIV Stack generated from %s\nChannel: %s\nIndex: %s\nXYDS: %u', obj.stackName, obj.channel, mat2str(obj.idx), obj.xyds);
         end
         
     end
