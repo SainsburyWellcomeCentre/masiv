@@ -12,7 +12,7 @@ classdef MaSIVStack<handle
     end
     
     properties(SetAccess=protected)
-        meta        % Reference to the MaSIVMeta object used to create this stack
+        MetaObject  % Reference to the MaSIVMeta object used to create this stack
         channel     % The name of the channel on which this stack is generated
         idx         % The index of each stack slice, in the original dataset
         xyds        % The downsampling factor, in xy, for the stack
@@ -58,10 +58,10 @@ classdef MaSIVStack<handle
                return
             else
                 if isa(metaObject, 'MaSIVMeta')
-                    obj.meta=metaObject;
+                    obj.MetaObject=metaObject;
                     
                     if nargin > 1
-                        if ischar(varargin{1}) && ismember(varargin{1}, obj.meta.channelNames)
+                        if ischar(varargin{1}) && ismember(varargin{1}, obj.MetaObject.channelNames)
                             obj.channel=varargin{1};
                         else
                             error('''%s'' is not a valid channel', varargin{1})
@@ -74,7 +74,7 @@ classdef MaSIVStack<handle
                                 error('Index specification should be a numeric vector')
                             end
                         else
-                            obj.idx=1:numel(obj.meta.imageFilePaths.(obj.channel));
+                            obj.idx=1:numel(obj.MetaObject.imageFilePaths.(obj.channel));
                         end
                         
                         if nargin > 3
@@ -103,7 +103,7 @@ classdef MaSIVStack<handle
         %% Getters and Setters
         
         function nm=get.stackName(obj)
-            nm=obj.meta.stackName;
+            nm=obj.MetaObject.stackName;
         end
         
         function nm=get.name(obj)
@@ -112,9 +112,9 @@ classdef MaSIVStack<handle
         
         function fnm=get.fileFullPath(obj)
             fnm='';
-            possibleMatchesForThisObject=dir(fullfile(obj.meta.masivDirectory, [obj.name '*.tif']));
+            possibleMatchesForThisObject=dir(fullfile(obj.MetaObject.masivDirectory, [obj.name '*.tif']));
             for ii=1:numel(possibleMatchesForThisObject)
-                fullFilePath=fullfile(obj.meta.masivDirectory, possibleMatchesForThisObject(ii).name);
+                fullFilePath=fullfile(obj.MetaObject.masivDirectory, possibleMatchesForThisObject(ii).name);
 
                 masivImageDescription=MaSIVStack.infoFromTifFile(fullFilePath);
                 
@@ -185,19 +185,19 @@ classdef MaSIVStack<handle
         end
         
         function x=get.xCoordsUnits(obj)
-            x=(obj.xCoordsVoxels-1)*obj.meta.VoxelSize.x;
+            x=(obj.xCoordsVoxels-1)*obj.MetaObject.VoxelSize.x;
          end 
 
         function y=get.yCoordsUnits(obj)
-           y=(obj.yCoordsVoxels-1)*obj.meta.VoxelSize.y;
+           y=(obj.yCoordsVoxels-1)*obj.MetaObject.VoxelSize.y;
         end
 
         function z=get.zCoordsUnits(obj)
-            z=(obj.zCoordsVoxels-1)*obj.meta.VoxelSize.z;
+            z=(obj.zCoordsVoxels-1)*obj.MetaObject.VoxelSize.z;
         end
         
         function ofn=get.originalImageFilePaths(obj)
-            ofn=obj.meta.imageFilePaths.(obj.channel);
+            ofn=obj.MetaObject.imageFilePaths.(obj.channel);
         end
    
         %% Stack creation, writing, loading, deletion
@@ -226,8 +226,9 @@ classdef MaSIVStack<handle
             %% Write file locally first to prevent network transport errors
             tempFileName=[tempname '.tif'];
             saveTiffStack(obj.I, tempFileName, 'g', tagList);
-            swb=SuperWaitBar(1, strrep(sprintf('Moving file in to place (%s)', obj.fileFullPath), '_', '\_'));
-            movefile(tempFileName, generateValidNewFileName(obj))
+            thisStackFilePath=generateValidNewFileName(obj);
+            swb=SuperWaitBar(1, strrep(sprintf('Moving file in to place (%s)', thisStackFilePath), '_', '\_'));
+            movefile(tempFileName, thisStackFilePath)
             swb.progress();delete(swb);clear swb
         end
         
@@ -368,7 +369,7 @@ function I = createDownscaledStack(obj)
     gcp;
     
     %% Generate full file path
-    pths=fullfile(obj.meta.imageBaseDirectory, obj.meta.imageFilePaths.(obj.channel)(obj.idx));
+    pths=fullfile(obj.MetaObject.imageBaseDirectory, obj.MetaObject.imageFilePaths.(obj.channel)(obj.idx));
     %% Get file information to determine crop
     info=cell(numel(obj.idx), 1);
     
@@ -391,14 +392,14 @@ function I = createDownscaledStack(obj)
     I=zeros(outputImageHeight, outputImageWidth, numel(obj.idx), 'uint16');
     if usejava('jvm')&&~feature('ShowFigureWindows') %Switch to console display if no graphics available
         parfor ii=1:numel(obj.idx)
-            fName=fullfile(obj.meta.imageBaseDirectory, obj.meta.imageFilePaths.(obj.channel){obj.idx(ii)}); %#ok<PFBNS>
+            fName=fullfile(obj.MetaObject.imageBaseDirectory, obj.MetaObject.imageFilePaths.(obj.channel){obj.idx(ii)}); %#ok<PFBNS>
             I(:,:,ii)=openTiff(fName, [1 1 minWidth minHeight], obj.xyds);
             fprintf('Generating downscaledStack: processing image %u of %u', numel(idx), ii)
         end        
     else
         swb=SuperWaitBar(numel(obj.idx), 'Generating stack...');
         parfor ii=1:numel(obj.idx)
-            fName=fullfile(obj.meta.imageBaseDirectory,obj.meta.imageFilePaths.(obj.channel){obj.idx(ii)}); %#ok<PFBNS>
+            fName=fullfile(obj.MetaObject.imageBaseDirectory,obj.MetaObject.imageFilePaths.(obj.channel){obj.idx(ii)}); %#ok<PFBNS>
             I(:,:,ii)=openTiff(fName, [1 1 minWidth minHeight], obj.xyds); 
             swb.progress(); %#ok<PFBNS>
         end
@@ -415,7 +416,7 @@ function fnm=generateValidNewFileName(obj)
     % This will be the object name, with a unique number if more than one
     % MaSIV stack would exist with the same name e.g. from the same
     % channel, same downsampling, and with identical first and last indices
-    baseName=fullfile(obj.meta.masivDirectory, obj.name);
+    baseName=fullfile(obj.MetaObject.masivDirectory, obj.name);
     filesThatMatch=dir([baseName, '*.tif']);
     if isempty(filesThatMatch)
         fnm=[baseName '.tif'];

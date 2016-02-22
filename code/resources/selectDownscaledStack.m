@@ -3,7 +3,7 @@ function selectedDSS = selectDownscaledStack(mosaicInfo)
 %
 % function selectedDSS = selectDownscaledStack(mosaicInfo)
 %
-%
+% This function will be superceded by selectMaSIVStack
 
 %#ok<*AGROW>
 

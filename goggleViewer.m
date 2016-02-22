@@ -1,6 +1,6 @@
 classdef goggleViewer<handle
     
-    properties(Access=protected)        
+    properties(Access=protected, Hidden)        
         %% Internal tracking
         numScrolls=0
         panxInt=0
@@ -28,8 +28,8 @@ classdef goggleViewer<handle
         mnuTutPlugins
 
         %% Data
-        mosaicInfo
-        overviewDSS
+        mosaicInfo      %will be changed to Meta
+        overviewDSS     %will be changed to Stack
         mainDisplay
         additionalDisplays
         contrastMode=0;
@@ -752,21 +752,17 @@ function setupPath()
 end
 
 function chooseDataset(obj)
-     fp=uigetdir(gbSetting('defaultDirectory'), 'Please select base directory of the stitched mosaic');
-     if isempty(fp) || isnumeric(fp)
-         return
-     end
-     gbSetting('defaultDirectory', fileparts(fp))
-     obj.mosaicInfo=TVStitchedMosaicInfo(fp);
+%      gbSetting('defaultDirectory', fileparts(fp))
+     obj.mosaicInfo=MaSIVMeta;
 end
 
 function getDownsampledStackChoice(obj)
-    obj.overviewDSS=selectDownscaledStack(obj.mosaicInfo);
+    obj.overviewDSS=selectMaSIVStack(obj.mosaicInfo);
 end
 
 function setupGUI(obj)
     obj.hFig=figure(...
-                'Name', sprintf('GoggleBox: %s', obj.mosaicInfo.experimentName), ...
+                'Name', sprintf('GoggleBox: %s', obj.mosaicInfo.stackName), ...
                 'NumberTItle', 'off', ...
                 'MenuBar', 'none', ...
                 'Position', gbSetting('viewer.mainFigurePosition'), ...

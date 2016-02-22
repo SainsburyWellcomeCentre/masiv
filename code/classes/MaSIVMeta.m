@@ -25,6 +25,10 @@ classdef MaSIVMeta < handle
         metadata        % Deserialised meta data
     end
     
+    properties(Dependent, SetAccess=protected)
+        VoxelSize       % Structure containing the x,y, and z size of the voxels
+    end
+    
     methods
         %% Constructor
         function obj=MaSIVMeta(filePath)
@@ -87,6 +91,10 @@ classdef MaSIVMeta < handle
             c=fieldnames(obj.imageFilePaths);
         end
         
+        function VS=get.VoxelSize(obj)
+            VS=obj.metadata.VoxelSize;
+        end
+        
     end
     
     methods(Static)      
@@ -101,11 +109,12 @@ classdef MaSIVMeta < handle
             % GETMETAFILE Used by the constructor to create a UI prompt to get a YML file 
             % from the user when none was provided
             
-            [f,p]=uigetfile({'*Meta.yml', 'MaSIV Meta File(*Meta.txt)'}, 'Please select the MaSIV Meta File', gbSetting('defaultDirectory'));
+            [f,p]=uigetfile({'*Meta.yml', 'MaSIV Meta File(*Meta.yml)'}, 'Please select the MaSIV Meta File', gbSetting('defaultDirectory'));
             if isnumeric(f)
                 metaFilePath='';
             else
                 metaFilePath=fullfile(p,f);
+                gbSetting('defaultDirectory', p);
             end
         end
         
@@ -165,7 +174,6 @@ classdef MaSIVMeta < handle
     
     
 end
-
 
 function obj=getimageFilePaths(obj)
     %GETIMAGEFILEPATHS Returns paths to full-resolution images from ImageList files
