@@ -1,0 +1,7 @@
+TVStitchedMosaicInfo -> MaSIVMeta           DONE
+goggleViewer.mosaicInfo -> Meta             DONE
+goggleViewer.overviewDSS -> goggleViewer.MainStack           
+
+downscaledStacks -> masivStacks
+
+experimentName / imageName -> stackName ?
