@@ -224,10 +224,10 @@ end
 function z=calculateZVoxels_ofSlicesToLoad(obj, currentViewZ)
     % Converts number of slices before and after in to original voxel
     % address in Z, so it's easy to find the right file
-    currentViewZIdx=find(obj.parent.overviewDSS.idx==currentViewZ);
+    currentViewZIdx=find(obj.parent.MainStack.idx==currentViewZ);
     idx=currentViewZIdx+[-obj.nBefore:-1 1:obj.nAfter];
-    idx(idx<1 | idx>obj.parent.overviewDSS.idx(end))=[]; %remove index values that aren't real
-    z=obj.parent.overviewDSS.idx(idx);
+    idx(idx<1 | idx>obj.parent.MainStack.idx(end))=[]; %remove index values that aren't real
+    z=obj.parent.MainStack.idx(idx);
 end
 
 function specsToCreate=excludeViewSpecsMatchingAlreadyLoadedGZV(obj,specsToCreate) 

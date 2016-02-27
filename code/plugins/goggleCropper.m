@@ -48,7 +48,7 @@ classdef goggleCropper<goggleBoxPlugin
                 'CloseRequestFcn', {@deleteRequest, obj}, ...
                 'MenuBar', 'none', ...
                 'NumberTitle', 'off', ...
-                'Name', ['Cropper: ' obj.goggleViewer.mosaicInfo.experimentName], ...
+                'Name', ['Cropper: ' obj.goggleViewer.Meta.experimentName], ...
                 'Color', gbSetting('viewer.panelBkgdColor'));
             %% Crop Position Indicators
             obj.hPanelPosition=uipanel(...
@@ -260,7 +260,7 @@ classdef goggleCropper<goggleBoxPlugin
                 'FontSize', obj.fontSize+1, ...
                 'Title', 'Channels');
             
-            channels=fieldnames(obj.mosaicInfo.stitchedImagePaths);
+            channels=fieldnames(obj.Meta.stitchedImagePaths);
             obj.hChannels=uicontrol(...
                 'Parent', cropPanel, ...
                 'Units', 'normalized', ...
@@ -336,8 +336,8 @@ classdef goggleCropper<goggleBoxPlugin
     %% Getters
     function sn=get.maxSliceNum(obj)
         
-         fnames=fieldnames(obj.mosaicInfo.stitchedImagePaths);
-         sn=numel(obj.mosaicInfo.stitchedImagePaths.(fnames{1}));
+         fnames=fieldnames(obj.Meta.stitchedImagePaths);
+         sn=numel(obj.Meta.stitchedImagePaths.(fnames{1}));
          
     end
     %% Callbacks
@@ -405,7 +405,7 @@ classdef goggleCropper<goggleBoxPlugin
         
         if strcmp(questAns, 'Yes')
             cropSpec=[str2double(obj.hXPositionMin.String), str2double(obj.hYPositionMin.String), str2double(obj.hXPositionMax.String), str2double(obj.hYPositionMax.String)];
-            executeCrop(obj.mosaicInfo, channelsToCrop, sliceFrom, sliceTo, cropSpec, obj);
+            executeCrop(obj.Meta, channelsToCrop, sliceFrom, sliceTo, cropSpec, obj);
         end
     end
     end
@@ -442,8 +442,8 @@ function setRectangleConstraints(obj)
     addNewPositionCallback(obj.hSelectionRectangle,@obj.updatePosition);
 end
 
-function executeCrop(mosaicInfo, channelsToCrop, sliceFrom, sliceTo, cropSpec, obj)
-fNames=generateFileListToCrop(mosaicInfo, channelsToCrop, sliceFrom, sliceTo);
+function executeCrop(Meta, channelsToCrop, sliceFrom, sliceTo, cropSpec, obj)
+fNames=generateFileListToCrop(Meta, channelsToCrop, sliceFrom, sliceTo);
 proceed=checkFilesAreUncropped(fNames);
 if ~proceed
     errordlg('Some files have already been cropped. Aborting')
@@ -476,10 +476,10 @@ end
 
 end
 
-function fileList=generateFileListToCrop(mosaicInfo, channelsToCrop, sliceFrom, sliceTo)
+function fileList=generateFileListToCrop(Meta, channelsToCrop, sliceFrom, sliceTo)
 fileList={};
 for ii=1:numel(channelsToCrop)
-    fileList=[fileList, fullfile(mosaicInfo.baseDirectory, mosaicInfo.stitchedImagePaths.(channelsToCrop{ii})(sliceFrom:sliceTo))];  %#ok<AGROW>
+    fileList=[fileList, fullfile(Meta.baseDirectory, Meta.stitchedImagePaths.(channelsToCrop{ii})(sliceFrom:sliceTo))];  %#ok<AGROW>
 end
 parfor ii=1:numel(fileList)
     if ~exist(fileList{ii}, 'file')

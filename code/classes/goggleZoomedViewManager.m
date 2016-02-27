@@ -69,7 +69,7 @@ classdef goggleZoomedViewManager<handle
 
                 goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view creation starting',toc,'s')
             basedir=obj.parentViewerDisplay.overviewStack.baseDirectory;
-            f=obj.parentViewerDisplay.overviewStack.originalStitchedFileNames{z};            
+            f=obj.parentViewerDisplay.overviewStack.originalImageFilePaths{z};            
             fp=fullfile(basedir, f);  
 
             if ~isempty(obj.xyPositionAdjustProfile)
@@ -135,7 +135,7 @@ classdef goggleZoomedViewManager<handle
 
         %% Getters
         function csfn=get.currentSliceFileName(obj)
-            stitchedFileNameList=obj.parentViewerDisplay.overviewStack.originalStitchedFileNames;
+            stitchedFileNameList=obj.parentViewerDisplay.overviewStack.originalImageFilePaths;
             indexInFileNameList=obj.parentViewerDisplay.currentZPlaneOriginalVoxels;
             csfn=stitchedFileNameList{indexInFileNameList};
         end

@@ -4,13 +4,13 @@ classdef(Abstract) goggleBoxPlugin<handle
     properties
         parentMenuItem
         goggleViewer
-        mosaicInfo
+        Meta
     end
     
     methods
         function obj=goggleBoxPlugin(caller)
             obj.goggleViewer=caller.UserData;
-            obj.mosaicInfo=obj.goggleViewer.mosaicInfo;
+            obj.Meta=obj.goggleViewer.Meta;
             
             items=get(obj.goggleViewer.mnuPlugins, 'Children');
             obj.parentMenuItem=findall(items, 'Label', obj.displayString);

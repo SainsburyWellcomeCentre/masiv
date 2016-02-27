@@ -62,7 +62,7 @@ classdef goggleExporter<goggleBoxPlugin
                 'CloseRequestFcn', {@deleteRequest, obj}, ...
                 'MenuBar', 'none', ...
                 'NumberTitle', 'off', ...
-                'Name', ['Stack Exporter: ' obj.goggleViewer.mosaicInfo.experimentName], ...
+                'Name', ['Stack Exporter: ' obj.goggleViewer.Meta.experimentName], ...
                 'Color', gbSetting('viewer.panelBkgdColor'));
             
             %% Export Position Indicators & Z selection
@@ -212,7 +212,7 @@ classdef goggleExporter<goggleBoxPlugin
                 'FontSize', obj.fontSize+1, ...
                 'Title', 'Channels');
             
-            channels=fieldnames(obj.mosaicInfo.stitchedImagePaths);
+            channels=fieldnames(obj.Meta.stitchedImagePaths);
             obj.hChannels=uicontrol(...
                 'Parent', cropPanel, ...
                 'Units', 'normalized', ...
@@ -386,7 +386,7 @@ classdef goggleExporter<goggleBoxPlugin
                 'ForegroundColor', gbSetting('viewer.textMainColor'), ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
-                'String', obj.goggleViewer.mosaicInfo.experimentName);
+                'String', obj.goggleViewer.Meta.experimentName);
             
             %% Destination Selection
             obj.hPnlDestination=uibuttongroup(...
@@ -569,7 +569,7 @@ classdef goggleExporter<goggleBoxPlugin
             idx=str2num(obj.hZSelectionMin.String):str2num(obj.hZSelectionMax.String);    %#ok<ST2NM>
             
             
-            t=obj.goggleViewer.mosaicInfo;
+            t=obj.goggleViewer.Meta;
             
             %%
             for ii=1:numel(channelsToLoad)
@@ -619,8 +619,8 @@ classdef goggleExporter<goggleBoxPlugin
         %% Getters
         function sn=get.maxSliceNum(obj)
             
-            fnames=fieldnames(obj.mosaicInfo.stitchedImagePaths);
-            sn=numel(obj.mosaicInfo.stitchedImagePaths.(fnames{1}));
+            fnames=fieldnames(obj.Meta.stitchedImagePaths);
+            sn=numel(obj.Meta.stitchedImagePaths.(fnames{1}));
             
         end
         

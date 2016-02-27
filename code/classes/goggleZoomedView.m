@@ -253,7 +253,7 @@ end
 function I=upsampleDSSToRegionSpec(DSS, currentDownscaleFactor, filePath, rSpec)
     %% Work out which slice in the DSS to use
     [~, requestedSliceFileName, ~]=fileparts(filePath);
-    sliceFileIdx=~cellfun(@isempty, strfind(DSS.originalStitchedFileNames, requestedSliceFileName));
+    sliceFileIdx=~cellfun(@isempty, strfind(DSS.originalImageFilePaths, requestedSliceFileName));
     %% Work out the limits of the requested region spec
     idx_x1=find(DSS.xCoordsVoxels<rSpec(1), 1, 'last');
     idx_y1=find(DSS.yCoordsVoxels<rSpec(2), 1, 'last');

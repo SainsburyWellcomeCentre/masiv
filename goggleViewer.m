@@ -28,8 +28,8 @@ classdef goggleViewer<handle
         mnuTutPlugins
 
         %% Data
-        mosaicInfo      %will be changed to Meta
-        overviewDSS     %will be changed to Stack
+        Meta      %will be changed to Meta
+        MainStack %will be changed to Stack
         mainDisplay
         additionalDisplays
         contrastMode=0;
@@ -51,26 +51,26 @@ classdef goggleViewer<handle
     end
    
     methods % Constructor
-        function obj=goggleViewer(mosaicInfoIn, idx)
+        function obj=goggleViewer(MetaIn, idx)
             obj=obj@handle; % base class initialisation
             
             startDebugOutput();
             runStartupTests();
             setupPath();
             
-            if nargin<1 ||isempty(mosaicInfoIn)
+            if nargin<1 ||isempty(MetaIn)
                 chooseDataset(obj)
             else
-                obj.mosaicInfo=mosaicInfoIn;
+                obj.Meta=MetaIn;
             end
             
             if nargin<2||isempty(idx)
                 getDownsampledStackChoice(obj)
             else
-                obj.overviewDSS=obj.mosaicInfo.downscaledStacks(idx);
+                obj.MainStack=obj.Meta.downscaledStacks(idx);
             end
             
-            if isempty(obj.overviewDSS)
+            if isempty(obj.MainStack)
                 return
             end
             
@@ -384,7 +384,7 @@ classdef goggleViewer<handle
     methods % Destructor
         function delete(obj)
             notify(obj, 'ViewerClosing')
-            delete(obj.overviewDSS)
+            delete(obj.MainStack)
             deleteInfoPanel(obj, 'all')
             delete(timerfind);
             if ishandle(obj.hFig)
@@ -397,7 +397,7 @@ end
 
 function startDebugOutput
 tic
-clc
+% clc
 end    
 
 %% Callbacks
@@ -611,8 +611,8 @@ function exportViewToWorkspace(~,~,obj)
     xView=round(obj.hMainImgAx.XLim);xView(xView<1)=1;
     yView=round(obj.hMainImgAx.YLim);yView(yView<1)=1;
     proposedImageName=sprintf('%s_%s_x%u_%u_y%u_%u_layer%04u',...
-        obj.overviewDSS.experimentName, ...
-        obj.overviewDSS.channel, ...
+        obj.MainStack.stackName, ...
+        obj.MainStack.channel, ...
         xView(1), xView(2), ...
         yView(1), yView(2), ...
         obj.mainDisplay.currentZPlaneOriginalLayerID);
@@ -753,16 +753,16 @@ end
 
 function chooseDataset(obj)
 %      gbSetting('defaultDirectory', fileparts(fp))
-     obj.mosaicInfo=MaSIVMeta;
+     obj.Meta=MaSIVMeta;
 end
 
 function getDownsampledStackChoice(obj)
-    obj.overviewDSS=selectMaSIVStack(obj.mosaicInfo);
+    obj.MainStack=selectMaSIVStack(obj.Meta);
 end
 
 function setupGUI(obj)
     obj.hFig=figure(...
-                'Name', sprintf('GoggleBox: %s', obj.mosaicInfo.stackName), ...
+                'Name', sprintf('GoggleBox: %s', obj.Meta.stackName), ...
                 'NumberTItle', 'off', ...
                 'MenuBar', 'none', ...
                 'Position', gbSetting('viewer.mainFigurePosition'), ...
@@ -887,13 +887,13 @@ end
 function setupContrast(obj)
     fprintf('Choosing a reasonable value for the contrast scale...\n')
     numValues=1e5; %make histogram with this many values
-    arraySize=numel(obj.overviewDSS.I);
+    arraySize=numel(obj.MainStack.I);
     decimateBy=round(arraySize/numValues);
     if decimateBy<1
         decimateBy=1;
     end
     
-    [n,x]=hist(single(obj.overviewDSS.I(1:decimateBy:end)),500);
+    [n,x]=hist(single(obj.MainStack.I(1:decimateBy:end)),500);
     
     y=log10(n+0.5);
     y=y-min(y(:)); %in case of negative numbers
@@ -942,7 +942,7 @@ function startParallelPool()
 end
 
 function initialiseDisplay(obj) 
-    obj.mainDisplay=goggleViewerDisplay(obj, obj.overviewDSS, obj.hMainImgAx);
+    obj.mainDisplay=goggleViewerDisplay(obj, obj.MainStack, obj.hMainImgAx);
     obj.mainDisplay.drawNewZ();
     axis(obj.hMainImgAx, 'equal')
     set(findall(gcf, '-property','FontName'), 'FontName', gbSetting('font.name'));

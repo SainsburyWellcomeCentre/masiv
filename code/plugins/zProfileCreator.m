@@ -8,8 +8,8 @@ classdef zProfileCreator<goggleBoxPlugin
         function obj=zProfileCreator(caller, ~)
             obj=obj@goggleBoxPlugin(caller);
             mainDisp=obj.goggleViewer.mainDisplay;
-            t=obj.mosaicInfo;
-            dss=obj.goggleViewer.overviewDSS;
+            t=obj.Meta;
+            dss=obj.goggleViewer.MainStack;
             %% Default view
             x=num2str(round(mainDisp.viewXLimOriginalCoords(1)));
             y=num2str(round(mainDisp.viewYLimOriginalCoords(1)));

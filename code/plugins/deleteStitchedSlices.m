@@ -9,13 +9,13 @@ methods
     function obj=deleteStitchedSlices(caller, ~, channels, slices)
         obj=obj@goggleBoxPlugin(caller);
         %% Parse input
-        if isa(caller, 'TVStitchedMosaicInfo')
-            mosaicInfo=caller;
+        if isa(caller, 'MaSIVMeta')
+            Meta=caller;
         elseif isa(caller, 'matlab.ui.container.Menu')
             gvObj=caller.UserData;
-            mosaicInfo=gvObj.mosaicInfo;
+            Meta=gvObj.Meta;
         else
-            error('Unrecognised parameter. First argument should either be a TVStitchedMosaicInfo object, or a plugins menu objext')
+            error('Unrecognised parameter. First argument should either be a MaSIVMeta object, or a plugins menu objext')
         end
         if nargin<4
             slices=[];
@@ -28,15 +28,15 @@ methods
         end
         %% Show GUI if any specifications not provided
         if isempty(channels)||isempty(slices)
-            [channels, slices]=getSlicesForDeletion(mosaicInfo, channels, slices);
+            [channels, slices]=getSlicesForDeletion(Meta, channels, slices);
             if isempty(channels)||isempty(slices)
                 deleteRequest(obj)
                 return
             end
-            filesToDelete=getFilesToDelete(mosaicInfo, channels, slices);
+            filesToDelete=getFilesToDelete(Meta, channels, slices);
             goAhead=showFileListToDelete(filesToDelete);
             if goAhead
-                doDelete(mosaicInfo, filesToDelete)
+                doDelete(Meta, filesToDelete)
                 
             else
                 goggleDebugTimingInfo(0, 'File Deletion Cancelled')
@@ -57,14 +57,14 @@ end
 
 end
 
-function [channels, slices]=getSlicesForDeletion(mosaicInfo, channels, slices)
+function [channels, slices]=getSlicesForDeletion(Meta, channels, slices)
     %% Params
     fontSz=12;
     mainFont='Titillium';
     initialChannelSelection={'Ch01', 'Ch03'};
     %% Declarations: Main
     hFig=dialog(...
-        'Name', sprintf('Delete full-resolution stitched images... %s',mosaicInfo.experimentName), ...
+        'Name', sprintf('Delete full-resolution stitched images... %s',Meta.experimentName), ...
         'ButtonDownFcn', '', 'CloseRequestFcn', @cancelButtonClick);
      hOKButton=uicontrol(...
         'Parent', hFig, ...
@@ -97,14 +97,14 @@ function [channels, slices]=getSlicesForDeletion(mosaicInfo, channels, slices)
         'FontSize', fontSz, ...
         'Style', 'listbox', ...
         'Max', 10, 'Min', 2, ...
-        'Value', find(ismember(fieldnames(mosaicInfo.stitchedImagePaths), channels)),...
-        'String', fieldnames(mosaicInfo.stitchedImagePaths), ...
+        'Value', find(ismember(fieldnames(Meta.stitchedImagePaths), channels)),...
+        'String', fieldnames(Meta.stitchedImagePaths), ...
         'Callback', @selectedChannelChanged);
     
     %% Declarations: slices
     if isempty(slices)
         
-        slcMax=numel(mosaicInfo.stitchedImagePaths.(channels{1}));
+        slcMax=numel(Meta.stitchedImagePaths.(channels{1}));
         slcMin=1;
         inc=1;
     else
@@ -284,14 +284,14 @@ function goAhead=showFileListToDelete(filesToDelete)
         end 
     end
 end
-function filesToDelete= getFilesToDelete(mosaicInfo, channels, slices)
+function filesToDelete= getFilesToDelete(Meta, channels, slices)
 
 filesToDelete={};
 for ii=1:numel(channels)
-    allFilesThisChannel=mosaicInfo.stitchedImagePaths.(channels{ii});
+    allFilesThisChannel=Meta.stitchedImagePaths.(channels{ii});
     filesToDeleteThisChannel=allFilesThisChannel(slices);
     
-    doesTheFileActuallyExist=logical(cellfun(@(x) exist(x, 'file'), fullfile(mosaicInfo.baseDirectory, filesToDeleteThisChannel)));
+    doesTheFileActuallyExist=logical(cellfun(@(x) exist(x, 'file'), fullfile(Meta.baseDirectory, filesToDeleteThisChannel)));
     
     existingFilesToDeleteThisChannel=filesToDeleteThisChannel(doesTheFileActuallyExist);
     filesToDelete=[filesToDelete; existingFilesToDeleteThisChannel]; %#ok<AGROW>
@@ -299,11 +299,11 @@ end
 filesToDelete=sort(filesToDelete);
 end
 
-function doDelete(mosaicInfo, filesToDelete)
+function doDelete(Meta, filesToDelete)
 goggleDebugTimingInfo(0, 'Deleting Files:')
                 swb=SuperWaitBar(numel(filesToDelete), 'Deleting Files');
                 for ii=1:numel(filesToDelete)
-                    fullFilePath=fullfile(mosaicInfo.baseDirectory, filesToDelete{ii});
+                    fullFilePath=fullfile(Meta.baseDirectory, filesToDelete{ii});
                     delete(fullFilePath)
                     goggleDebugTimingInfo(1, fullFilePath)
                     swb.progress;
