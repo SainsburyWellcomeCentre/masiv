@@ -1,5 +1,5 @@
 classdef masivMeta < handle
-    %MASIV Contains metadata about an stack for use with MaSIV
+    %MASIVMETA Contains metadata about an stack for use with MaSIV
     
     properties(Dependent, SetAccess=protected)
         stackName % The name of the stack. Can be anything you like (doesn't have to correspond to file names)

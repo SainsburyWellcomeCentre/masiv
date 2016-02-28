@@ -1,5 +1,5 @@
 classdef masivStack<handle
-    % MASIVSTACKS represents a downscaled stack used by MaSIV
+    % MASIVSTACK Represents a downscaled stack used by MaSIV
     %
     % This class handles the creation, use, and deletion of a particular
     % MaSIV Stack. Stacks are stored in the MaSIV directory (the same
