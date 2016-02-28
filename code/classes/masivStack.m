@@ -262,7 +262,8 @@ classdef masivStack<handle
             % TOTEXT Returns a text representation of the spec used to create this stack.
             %
             % Used by writeStackToDisk to embed metadata in the tif file
-            t=sprintf('MaSIV Stack generated from %s\nChannel: %s\nIndex: %s\nXYDS: %u', obj.stackName, obj.channel, mat2str(obj.idx), obj.xyds);
+            idxStr=getIdxStringRepresentation(obj);
+            t=sprintf('MaSIV Stack generated from %s\nChannel: %s\nIndex: %s\nXYDS: %u', obj.stackName, obj.channel, idxStr, obj.xyds);
         end
         
     end
@@ -452,6 +453,10 @@ function t=getKeyPair(txt, expectedName, convertFun)
     %
     % Used in reading spec from MaSIV Stack ImageDescription tag
     keyval=strsplit(txt, ':');
+    if numel(keyval) > 2 && strcmp(expectedName, 'Index')
+        keyval{2}=strjoin(keyval(2:end), ':');
+        keyval=keyval(1:2);
+    end
     if ~strcmp(keyval{1}, expectedName)
         error('Bad text specification')
     else
@@ -459,5 +464,21 @@ function t=getKeyPair(txt, expectedName, convertFun)
     end
     if nargin > 2
         t=convertFun(t);
+    end
+end
+
+function idxStr=getIdxStringRepresentation(obj)
+
+    if numel(obj.idx)==1;
+        idxStr=num2str(obj.idx);
+    elseif numel(obj.idx)==2
+        idxStr=mat2str(obj.idx);
+    else
+        d=unique(diff(obj.idx));
+        if numel(d)==1
+            idxStr=sprintf('[%u:%u:%u]', obj.idx(1), d, obj.idx(end));
+        else
+            idxStr=mat2str(obj.idx);
+        end
     end
 end
