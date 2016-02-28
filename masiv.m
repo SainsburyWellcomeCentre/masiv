@@ -397,7 +397,7 @@ end
 
 function startDebugOutput
 tic
-% clc
+clc
 end    
 
 %% Callbacks
@@ -461,13 +461,14 @@ function pos=mouseMove(~, ~, obj)
     
     if obj.contrastMode && ~any(isnan(obj.dragOrigin))
         %% Contrast
+        gain=2;
         delta=pos-obj.dragOrigin;
         delta(1)=delta(1)/range(xlim); % make it relative
         delta(2)=delta(2)/range(ylim);
         
         m=obj.hjSliderContrast.getLowValue();
         rng=obj.hjSliderContrast.getHighValue-m;
-        newVal=obj.hjSliderContrast.getHighValue()+delta(2)*rng; % scales quite nicely
+        newVal=obj.hjSliderContrast.getHighValue()+delta(2)*rng*gain; % scales quite nicely
 
         if newVal>m
             obj.hjSliderContrast.setHighValue(newVal);
@@ -745,11 +746,16 @@ function runStartupTests()
 end
 
 function setupPath()
-    MaSIVPath = fileparts(which('MaSIV'));
-    MaSIVDirs = fullfile(MaSIVPath,'code');
-    if isempty(strfind(path, MaSIVDirs)) %only add to path if dirs aren't already present
-        fprintf('Adding MaSIV to path for this session\n')
-        addpath(genpath(MaSIVDirs),'-end')
+    MaSIVBasePath = fileparts(which('masiv'));
+    MaSIVDirs = fullfile(MaSIVBasePath,'code');
+    
+    MaSIVPath=strsplit(genpath(MaSIVDirs), ':');
+    p=strsplit(path, ':');
+    toAddToPath=setdiff(MaSIVPath, p); %only add to path if dirs aren't already present
+    toAddToPath(cellfun(@isempty, toAddToPath))=[]; %remove any blank entries
+    fprintf('Adding MaSIV to path for this session\n')
+    if numel(toAddToPath)>0
+        addpath(toAddToPath{:},'-end')
     end
 end
 
@@ -759,7 +765,7 @@ function chooseDataset(obj)
 end
 
 function getDownsampledStackChoice(obj)
-    obj.MainStack=selectmasivStack(obj.Meta);
+    obj.MainStack=selectMasivStack(obj.Meta);
 end
 
 function setupGUI(obj)

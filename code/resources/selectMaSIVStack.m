@@ -1,4 +1,4 @@
-function selectedmasivStack = selectmasivStack(meta)
+function selectedmasivStack = selectMasivStack(meta)
 % Displays information about MaSIV stacks to the user, in order to get them to choose one
 %
 % function selectedmasivStack = selectDownscaledStack(meta)

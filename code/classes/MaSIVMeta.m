@@ -109,12 +109,12 @@ classdef masivMeta < handle
             % GETMETAFILE Used by the constructor to create a UI prompt to get a YML file 
             % from the user when none was provided
             
-            [f,p]=uigetfile({'*Meta.yml', 'MaSIV Meta File(*Meta.yml)'}, 'Please select the MaSIV Meta File', gbSetting('defaultDirectory'));
+            [f,p]=uigetfile({'*Meta.yml', 'MaSIV Meta File(*Meta.yml)'}, 'Please select the MaSIV Meta File', masivSetting('defaultDirectory'));
             if isnumeric(f)
                 metaFilePath='';
             else
                 metaFilePath=fullfile(p,f);
-                gbSetting('defaultDirectory', p);
+                masivSetting('defaultDirectory', p);
             end
         end
         
