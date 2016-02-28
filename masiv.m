@@ -60,6 +60,9 @@ classdef masiv < handle
             
             if nargin<1 ||isempty(MetaIn)
                 chooseDataset(obj)
+                if isempty(obj.Meta)
+                    return
+                end
             else
                 obj.Meta=MetaIn;
             end
@@ -93,7 +96,7 @@ classdef masiv < handle
         
         %% ---Scrolling
         function formatKeyScrollAndAddToQueue(obj, eventdata)
-            masivDebugTimingInfo(0, 'GV: KeyScroll event fired',toc, 's')
+            masivDebugTimingInfo(0, 'masiv: KeyScroll event fired',toc, 's')
             mods=eventdata.Modifier;
             if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
                 p=masivSetting('navigation.scrollIncrement');p=p(1);
@@ -109,7 +112,7 @@ classdef masiv < handle
         end
         
         function keyScrollQueue(obj, dir)
-            
+            masivDebugTimingInfo(0, 'masiv: Scroll queue update beginning',toc, 's')
             obj.numScrolls=obj.numScrolls+dir;
             pause(masivSetting('navigation.keyboardUpdatePeriod'))
             if obj.numScrolls~=0
@@ -132,6 +135,7 @@ classdef masiv < handle
                 if masivSetting('navigation.scrollLayerInvert')
                     nScrolls=nScrolls*-1;
                 end
+                masivDebugTimingInfo(0, 'masiv:Calling mDisplay.seekZ',toc, 's')
                 stdout=obj.mainDisplay.seekZ(nScrolls);
                 if stdout
                     for ii=obj.additionalDisplays
@@ -140,7 +144,7 @@ classdef masiv < handle
                     obj.changeAxes;
                     notify(obj, 'Scrolled')
                 else
-                    masivDebugTimingInfo(0, 'GV: Scroll did not cause an axis change',toc, 's')
+                    masivDebugTimingInfo(0, 'masiv: Scroll did not cause an axis change',toc, 's')
                 end
             case 'zoomScroll'
                 zoomRate=masivSetting('navigation.zoomRate'); %to zoom out
@@ -159,7 +163,7 @@ classdef masiv < handle
         
         %% ---Panning
         function formatKeyPanAndAddToQueue(obj, eventdata)
-            masivDebugTimingInfo(0, 'GV: KeyPan event fired',toc, 's')
+            masivDebugTimingInfo(0, 'masiv: KeyPan event fired',toc, 's')
             mods=eventdata.Modifier;
             if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
                 p=masivSetting('navigation.panIncrement'); p=p(1);
@@ -219,7 +223,7 @@ classdef masiv < handle
                 obj.changeAxes;
                 notify(obj, 'Panned')
             else
-                masivDebugTimingInfo(0, 'GV: Pan did not cause an axis change',toc, 's')
+                masivDebugTimingInfo(0, 'masiv: Pan did not cause an axis change',toc, 's')
             end
         end
         
@@ -301,15 +305,15 @@ classdef masiv < handle
         
         %% ---Update axes
         function changeAxes(obj)
-            masivDebugTimingInfo(0, 'GV: Calling mainDisplay updateZoomedView...',toc, 's')
+            masivDebugTimingInfo(0, 'masiv: Calling mainDisplay updateZoomedView...',toc, 's')
             obj.mainDisplay.updateZoomedView
-            masivDebugTimingInfo(0, 'GV: mainDisplay updateZoomedView complete',toc, 's')
+            masivDebugTimingInfo(0, 'masiv: mainDisplay updateZoomedView complete',toc, 's')
             for ii=obj.additionalDisplays
-                masivDebugTimingInfo(0, 'GV: Calling additional display updateZoomedView...',toc, 's')
+                masivDebugTimingInfo(0, 'masiv: Calling additional display updateZoomedView...',toc, 's')
                 ii.updateZoomedView
-                masivDebugTimingInfo(0, 'GV: additional display updateZoomedView complete',toc, 's')
+                masivDebugTimingInfo(0, 'masiv: additional display updateZoomedView complete',toc, 's')
             end
-            masivDebugTimingInfo(0, 'GV: Firing ViewChanged Event',toc, 's')
+            masivDebugTimingInfo(0, 'masiv: Firing ViewChanged Event',toc, 's')
             obj.updateMouseCoordsInPanel;
             notify(obj, 'ViewChanged')
         end
@@ -505,7 +509,7 @@ end
 function hFigMain_ScrollWheel(~, eventdata, obj)
     startDebugOutput
 
-    masivDebugTimingInfo(0, 'GV: WheelScroll event fired',toc, 's')
+    masivDebugTimingInfo(0, 'masiv: WheelScroll event fired',toc, 's')
     
     modifiers = get(obj.hFig,'currentModifier');          
     %If user ctrl-scrolls we zoom instead of change z-level
@@ -760,8 +764,10 @@ function setupPath()
 end
 
 function chooseDataset(obj)
-%      masivSetting('defaultDirectory', fileparts(fp))
-     obj.Meta=masivMeta;
+	obj.Meta=masivMeta;
+    if isempty(obj.Meta.metadata)
+        obj.Meta=[];
+    end
 end
 
 function getDownsampledStackChoice(obj)

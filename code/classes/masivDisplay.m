@@ -75,7 +75,7 @@ classdef masivDisplay<handle
 
         %% Methods
         function stdout=seekZ(obj, n)
-            masivDebugTimingInfo(1, 'GVD: seekZ starting',toc, 's')
+            masivDebugTimingInfo(1, 'mDisplay: seekZ starting',toc, 's')
             stdout=0;
             newIdx=obj.currentIndex+n;
             if newIdx>=1&&newIdx<=numel(obj.overviewStack.idx)
@@ -83,26 +83,26 @@ classdef masivDisplay<handle
                 obj.drawNewZ();
                 stdout=1;
             end
-            masivDebugTimingInfo(1, 'GVD: seekZ finished',toc, 's')
+            masivDebugTimingInfo(1, 'mDisplay: seekZ finished',toc, 's')
         end
 
         function drawNewZ(obj)   
             % Draws the correct plane from the downscaled stack in to the
             % axes, reusing the main Image Object if available
-            masivDebugTimingInfo(1, 'GVD: drawNewZ starting',toc, 's')
+            masivDebugTimingInfo(1, 'mDisplay: drawNewZ starting',toc, 's')
             obj.hImg.CData=obj.currentPlaneData;
-            masivDebugTimingInfo(1, 'GVD: drawNewZ DS CData changed',toc, 's')
+            masivDebugTimingInfo(1, 'mDisplay: drawNewZ DS CData changed',toc, 's')
         end
 
         function updateZoomedView(obj)
             if obj.zoomedViewNeeded
-                masivDebugTimingInfo(1, 'GVD.updateZoomedView: Zoomed image needed. Updating view...', toc, 's')
+                masivDebugTimingInfo(1, 'mDisplay.updateZoomedView: Zoomed image needed. Updating view...', toc, 's')
                 obj.zoomedViewManager.updateView()
-                masivDebugTimingInfo(1, 'GVD.updateZoomedView: View updated', toc, 's')
+                masivDebugTimingInfo(1, 'mDisplay.updateZoomedView: View updated', toc, 's')
             else
-                masivDebugTimingInfo(1, 'GVD.updateZoomedView: No zoomed image needed', toc, 's')
+                masivDebugTimingInfo(1, 'mDisplay.updateZoomedView: No zoomed image needed', toc, 's')
                 obj.zoomedViewManager.hide;
-                masivDebugTimingInfo(1, 'GVD.updateZoomedView: Zoomed image hidden', toc, 's')
+                masivDebugTimingInfo(1, 'mDisplay.updateZoomedView: Zoomed image hidden', toc, 's')
             end
         end
 

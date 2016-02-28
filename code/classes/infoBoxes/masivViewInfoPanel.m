@@ -307,7 +307,7 @@ end
 
 function doUpdate(obj)
     masivDebugTimingInfo(1, 'GVIP: Beginning asynchronous ViewInfo update',toc, 's')
-
+  
     %% Update view limit coordinates
     xl=round(xlim(obj.MaSIVDisplay.axes));
     obj.xLimMin.String=sprintf('%i', xl(1));

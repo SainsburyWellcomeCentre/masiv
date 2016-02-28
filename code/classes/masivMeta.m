@@ -50,10 +50,13 @@ classdef masivMeta < handle
         end
         %% Getters & Setters
         function val=get.imageBaseDirectory(obj)
-            if isrelpath(obj.metadata.baseDirectory)
-                val=fullfile(obj.masivDirectory, obj.metadata.baseDirectory);
+            if isrelpath(obj.metadata.imageBaseDirectory)
+                val=fullfile(obj.masivDirectory, obj.metadata.imageBaseDirectory);
             else
-                val=obj.metadata.baseDirectory;
+                val=obj.metadata.imageBaseDirectory;
+            end
+            if ~(val(end)==filesep) %ensure a trailing file separator
+                val=[val filesep];
             end
         end
         
@@ -68,7 +71,7 @@ classdef masivMeta < handle
         function masivStacks=get.masivStacks(obj)
             masivStacks=getMasivStacks(obj);
             
-            if isempty(masivStacks)
+            if isempty(masivStacks) && ~isempty(obj.channelNames)
                 masivStacks=[];
                 fprintf('\n\n=====>  Directory %s contains no MaSIV down-scaled image stacks  <=====\n',obj.masivDirectory)
                 fprintf('\n\n\tINSTRUCTIONS')
@@ -141,7 +144,7 @@ classdef masivMeta < handle
             t=uigetdir([], 'Select the base directory where your images are located');
             
             if ischar(t) && exist(t, 'dir')
-                s.baseDirectory=t;
+                s.imageBaseDirectory=t;
             else
                 warning('No base directory selected. Cancelling')
                 return
@@ -151,10 +154,10 @@ classdef masivMeta < handle
             
             switch t
                 case 'Base Folder'
-                    masivDir=fullfile(s.baseDirectory, [s.stackName, '_MaSIV']);
+                    masivDir=fullfile(s.imageBaseDirectory, [s.stackName, '_MaSIV']);
                     mkdir(masivDir);
                 case 'Somewhere else...'
-                    masivDir=uigetdir(s.baseDirectory, sprintf('Select directory for %s MaSIV Data', s.stackName));
+                    masivDir=uigetdir(s.imageBaseDirectory, sprintf('Select directory for %s MaSIV Data', s.stackName));
                     if ~exist(masivDir, 'dir')
                         mkdir(masivDir)
                     end
@@ -182,8 +185,7 @@ function obj=getimageFilePaths(obj)
     listFilePaths=dir(fullfile(obj.masivDirectory, [searchPattern '*.txt']));
     
     if isempty(listFilePaths)
-        fprintf('\n\n\t*****\n\tCan not find text files listing the relative paths to the full resolution images.\n\tYou need to create these text files. Please see the documentation on the web.\n\tQUITING.\n\t*****\n\n\n')
-        error('No %s*.txt files found.\n',searchPattern)
+        fprintf('\n\n\t*****\n\tCan not find text files listing the relative paths to the full resolution images.\n\tYou need to create these text files. Please see the documentation on the web.\n\t*****\n\n\n')
     end
 
     obj.imageFilePaths=struct;

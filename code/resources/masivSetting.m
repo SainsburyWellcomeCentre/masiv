@@ -127,7 +127,7 @@ function s=returnDefaultSettings
     s.navigation.panModeInvert=0;
     s.navigation.scrollZoomInvert=0;
     s.navigation.scrollLayerInvert=0;
-    s.navigation.keyboardUpdatePeriod=0.02; %20ms keyboard polling
+    s.navigation.keyboardUpdatePeriod=0.005; %5ms keyboard polling
 
     %% GVD Settings
     s.viewerDisplay.nPixelsWidthForZoomedView=2000;

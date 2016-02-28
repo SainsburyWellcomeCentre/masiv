@@ -40,7 +40,7 @@ classdef masivZoomedViewManager<handle
             obj.currentSliceFileExistsOnDiskCache=[];
             v=findMatchingView(obj);
             if isempty(v)
-                masivDebugTimingInfo(2, 'GZVM.updateView: Creating new view...', toc,'s')
+                masivDebugTimingInfo(2, 'mZVM.updateView: Creating new view...', toc,'s')
                 try
                     stdout=obj.createNewViewForCurrentView;
                     if stdout==0
@@ -48,15 +48,15 @@ classdef masivZoomedViewManager<handle
                     end
                 catch err
                     if strcmp(err.identifier, 'ZVM:couldNotFindFile')
-                        masivDebugTimingInfo(0, strrep(err.message,  'ZoomedViewManager: ', 'WARNING IN GZVM.updateView: '), toc,'s')
+                        masivDebugTimingInfo(0, strrep(err.message,  'ZoomedViewManager: ', 'WARNING IN mZVM.updateView: '), toc,'s')
                         obj.hImg.Visible='off';
                     else
                         rethrow(err)
                     end
                 end
             else
-                masivDebugTimingInfo(2, ['GZVM.updateView: Matching views found: ' sprintf('%u, ', v)],toc,'s')
-                masivDebugTimingInfo(2, sprintf('GZVM.updateView: View #%u will be used. Updating image...', v(1)),toc,'s')
+                masivDebugTimingInfo(2, ['mZVM.updateView: Matching views found: ' sprintf('%u, ', v)],toc,'s')
+                masivDebugTimingInfo(2, sprintf('mZVM.updateView: View #%u will be used. Updating image...', v(1)),toc,'s')
                 updateImage(obj, v(1))
             end
         end
@@ -67,7 +67,7 @@ classdef masivZoomedViewManager<handle
                 loadedCallback=[];
             end
 
-                masivDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view creation starting',toc,'s')
+                masivDebugTimingInfo(2, 'mZVM.createNewView: Zoomed view creation starting',toc,'s')
             basedir=obj.parentViewerDisplay.overviewStack.MetaObject.imageBaseDirectory;
             f=obj.parentViewerDisplay.overviewStack.originalImageFilePaths{z};            
             fp=fullfile(basedir, f);  
@@ -82,7 +82,7 @@ classdef masivZoomedViewManager<handle
                                 'completedFcn', loadedCallback,...
                                 'processingFcns', obj.imageProcessingPipeline, ...
                                 'positionAdjustment', offset);
-                masivDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view created',toc,'s')
+                masivDebugTimingInfo(2, 'mZVM.createNewView: Zoomed view created',toc,'s')
         end
 
         function stdout=createNewViewForCurrentView(obj)
@@ -185,7 +185,7 @@ classdef masivZoomedViewManager<handle
         function reduceToCacheLimit(obj)
             if ~isempty(obj.zoomedViewArray)
                 cumTotalSizeOfZoomedViewsMB=cumsum([obj.zoomedViewArray.sizeMiB]);
-                masivDebugTimingInfo(2, 'GZVM.reduceToCacheLimit: Current Cache Size',round(cumTotalSizeOfZoomedViewsMB(end)), 'MB')
+                masivDebugTimingInfo(2, 'mZVM.reduceToCacheLimit: Current Cache Size',round(cumTotalSizeOfZoomedViewsMB(end)), 'MB')
                 if any(cumTotalSizeOfZoomedViewsMB>masivSetting('cache.sizeLimitMiB'))
                     firstIndexToCut=find(cumTotalSizeOfZoomedViewsMB>masivSetting('cache.sizeLimitMiB'), 1);
                     obj.zoomedViewArray=obj.zoomedViewArray(1:firstIndexToCut-1);
@@ -194,9 +194,9 @@ classdef masivZoomedViewManager<handle
         end
 
         function moveZVToTopOfCacheStack(obj, idx)
-            masivDebugTimingInfo(2, sprintf('GZVM.moveZVToTopOfCacheStack: Moving GV to stack top (stack size %u)', numel(obj.zoomedViewArray)),toc,'s')
+            masivDebugTimingInfo(2, sprintf('mZVM.moveZVToTopOfCacheStack: Moving GV to stack top (stack size %u)', numel(obj.zoomedViewArray)),toc,'s')
             obj.zoomedViewArray=obj.zoomedViewArray([idx 1:idx-1 idx+1:end]);
-            masivDebugTimingInfo(2, 'GZVM.moveZVToTopOfCacheStack: Move completed',toc,'s')
+            masivDebugTimingInfo(2, 'mZVM.moveZVToTopOfCacheStack: Move completed',toc,'s')
         end
 
     end
@@ -209,7 +209,7 @@ classdef masivZoomedViewManager<handle
 end
 
 function v=findMatchingView(obj)
-    masivDebugTimingInfo(2, 'GZVM.findMatchingView: Checking for matching planes...', toc,'s')
+    masivDebugTimingInfo(2, 'mZVM.findMatchingView: Checking for matching planes...', toc,'s')
     if isempty(obj.zoomedViewArray)
         v=[];
         return
@@ -238,13 +238,13 @@ function v=findMatchingView(obj)
             viewZ==obj.planesInMemZ & ...
             viewDS==obj.planesInMemDS);
 
-        masivDebugTimingInfo(2, 'GZVM.findMatchingView: Comparison complete.', toc,'s')
+        masivDebugTimingInfo(2, 'mZVM.findMatchingView: Comparison complete.', toc,'s')
     end
 end
 
 function updateImage(obj, idx)
    zv=obj.zoomedViewArray(idx);
-   masivDebugTimingInfo(2, 'GZVM.updateImage: beginning update',toc,'s')
+   masivDebugTimingInfo(2, 'mZVM.updateImage: beginning update',toc,'s')
    %% Create image object if it doesn't exist
    if ~ishandle(obj.hImg)
        obj.hImg=image('Parent', obj.parentViewerDisplay.axes, ...
@@ -256,9 +256,9 @@ function updateImage(obj, idx)
    %% Update Image
    obj.hImg.XData=zv.x;
    obj.hImg.YData=zv.y;
-   masivDebugTimingInfo(2, 'GZVM.updateImage: beginning CData change',toc,'s')
+   masivDebugTimingInfo(2, 'mZVM.updateImage: beginning CData change',toc,'s')
    obj.hImg.CData=zv.imageData;
-   masivDebugTimingInfo(2, 'GZVM.updateImage: CData change complete',toc,'s')
+   masivDebugTimingInfo(2, 'mZVM.updateImage: CData change complete',toc,'s')
    obj.hImg.Visible='on';
    obj.moveZVToTopOfCacheStack(idx);
 end
