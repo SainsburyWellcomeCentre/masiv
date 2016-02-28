@@ -1,18 +1,18 @@
-classdef(Abstract) goggleBoxPlugin<handle
-    %GOGGLEBOXPLUGIN Base class for goggleBoxPlugins. 
+classdef(Abstract) masivPlugin<handle
+    %GOGGLEBOXPLUGIN Base class for masivPlugins. 
     
     properties
         parentMenuItem
-        goggleViewer
+        MaSIV
         Meta
     end
     
     methods
-        function obj=goggleBoxPlugin(caller)
-            obj.goggleViewer=caller.UserData;
-            obj.Meta=obj.goggleViewer.Meta;
+        function obj=masivPlugin(caller)
+            obj.MaSIV=caller.UserData;
+            obj.Meta=obj.MaSIV.Meta;
             
-            items=get(obj.goggleViewer.mnuPlugins, 'Children');
+            items=get(obj.MaSIV.mnuPlugins, 'Children');
             obj.parentMenuItem=findall(items, 'Label', obj.displayString);
             set(obj.parentMenuItem, 'Enable', 'off');
         end
@@ -20,10 +20,10 @@ classdef(Abstract) goggleBoxPlugin<handle
             set(obj.parentMenuItem, 'Enable', 'on');
         end
         function registerPluginAsOpenWithParentViewer(obj)
-            obj.goggleViewer.registerOpenPluginForCloseReqs(obj)
+            obj.MaSIV.registerOpenPluginForCloseReqs(obj)
         end
         function deregisterPluginAsOpenWithParentViewer(obj)
-             obj.goggleViewer.deregisterOpenPluginForCloseReqs(obj)
+             obj.MaSIV.deregisterOpenPluginForCloseReqs(obj)
         end
         
     end

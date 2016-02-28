@@ -1,5 +1,5 @@
 function T=convertMarkerStructToTable(yml) %#ok<*AGROW>
-% Convert gogglemarker structure into a table. 
+% Convert masivmarker structure into a table. 
 %
 % function T=convertMarkerStructToTable(yml) 
 %

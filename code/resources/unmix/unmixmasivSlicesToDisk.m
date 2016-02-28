@@ -9,8 +9,8 @@ parse(p, varargin{:})
 
 q=p.Results;
 
-if nargin<1 || isempty(t) || ~isa(t, 'MaSIVMeta')
-    error('First argument should be a MaSIVMeta object')
+if nargin<1 || isempty(t) || ~isa(t, 'masivMeta')
+    error('First argument should be a masivMeta object')
 end
 
 if nargin<2||isempty(emissionCSVFiles) || ~iscell(emissionCSVFiles)

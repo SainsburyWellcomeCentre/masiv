@@ -1,4 +1,4 @@
-classdef MaSIVMeta < handle
+classdef masivMeta < handle
     %MASIV Contains metadata about an stack for use with MaSIV
     
     properties(Dependent, SetAccess=protected)
@@ -31,7 +31,7 @@ classdef MaSIVMeta < handle
     
     methods
         %% Constructor
-        function obj=MaSIVMeta(filePath)
+        function obj=masivMeta(filePath)
             % MASIVMETA Constructor accepts a filepath to a YML file
             % containing metadata, or prompts the user for one. 
             if nargin<1 || isempty(filePath)
@@ -213,10 +213,10 @@ function stacks=getMasivStacks(obj)
     files=dir(fullfile(obj.masivDirectory, '*.tif'));
     for ii=1:numel(files)
         filePath=fullfile(obj.masivDirectory, files(ii).name);
-        msvInfo=MaSIVStack.infoFromTifFile(filePath);
+        msvInfo=masivStack.infoFromTifFile(filePath);
         if ~isempty(msvInfo)
-            [c, idx, xyds]=MaSIVStack.paramsFromText(msvInfo);
-            newStack=MaSIVStack(obj, c, idx, xyds);            
+            [c, idx, xyds]=masivStack.paramsFromText(msvInfo);
+            newStack=masivStack(obj, c, idx, xyds);            
             if isempty(stacks)
                 stacks=newStack;
             else

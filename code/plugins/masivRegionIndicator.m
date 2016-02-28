@@ -1,4 +1,4 @@
-classdef goggleRegionIndicator<goggleBoxPlugin
+classdef masivRegionIndicator<masivPlugin
     properties
         hFig
         hAx
@@ -24,20 +24,20 @@ classdef goggleRegionIndicator<goggleBoxPlugin
         scrollListener
     end
     methods
-        function obj=goggleRegionIndicator(caller, ~)
-            obj=obj@goggleBoxPlugin(caller);
-            obj.goggleViewer=caller.UserData;
+        function obj=masivRegionIndicator(caller, ~)
+            obj=obj@masivPlugin(caller);
+            obj.MaSIV=caller.UserData;
             
             %% Settings
-            obj.fontName=gbSetting('font.name');
-            obj.fontSize=gbSetting('font.size');
+            obj.fontName=masivSetting('font.name');
+            obj.fontSize=masivSetting('font.size');
             try
-                pos=gbSetting('regionIndicator.figurePosition');
+                pos=masivSetting('regionIndicator.figurePosition');
             catch
                 ssz=get(0, 'ScreenSize');
                 lb=[ssz(3)/3 ssz(4)/3];
                 pos=round([lb 300 200]);
-                gbSetting('regionIndicator.figurePosition', pos)
+                masivSetting('regionIndicator.figurePosition', pos)
             end
             %% Main UI initialisation
             obj.hFig=figure(...
@@ -45,8 +45,8 @@ classdef goggleRegionIndicator<goggleBoxPlugin
                 'CloseRequestFcn', {@deleteRequest, obj}, ...
                 'MenuBar', 'none', ...
                 'NumberTitle', 'off', ...
-                'Name', ['Overview: ' obj.goggleViewer.Meta.experimentName], ...
-                'Color', gbSetting('viewer.panelBkgdColor'), ...
+                'Name', ['Overview: ' obj.MaSIV.Meta.stackName], ...
+                'Color', masivSetting('viewer.panelBkgdColor'), ...
                 'KeyPressFcn', {@setParentFigureFocus, obj}, ...
                 'Visible', 'off', ...
                 'AlphaMap', [0 0.3 1]);
@@ -54,20 +54,20 @@ classdef goggleRegionIndicator<goggleBoxPlugin
                 'Parent', obj.hFig, ...
                 'Position', [0 0 1 1], ...
                 'Visible', 'off');
-            bkgdRectPos=[1 1 obj.goggleViewer.MainStack.xCoordsVoxels(end) obj.goggleViewer.MainStack.yCoordsVoxels(end)];
+            bkgdRectPos=[1 1 obj.MaSIV.MainStack.xCoordsVoxels(end) obj.MaSIV.MainStack.yCoordsVoxels(end)];
                 
             obj.hBackgroundRect=rectangle('Parent', obj.hAx, 'Position', bkgdRectPos, 'FaceColor', 'k', 'EdgeColor', 'none');
             
            
             %% Image initialisation
-            obj.hImg=image(obj.goggleViewer.MainStack.xCoordsVoxels([1 end]), ...
-                           obj.goggleViewer.MainStack.yCoordsVoxels([1 end]), ...
+            obj.hImg=image(obj.MaSIV.MainStack.xCoordsVoxels([1 end]), ...
+                           obj.MaSIV.MainStack.yCoordsVoxels([1 end]), ...
                            [0 0;0 0], 'CDataMapping', 'scaled');
             obj.updateOverviewImage;
             axis(obj.hAx, 'image')
             obj.hAx.Visible='off';
             colormap(obj.hFig, gray);
-            caxis(obj.hAx,obj.goggleViewer.mainDisplay.contrastLims);
+            caxis(obj.hAx,obj.MaSIV.mainDisplay.contrastLims);
             %% Draw highlighter image and outline rectangles
             hold on
             for ii=1:size(obj.overlayColors, 1)
@@ -103,9 +103,9 @@ classdef goggleRegionIndicator<goggleBoxPlugin
             obj.hMarkedOverlay{ii}.UIContextMenu=obj.mnuSetUnset;
             end
             %% Set listeners
-            obj.panListener=event.listener(obj.goggleViewer, 'Panned', @obj.setOutlineRectPosition);
-            obj.zoomedListener=event.listener(obj.goggleViewer, 'Zoomed', @obj.setOutlineRectPosition);
-            obj.scrollListener=event.listener(obj.goggleViewer, 'Scrolled', @obj.updateOverviewImage);
+            obj.panListener=event.listener(obj.MaSIV, 'Panned', @obj.setOutlineRectPosition);
+            obj.zoomedListener=event.listener(obj.MaSIV, 'Zoomed', @obj.setOutlineRectPosition);
+            obj.scrollListener=event.listener(obj.MaSIV, 'Scrolled', @obj.updateOverviewImage);
 
             %% Ready to roll: Display!
             obj.hFig.Visible='on';
@@ -117,13 +117,13 @@ classdef goggleRegionIndicator<goggleBoxPlugin
             obj.hViewOutlineRect.Position=pos;
         end
         function updateOverviewImage(obj, ~,~)
-            obj.hImg.CData=obj.goggleViewer.MainStack.I(:,:,obj.goggleViewer.mainDisplay.currentIndex);
+            obj.hImg.CData=obj.MaSIV.MainStack.I(:,:,obj.MaSIV.mainDisplay.currentIndex);
         end
        
         %% Methods
         function [xPos, yPos]=getCurrentPos(obj)
-            xPos=obj.goggleViewer.mainDisplay.viewXLimOriginalCoords;
-            yPos=obj.goggleViewer.mainDisplay.viewYLimOriginalCoords;
+            xPos=obj.MaSIV.mainDisplay.viewXLimOriginalCoords;
+            yPos=obj.MaSIV.mainDisplay.viewYLimOriginalCoords;
         end
     end
     methods(Static)
@@ -135,8 +135,8 @@ end
 
 %% Callbacks
 function deleteRequest(~, ~, obj)
-    gbSetting('regionIndicator.figurePosition', obj.hFig.Position)
-    deleteRequest@goggleBoxPlugin(obj);
+    masivSetting('regionIndicator.figurePosition', obj.hFig.Position)
+    deleteRequest@masivPlugin(obj);
     delete(obj.hFig);
     delete(obj);
 end
@@ -160,7 +160,7 @@ end
 
 function saveAlphaMap(~,~,obj)
     I=convertAlphaMapsToSingleImage(obj.hMarkedOverlay);
-    [f,p]=uiputfile('*.tif', 'Save Mark Map as...', gbSetting('defaultDirectory'));
+    [f,p]=uiputfile('*.tif', 'Save Mark Map as...', masivSetting('defaultDirectory'));
     if ~isempty(f)&&~isempty(p)&&~isnumeric(p)&&~isnumeric(f)
         imwrite(I,fullfile(p,f))
         msgbox('Image Saved')
@@ -176,7 +176,7 @@ set(gcf, 'pointer', 'arrow');drawnow
 end
 
 function loadAlphaMap(~,~,obj)
-    [f,p]=uigetfile('*.tif', 'Load Map Markings', gbSetting('defaultDirectory'));
+    [f,p]=uigetfile('*.tif', 'Load Map Markings', masivSetting('defaultDirectory'));
     if ~isempty(f)&&~isempty(p)&&~isnumeric(p)&&~isnumeric(f)
         I=imread(fullfile(p,f));
         convertSingleImageToAlphaMapsAndSet(I, obj);
@@ -189,7 +189,7 @@ function convertSingleImageToAlphaMapsAndSet(I, obj)
 end
 
 function setParentFigureFocus(~,~,obj)
-figure(obj.goggleViewer.hFig)
+figure(obj.MaSIV.hFig)
 end
 function adjustLevels(~, ~, obj)
     w=380;

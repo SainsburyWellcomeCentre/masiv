@@ -1,7 +1,13 @@
-TVStitchedMosaicInfo -> MaSIVMeta           DONE
+TVStitchedMosaicInfo -> masivMeta           DONE
+TVDownscaledStack 	 -> masivStack
 goggleViewer.mosaicInfo -> Meta             DONE
-goggleViewer.overviewDSS -> goggleViewer.MainStack           
+goggleViewer.overviewDSS -> goggleViewer.MainStack DONE   
 
-downscaledStacks -> masivStacks
+downscaledStacks -> masivStacks 			DONE
 
-experimentName / imageName -> stackName ?
+experimentName / imageName -> stackName 	DONE
+
+goggleViewer -> MaSIV 						DONE
+
+goggle* 	-> masiv
+goggleBox*	-> masiv

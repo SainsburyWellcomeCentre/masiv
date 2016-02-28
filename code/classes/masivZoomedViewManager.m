@@ -1,4 +1,4 @@
-classdef goggleZoomedViewManager<handle
+classdef masivZoomedViewManager<handle
     %TODO: document what this does
 
     properties(SetAccess=protected)
@@ -31,7 +31,7 @@ classdef goggleZoomedViewManager<handle
 
     methods
         %% Constructor
-        function obj=goggleZoomedViewManager(parentViewerDisplay)
+        function obj=masivZoomedViewManager(parentViewerDisplay)
             obj.parentViewerDisplay=parentViewerDisplay;
         end
 
@@ -40,7 +40,7 @@ classdef goggleZoomedViewManager<handle
             obj.currentSliceFileExistsOnDiskCache=[];
             v=findMatchingView(obj);
             if isempty(v)
-                goggleDebugTimingInfo(2, 'GZVM.updateView: Creating new view...', toc,'s')
+                masivDebugTimingInfo(2, 'GZVM.updateView: Creating new view...', toc,'s')
                 try
                     stdout=obj.createNewViewForCurrentView;
                     if stdout==0
@@ -48,15 +48,15 @@ classdef goggleZoomedViewManager<handle
                     end
                 catch err
                     if strcmp(err.identifier, 'ZVM:couldNotFindFile')
-                        goggleDebugTimingInfo(0, strrep(err.message,  'ZoomedViewManager: ', 'WARNING IN GZVM.updateView: '), toc,'s')
+                        masivDebugTimingInfo(0, strrep(err.message,  'ZoomedViewManager: ', 'WARNING IN GZVM.updateView: '), toc,'s')
                         obj.hImg.Visible='off';
                     else
                         rethrow(err)
                     end
                 end
             else
-                goggleDebugTimingInfo(2, ['GZVM.updateView: Matching views found: ' sprintf('%u, ', v)],toc,'s')
-                goggleDebugTimingInfo(2, sprintf('GZVM.updateView: View #%u will be used. Updating image...', v(1)),toc,'s')
+                masivDebugTimingInfo(2, ['GZVM.updateView: Matching views found: ' sprintf('%u, ', v)],toc,'s')
+                masivDebugTimingInfo(2, sprintf('GZVM.updateView: View #%u will be used. Updating image...', v(1)),toc,'s')
                 updateImage(obj, v(1))
             end
         end
@@ -67,8 +67,8 @@ classdef goggleZoomedViewManager<handle
                 loadedCallback=[];
             end
 
-                goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view creation starting',toc,'s')
-            basedir=obj.parentViewerDisplay.overviewStack.baseDirectory;
+                masivDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view creation starting',toc,'s')
+            basedir=obj.parentViewerDisplay.overviewStack.MetaObject.imageBaseDirectory;
             f=obj.parentViewerDisplay.overviewStack.originalImageFilePaths{z};            
             fp=fullfile(basedir, f);  
 
@@ -78,11 +78,11 @@ classdef goggleZoomedViewManager<handle
                 offset=[0 0];
             end
 
-            v=goggleZoomedView(fp, regionSpec, ds, z, obj, ...
+            v=masivZoomedView(fp, regionSpec, ds, z, obj, ...
                                 'completedFcn', loadedCallback,...
                                 'processingFcns', obj.imageProcessingPipeline, ...
                                 'positionAdjustment', offset);
-                goggleDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view created',toc,'s')
+                masivDebugTimingInfo(2, 'GZVM.createNewView: Zoomed view created',toc,'s')
         end
 
         function stdout=createNewViewForCurrentView(obj)
@@ -129,7 +129,7 @@ classdef goggleZoomedViewManager<handle
         end
 
         function clearCache(obj)
-            obj.zoomedViewArray=goggleZoomedView;
+            obj.zoomedViewArray=masivZoomedView;
             obj.updateView();
         end
 
@@ -140,7 +140,7 @@ classdef goggleZoomedViewManager<handle
             csfn=stitchedFileNameList{indexInFileNameList};
         end
         function csfp=get.currentSliceFileFullPath(obj)
-            baseDir=obj.parentViewerDisplay.overviewStack.baseDirectory;
+            baseDir=obj.parentViewerDisplay.overviewStack.MetaObject.imageBaseDirectory;
             csfn=obj.currentSliceFileName;
 
             csfp=fullfile(baseDir, csfn);
@@ -185,18 +185,18 @@ classdef goggleZoomedViewManager<handle
         function reduceToCacheLimit(obj)
             if ~isempty(obj.zoomedViewArray)
                 cumTotalSizeOfZoomedViewsMB=cumsum([obj.zoomedViewArray.sizeMiB]);
-                goggleDebugTimingInfo(2, 'GZVM.reduceToCacheLimit: Current Cache Size',round(cumTotalSizeOfZoomedViewsMB(end)), 'MB')
-                if any(cumTotalSizeOfZoomedViewsMB>gbSetting('cache.sizeLimitMiB'))
-                    firstIndexToCut=find(cumTotalSizeOfZoomedViewsMB>gbSetting('cache.sizeLimitMiB'), 1);
+                masivDebugTimingInfo(2, 'GZVM.reduceToCacheLimit: Current Cache Size',round(cumTotalSizeOfZoomedViewsMB(end)), 'MB')
+                if any(cumTotalSizeOfZoomedViewsMB>masivSetting('cache.sizeLimitMiB'))
+                    firstIndexToCut=find(cumTotalSizeOfZoomedViewsMB>masivSetting('cache.sizeLimitMiB'), 1);
                     obj.zoomedViewArray=obj.zoomedViewArray(1:firstIndexToCut-1);
                 end
             end
         end
 
         function moveZVToTopOfCacheStack(obj, idx)
-            goggleDebugTimingInfo(2, sprintf('GZVM.moveZVToTopOfCacheStack: Moving GV to stack top (stack size %u)', numel(obj.zoomedViewArray)),toc,'s')
+            masivDebugTimingInfo(2, sprintf('GZVM.moveZVToTopOfCacheStack: Moving GV to stack top (stack size %u)', numel(obj.zoomedViewArray)),toc,'s')
             obj.zoomedViewArray=obj.zoomedViewArray([idx 1:idx-1 idx+1:end]);
-            goggleDebugTimingInfo(2, 'GZVM.moveZVToTopOfCacheStack: Move completed',toc,'s')
+            masivDebugTimingInfo(2, 'GZVM.moveZVToTopOfCacheStack: Move completed',toc,'s')
         end
 
     end
@@ -209,7 +209,7 @@ classdef goggleZoomedViewManager<handle
 end
 
 function v=findMatchingView(obj)
-    goggleDebugTimingInfo(2, 'GZVM.findMatchingView: Checking for matching planes...', toc,'s')
+    masivDebugTimingInfo(2, 'GZVM.findMatchingView: Checking for matching planes...', toc,'s')
     if isempty(obj.zoomedViewArray)
         v=[];
         return
@@ -238,13 +238,13 @@ function v=findMatchingView(obj)
             viewZ==obj.planesInMemZ & ...
             viewDS==obj.planesInMemDS);
 
-        goggleDebugTimingInfo(2, 'GZVM.findMatchingView: Comparison complete.', toc,'s')
+        masivDebugTimingInfo(2, 'GZVM.findMatchingView: Comparison complete.', toc,'s')
     end
 end
 
 function updateImage(obj, idx)
    zv=obj.zoomedViewArray(idx);
-   goggleDebugTimingInfo(2, 'GZVM.updateImage: beginning update',toc,'s')
+   masivDebugTimingInfo(2, 'GZVM.updateImage: beginning update',toc,'s')
    %% Create image object if it doesn't exist
    if ~ishandle(obj.hImg)
        obj.hImg=image('Parent', obj.parentViewerDisplay.axes, ...
@@ -256,9 +256,9 @@ function updateImage(obj, idx)
    %% Update Image
    obj.hImg.XData=zv.x;
    obj.hImg.YData=zv.y;
-   goggleDebugTimingInfo(2, 'GZVM.updateImage: beginning CData change',toc,'s')
+   masivDebugTimingInfo(2, 'GZVM.updateImage: beginning CData change',toc,'s')
    obj.hImg.CData=zv.imageData;
-   goggleDebugTimingInfo(2, 'GZVM.updateImage: CData change complete',toc,'s')
+   masivDebugTimingInfo(2, 'GZVM.updateImage: CData change complete',toc,'s')
    obj.hImg.Visible='on';
    obj.moveZVToTopOfCacheStack(idx);
 end

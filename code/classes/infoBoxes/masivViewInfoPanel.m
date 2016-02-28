@@ -1,7 +1,7 @@
-classdef goggleViewInfoPanel<handle
+classdef masivViewInfoPanel<handle
     properties(SetAccess=protected)
         mainPanel
-        goggleViewerDisplay
+        MaSIVDisplay
         xLimMin
         xLimMax
         cursorX
@@ -30,15 +30,15 @@ classdef goggleViewInfoPanel<handle
     end
     methods
         %% Constructor
-        function obj=goggleViewInfoPanel(parent, hFig, position, gvd)
+        function obj=masivViewInfoPanel(parent, hFig, position, gvd)
            
             obj.parent=parent;
-            obj.goggleViewerDisplay=gvd; %associated display object
+            obj.MaSIVDisplay=gvd; %associated display object
             obj.mainPanel=uipanel(...
                 'Parent', hFig, ...
                 'Units', 'normalized', ...
                 'Position', position);
-            fontSz=gbSetting('font.size');
+            fontSz=masivSetting('font.size');
             %% Labels
             
             uicontrol(...
@@ -233,9 +233,9 @@ classdef goggleViewInfoPanel<handle
             obj.hKeyboardListener=event.listener(obj.parent, 'KeyPress', @obj.handleMainWindowKeyPress);
             obj.updateDisplay();
             %% Set Colors
-            obj.mainPanel.BackgroundColor=gbSetting('viewer.panelBkgdColor');
-            set(obj.mainPanel.Children,'BackgroundColor', gbSetting('viewer.panelBkgdColor'))
-            set(obj.mainPanel.Children,'ForegroundColor', gbSetting('viewer.textMainColor'))
+            obj.mainPanel.BackgroundColor=masivSetting('viewer.panelBkgdColor');
+            set(obj.mainPanel.Children,'BackgroundColor', masivSetting('viewer.panelBkgdColor'))
+            set(obj.mainPanel.Children,'ForegroundColor', masivSetting('viewer.textMainColor'))
             
            %% Add listeners
            obj.updateListener=event.listener(parent, 'ViewChanged', @obj.updateDisplay);
@@ -256,12 +256,12 @@ classdef goggleViewInfoPanel<handle
         end
         function showFileOnDiskStatus(obj)
             
-            gvd=obj.goggleViewerDisplay;
+            gvd=obj.MaSIVDisplay;
             zvm=gvd.zoomedViewManager;
             
             zoomLevel=gvd.zoomLevel;
             
-            if zoomLevel<=gbSetting('viewerDisplay.minZoomLevelForDetailedLoad')
+            if zoomLevel<=masivSetting('viewerDisplay.minZoomLevelForDetailedLoad')
                 obj.onDiskIndicator.Visible='off';
                 obj.onDiskIndicatorLabel.Visible='off';
             else
@@ -270,19 +270,19 @@ classdef goggleViewInfoPanel<handle
                 
                 if ~zvm.currentSliceFileExistsOnDisk
                     obj.onDiskIndicator.String='NOT FOUND';
-                    obj.onDiskIndicator.ForegroundColor =gbSetting('viewInfoPanel.fileNotOnDiskTextColor');
+                    obj.onDiskIndicator.ForegroundColor =masivSetting('viewInfoPanel.fileNotOnDiskTextColor');
                 else
                     obj.onDiskIndicator.String='On Disk';
-                    obj.onDiskIndicator.ForegroundColor = gbSetting('viewInfoPanel.fileOnDiskTextColor');
+                    obj.onDiskIndicator.ForegroundColor = masivSetting('viewInfoPanel.fileOnDiskTextColor');
                 end
             end
         end
         %% Getters
         function fn=get.fileNameTruncatedForDisplay(obj)
-            zvm=obj.goggleViewerDisplay.zoomedViewManager;
+            zvm=obj.MaSIVDisplay.zoomedViewManager;
             [~, nm, ext]=fileparts(zvm.currentSliceFileName);
             
-            spName=obj.goggleViewerDisplay.overviewStack.sampleName;
+            spName=obj.MaSIVDisplay.overviewStack.stackName;
 
             nm=strrep(nm, spName, '');     %Get rid of experiment name, it's uninteresting
             if nm(1)=='_'                   %Get rid of leading underscores
@@ -306,34 +306,34 @@ classdef goggleViewInfoPanel<handle
 end
 
 function doUpdate(obj)
-    goggleDebugTimingInfo(1, 'GVIP: Beginning asynchronous ViewInfo update',toc, 's')
+    masivDebugTimingInfo(1, 'GVIP: Beginning asynchronous ViewInfo update',toc, 's')
 
     %% Update view limit coordinates
-    xl=round(xlim(obj.goggleViewerDisplay.axes));
+    xl=round(xlim(obj.MaSIVDisplay.axes));
     obj.xLimMin.String=sprintf('%i', xl(1));
     obj.xLimMax.String=sprintf('%i', xl(2));
     
     
-    yl=round(ylim(obj.goggleViewerDisplay.axes));
+    yl=round(ylim(obj.MaSIVDisplay.axes));
     obj.yLimMin.String=sprintf('%i',yl(1));
     obj.yLimMax.String=sprintf('%i',yl(2));
     
-    zIdx=obj.goggleViewerDisplay.currentIndex;
-    zIdxOriginalVoxels=obj.goggleViewerDisplay.currentZPlaneOriginalVoxels;
+    zIdx=obj.MaSIVDisplay.currentIndex;
+    zIdxOriginalVoxels=obj.MaSIVDisplay.currentZPlaneOriginalVoxels;
     
-    zActual=obj.goggleViewerDisplay.overviewStack.zCoordsUnits(zIdx);
+    zActual=obj.MaSIVDisplay.overviewStack.zCoordsUnits(zIdx);
     obj.zPosition.String=sprintf('%04i (%ium)', zIdxOriginalVoxels, round(zActual));
     
     %% Zoom info and file status. File name info.
     
-    gvd=obj.goggleViewerDisplay;
+    gvd=obj.MaSIVDisplay;
     zvm=gvd.zoomedViewManager;
     
     zoomLevel=gvd.zoomLevel;
     dsFactor=gvd.downSamplingForCurrentZoomLevel;
     stackDsFactor=gvd.overviewStack.xyds;
     
-    if zoomLevel<=gbSetting('viewerDisplay.minZoomLevelForDetailedLoad')
+    if zoomLevel<=masivSetting('viewerDisplay.minZoomLevelForDetailedLoad')
         obj.viewMode.String='In Memory';
         obj.downSamplingFactor.String=sprintf('%ux',stackDsFactor);
         obj.fileName.String='';
@@ -353,7 +353,7 @@ function doUpdate(obj)
             else
                 error('Unrecognised downSampling/zoomLevels')
             end
-            obj.fileName.ForegroundColor = gbSetting('viewInfoPanel.fileOnDiskTextColor');
+            obj.fileName.ForegroundColor = masivSetting('viewInfoPanel.fileOnDiskTextColor');
         end
         obj.fileName.String=['(' obj.fileNameTruncatedForDisplay, ')'];
         
@@ -361,16 +361,16 @@ function doUpdate(obj)
         
     obj.showFileOnDiskStatus;
     
-    goggleDebugTimingInfo(1, 'GVIP: ViewInfo update (asynchronous) complete',toc, 's')
+    masivDebugTimingInfo(1, 'GVIP: ViewInfo update (asynchronous) complete',toc, 's')
     
 end
 
 function dlSuppressValueChange(obj, ~)
 if isempty(obj.UserData)
-    obj.UserData=gbSetting('viewerDisplay.minZoomLevelForDetailedLoad');
-    gbSetting('viewerDisplay.minZoomLevelForDetailedLoad', Inf)
+    obj.UserData=masivSetting('viewerDisplay.minZoomLevelForDetailedLoad');
+    masivSetting('viewerDisplay.minZoomLevelForDetailedLoad', Inf)
 else    
-    gbSetting('viewerDisplay.minZoomLevelForDetailedLoad', obj.UserData)
+    masivSetting('viewerDisplay.minZoomLevelForDetailedLoad', obj.UserData)
     obj.UserData=[];
 end
 end

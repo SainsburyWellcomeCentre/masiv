@@ -1,9 +1,9 @@
-classdef neuriteTracer<goggleBoxPlugin
+classdef neuriteTracer<masivPlugin
 
     % neuriteTracer
     %
     % Purpose 
-    % neuriteTracer is a plugin for goggleViewer that implements 
+    % neuriteTracer is a plugin for MaSIV that implements 
     % a trakEM-style neurite tracer. 
     % The first point is the "root" node. It can have more than one child
     % node but can not have a parent node. The point from which we will 
@@ -108,28 +108,28 @@ classdef neuriteTracer<goggleBoxPlugin
                 fprintf('\n\n\tThe matlab-tree package is not installed. \n\tPlease install from: https://github.com/raacampbell13/matlab-tree\n\n\n')
                 return
             end
-            obj=obj@goggleBoxPlugin(caller); %call constructor of goggleBoxPlugin
-            obj.goggleViewer=caller.UserData;
+            obj=obj@masivPlugin(caller); %call constructor of masivPlugin
+            obj.MaSIV=caller.UserData;
 
 
             %% Settings
-            obj.fontName=gbSetting('font.name');
-            obj.fontSize=gbSetting('font.size');
+            obj.fontName=masivSetting('font.name');
+            obj.fontSize=masivSetting('font.size');
             obj.currentTree=1; %By default we draw on neuron (tree) 1
 
             try
-                pos=gbSetting('neuriteTracer.figurePosition');
+                pos=masivSetting('neuriteTracer.figurePosition');
             catch
                 ssz=get(0, 'ScreenSize');
                 lb=[ssz(3)/3 ssz(4)/3];
                 pos=round([lb 400 550]);
-                gbSetting('neuriteTracer.figurePosition', pos)
-                gbSetting('neuriteTracer.markerDiameter.xy', 20);
-                gbSetting('neuriteTracer.markerDiameter.z', 30);
-                gbSetting('neuriteTracer.minimumSize', 1) %sets when the highlights are drawn. Likely we will eventually ditch this
-                gbSetting('neuriteTracer.maximumDistanceVoxelsForDeletion', 500)
+                masivSetting('neuriteTracer.figurePosition', pos)
+                masivSetting('neuriteTracer.markerDiameter.xy', 20);
+                masivSetting('neuriteTracer.markerDiameter.z', 30);
+                masivSetting('neuriteTracer.minimumSize', 1) %sets when the highlights are drawn. Likely we will eventually ditch this
+                masivSetting('neuriteTracer.maximumDistanceVoxelsForDeletion', 500)
             end
-            gbSetting('neuriteTracer.importExportDefault', gbSetting('defaultDirectory'))
+            masivSetting('neuriteTracer.importExportDefault', masivSetting('defaultDirectory'))
 
             obj.pluginName='Neurite Tracer';
 
@@ -139,8 +139,8 @@ classdef neuriteTracer<goggleBoxPlugin
                 'CloseRequestFcn', {@deleteRequest, obj}, ...
                 'MenuBar', 'none', ...
                 'NumberTitle', 'off', ...
-                'Name', [obj.pluginName, ': ' obj.goggleViewer.Meta.experimentName], ...
-                'Color', gbSetting('viewer.panelBkgdColor'), ...
+                'Name', [obj.pluginName, ': ' obj.MaSIV.Meta.stackName], ...
+                'Color', masivSetting('viewer.panelBkgdColor'), ...
                 'KeyPressFcn', {@keyPress, obj});
 
             %% Marker selection initialisation
@@ -148,8 +148,8 @@ classdef neuriteTracer<goggleBoxPlugin
                 'Parent', obj.hFig, ...
                 'Units', 'normalized', ...
                 'Position', [0.02 0.02 0.6 0.96], ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'), ...
                 'Title', 'Neurite Trees', ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize);
@@ -167,8 +167,8 @@ classdef neuriteTracer<goggleBoxPlugin
                 'Parent', obj.hFig, ...
                 'Units', 'normalized', ...
                 'Position', [0.64 0.86 0.34 0.12], ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'), ...
                 'Title', 'Placement Mode', ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize);
@@ -181,8 +181,8 @@ classdef neuriteTracer<goggleBoxPlugin
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
                 'Value', 1, ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'));
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'));
             obj.hModeDelete=uicontrol(...
                 'Parent', obj.hModeButtonGroup, ...
                 'Style', 'radiobutton', ...
@@ -192,8 +192,8 @@ classdef neuriteTracer<goggleBoxPlugin
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
                 'Value', 0, ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'));
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'));
 
 
 
@@ -202,8 +202,8 @@ classdef neuriteTracer<goggleBoxPlugin
                 'Parent', obj.hFig, ...
                 'Units', 'normalized', ...
                 'Position', [0.64 0.73 0.34 0.12], ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'), ...
                 'Title', 'Neurite Type', ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize);
@@ -217,8 +217,8 @@ classdef neuriteTracer<goggleBoxPlugin
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
                 'Value', 1, ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'));
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'));
             obj.hDendrite=uicontrol(...
                 'Parent', obj.hNeuriteButtonGroup, ...
                 'Style', 'radiobutton', ...
@@ -229,8 +229,8 @@ classdef neuriteTracer<goggleBoxPlugin
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
                 'Value', 0, ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'));
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'));
 
 
             %% Premature termination checkbox
@@ -238,8 +238,8 @@ classdef neuriteTracer<goggleBoxPlugin
                 'Parent', obj.hFig, ...
                 'Units', 'normalized', ...
                 'Position', [0.64 0.61 0.34 0.12], ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'), ...
                 'Title', 'Termination', ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize);
@@ -253,8 +253,8 @@ classdef neuriteTracer<goggleBoxPlugin
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
                 'Value', 0, ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'));
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'));
 
 
             %% Settings panel
@@ -262,8 +262,8 @@ classdef neuriteTracer<goggleBoxPlugin
                 'Parent', obj.hFig, ...
                 'Units', 'normalized', ...
                 'Position', [0.64 0.17 0.34 0.43], ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'), ...
                 'Title', 'Display Settings', ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize);            
@@ -286,8 +286,8 @@ classdef neuriteTracer<goggleBoxPlugin
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
                 'Value', 1, ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'), ...
                 'Callback', {@importData, obj});
             uicontrol(...
                 'Parent', obj.hFig, ...
@@ -298,19 +298,19 @@ classdef neuriteTracer<goggleBoxPlugin
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
                 'Value', 0, ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'), ...
                 'Callback', {@exportData, obj});
 
             %% Listener Declarations
-            obj.cursorListenerInsideAxes=event.listener(obj.goggleViewer, 'CursorPositionChangedWithinImageAxes', @obj.updateCursorWithinAxes);
-            obj.cursorListenerOutsideAxes=event.listener(obj.goggleViewer, 'CursorPositionChangedOutsideImageAxes', @obj.updateCursorOutsideAxes);
-            obj.cursorListenerClick=event.listener(obj.goggleViewer, 'ViewClicked', @obj.mouseClickInMainWindowAxes);
-            obj.scrolledListener=event.listener(obj.goggleViewer, 'Scrolled', @obj.drawAllTrees);
-            obj.zoomedListener=event.listener(obj.goggleViewer, 'Zoomed', @obj.drawAllTrees);
-            obj.pannedListener=event.listener(obj.goggleViewer, 'Panned', @obj.drawAllTrees);
-            obj.keyPressListener=event.listener(obj.goggleViewer, 'KeyPress', @obj.parentKeyPress);
-            obj.gvClosingListener=event.listener(obj.goggleViewer, 'ViewerClosing', @obj.parentClosing);
+            obj.cursorListenerInsideAxes=event.listener(obj.MaSIV, 'CursorPositionChangedWithinImageAxes', @obj.updateCursorWithinAxes);
+            obj.cursorListenerOutsideAxes=event.listener(obj.MaSIV, 'CursorPositionChangedOutsideImageAxes', @obj.updateCursorOutsideAxes);
+            obj.cursorListenerClick=event.listener(obj.MaSIV, 'ViewClicked', @obj.mouseClickInMainWindowAxes);
+            obj.scrolledListener=event.listener(obj.MaSIV, 'Scrolled', @obj.drawAllTrees);
+            obj.zoomedListener=event.listener(obj.MaSIV, 'Zoomed', @obj.drawAllTrees);
+            obj.pannedListener=event.listener(obj.MaSIV, 'Panned', @obj.drawAllTrees);
+            obj.keyPressListener=event.listener(obj.MaSIV, 'KeyPress', @obj.parentKeyPress);
+            obj.gvClosingListener=event.listener(obj.MaSIV, 'ViewerClosing', @obj.parentClosing);
 
 
             %set up the handles for the plot elements
@@ -351,8 +351,8 @@ classdef neuriteTracer<goggleBoxPlugin
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
                 'Callback', {@treeRadioSelectCallback,obj}, ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'));
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'));
             setNameChangeContextMenu(obj.hTreeSelection, obj)
 
             for ii=2:numel(obj.markerTypes)
@@ -366,8 +366,8 @@ classdef neuriteTracer<goggleBoxPlugin
                     'FontName', obj.fontName, ...
                     'FontSize', obj.fontSize, ...
                     'Callback', {@treeRadioSelectCallback,obj}, ...
-                    'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                    'ForegroundColor', gbSetting('viewer.textMainColor'));
+                    'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                    'ForegroundColor', masivSetting('viewer.textMainColor'));
                 setNameChangeContextMenu(obj.hTreeSelection(ii), obj)
 
             end
@@ -443,7 +443,7 @@ classdef neuriteTracer<goggleBoxPlugin
                 'UserData', ii, ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize+2, ...
-                'Color', gbSetting('viewer.textMainColor'), ...
+                'Color', masivSetting('viewer.textMainColor'), ...
                 'HorizontalAlignment', 'center');
 
             obj.hTreeSelection(ii).Value=1;
@@ -458,7 +458,7 @@ classdef neuriteTracer<goggleBoxPlugin
                     'UserData', ii, ...
                     'FontName', obj.fontName, ...
                     'FontSize', obj.fontSize+2, ...
-                    'Color', gbSetting('viewer.textMainColor'), ...
+                    'Color', masivSetting('viewer.textMainColor'), ...
                     'HorizontalAlignment', 'center');                
                 obj.hTreeSelection(ii).Value=1;
                 obj.updateMarkerCount(obj.currentType);
@@ -474,18 +474,18 @@ classdef neuriteTracer<goggleBoxPlugin
         function updateCursorWithinAxes(obj, ~, cursorEventData)                          
             obj.cursorX=round(cursorEventData.CursorPosition(1,1));
             obj.cursorY=round(cursorEventData.CursorPosition(2,2));
-            obj.goggleViewer.hFig.Pointer='crosshair';
+            obj.MaSIV.hFig.Pointer='crosshair';
 
             %If alt is pressed we highlight the nearest data point 
             %within the delete proximity and if the user also clicks
             %a new branch is drawn 
-            if ismember('alt',get(obj.goggleViewer.hFig,'currentModifier'))
+            if ismember('alt',get(obj.MaSIV.hFig,'currentModifier'))
                 highlightMarker(obj)
             end
         end    
 
         function updateCursorOutsideAxes(obj, ~, ~)
-            obj.goggleViewer.hFig.Pointer='arrow';
+            obj.MaSIV.hFig.Pointer='arrow';
         end
         function mouseClickInMainWindowAxes(obj, ~, ~)
             tic
@@ -515,10 +515,10 @@ classdef neuriteTracer<goggleBoxPlugin
         %------------------------------------------------------------------------------------------
         %Marker addition and deletion
         function UIaddMarker(obj) %Adds a marker to the currently selected tree
-            goggleDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Beginning',toc,'s')
+            masivDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Beginning',toc,'s')
             newMarker=neuriteTracerNode(obj.currentType, obj.deCorrectedCursorX, obj.deCorrectedCursorY, obj.cursorZVoxels);
 
-            goggleDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: New marker created',toc,'s')
+            masivDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: New marker created',toc,'s')
 
             thisT = obj.selectedTreeIdx;
 
@@ -534,14 +534,14 @@ classdef neuriteTracer<goggleBoxPlugin
             end
 
 
-            goggleDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Marker added to collection',toc,'s')
+            masivDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Marker added to collection',toc,'s')
             drawAllTrees(obj)
-            goggleDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Markers Drawn',toc,'s')
+            masivDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Markers Drawn',toc,'s')
 
             %% Update count
             obj.incrementMarkerCount(obj.currentType); 
 
-            goggleDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Count updated',toc,'s')
+            masivDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Count updated',toc,'s')
             %% Set change flag
             obj.changeFlag=1;
         end
@@ -565,7 +565,7 @@ classdef neuriteTracer<goggleBoxPlugin
 
             markersOfCurrentTrace=nodes(matchIdx);                
             [dist, closestIdx]=minEucDist2DToMarker(markersOfCurrentTrace, obj);
-            if dist<gbSetting('neuriteTracer.maximumDistanceVoxelsForDeletion')
+            if dist<masivSetting('neuriteTracer.maximumDistanceVoxelsForDeletion')
                 idx=matchIdx(closestIdx);
             else
                 idx=[];
@@ -574,19 +574,19 @@ classdef neuriteTracer<goggleBoxPlugin
         end
 
         function UIdeleteMarker(obj)
-            goggleDebugTimingInfo(2, 'Entering UIdeleteMarker',toc,'s')
+            masivDebugTimingInfo(2, 'Entering UIdeleteMarker',toc,'s')
 
             idx = findMarkerNearestToCursor(obj);
             thisT = obj.selectedTreeIdx;
 
             if isempty(idx)            
                 fprintf('No points in current z-depth.\n')
-                goggleDebugTimingInfo(2, 'Leaving UIdeleteMarker',toc,'s')
+                masivDebugTimingInfo(2, 'Leaving UIdeleteMarker',toc,'s')
                 return
             end
             if length(obj.neuriteTrees{obj.currentTree}.getchildren(idx))>1
                 fprintf('Can Not Delete Branch Points!\n')
-                goggleDebugTimingInfo(2, 'Leaving UIdeleteMarker',toc,'s')
+                masivDebugTimingInfo(2, 'Leaving UIdeleteMarker',toc,'s')
                 return
             end
 
@@ -600,7 +600,7 @@ classdef neuriteTracer<goggleBoxPlugin
 
             %% Set change flag
             obj.changeFlag=1;
-            goggleDebugTimingInfo(2, 'Leaving UIdeleteMarker',toc,'s')
+            masivDebugTimingInfo(2, 'Leaving UIdeleteMarker',toc,'s')
         end
 
 
@@ -615,15 +615,15 @@ classdef neuriteTracer<goggleBoxPlugin
             end
 
             obj.clearMarkers; %Clear markers from any previous draws
-            goggleDebugTimingInfo(2, 'NeuriteTracer.drawTree: Markers cleared',toc,'s')
+            masivDebugTimingInfo(2, 'NeuriteTracer.drawTree: Markers cleared',toc,'s')
 
-            hMainImgAx=obj.goggleViewer.hMainImgAx;
+            hMainImgAx=obj.MaSIV.hMainImgAx;
 
             prevhold=ishold(hMainImgAx);
             hold(hMainImgAx, 'on')
 
             %Set focus to main axes whenever a draw event happens.
-            axes(obj.goggleViewer.hMainImgAx); 
+            axes(obj.MaSIV.hMainImgAx); 
 
             %Loop through all trees and plot
             for thisTreeIdx=1:length(obj.neuriteTrees)
@@ -631,11 +631,11 @@ classdef neuriteTracer<goggleBoxPlugin
                     continue %skip trees where the checkbox is not ticked or tree is absent
                 end
 
-                goggleDebugTimingInfo(2, sprintf(' ***> NeuriteTracer.drawAllTrees: Beginning tree %d',thisTreeIdx),toc,'s')
+                masivDebugTimingInfo(2, sprintf(' ***> NeuriteTracer.drawAllTrees: Beginning tree %d',thisTreeIdx),toc,'s')
                 obj.currentTree=thisTreeIdx; %This is the tree we are currently plotting, not the user's selected tree
 
                 obj.drawTree
-                goggleDebugTimingInfo(2, sprintf(' ***> NeuriteTracer.drawAllTrees: Done with tree %d',thisTreeIdx),toc,'s')
+                masivDebugTimingInfo(2, sprintf(' ***> NeuriteTracer.drawAllTrees: Done with tree %d',thisTreeIdx),toc,'s')
             end
 
             %% Restore hold state
@@ -656,20 +656,20 @@ classdef neuriteTracer<goggleBoxPlugin
 
             %Check how many markers are visible from this depth. Remember that not in the current plane are likely 
             %also visible. This will depend on the Z marker diameter setting. 
-            zRadius=(gbSetting('neuriteTracer.markerDiameter.z')/2); 
+            zRadius=(masivSetting('neuriteTracer.markerDiameter.z')/2); 
             idx=allMarkerZRelativeToCurrentPlaneVoxels<zRadius; %ones indicate visible and zeros not visible 
 
 
             msg=sprintf('Found %d markers within %d planes of this z-plane. %d are in this z-plane.',...
                             length(idx), zRadius, sum(allMarkerZRelativeToCurrentPlaneVoxels==0));
-            goggleDebugTimingInfo(2, msg,toc,'s')
+            masivDebugTimingInfo(2, msg,toc,'s')
 
 
             %Search all branches of the tree for nodes that cross the plane. 
             visibleNodeIdx = find(idx); %index of visible nodes in all branches 
             n=1;
             leaves = obj.neuriteTrees{obj.currentTree}.findleaves; %all the leaves of the tree
-            goggleDebugTimingInfo(2, sprintf('Found %d leaves',length(leaves)),toc,'s')
+            masivDebugTimingInfo(2, sprintf('Found %d leaves',length(leaves)),toc,'s')
 
             pathToRoot=0; %If 1 we use the brute-force path to root. 
             paths ={};
@@ -736,14 +736,14 @@ classdef neuriteTracer<goggleBoxPlugin
                     paths{thisPath}=[]; %remove branch if none of its nodes are visible
                     nRemoved=nRemoved+1;
                     if ~pathToRoot & showRemovalDetails
-                        goggleDebugTimingInfo(2, sprintf('Removed segment %d - out of x/y range',...
+                        masivDebugTimingInfo(2, sprintf('Removed segment %d - out of x/y range',...
                                             thisPath),toc,'s')
                     end
                 end
 
                 if pathToRoot
                     if showRemovalDetails
-                        goggleDebugTimingInfo(2, sprintf('Trimmed path %d from %d to %d points',...
+                        masivDebugTimingInfo(2, sprintf('Trimmed path %d from %d to %d points',...
                             thisPath,initialSize,length(paths{thisPath})),toc,'s')
                     end
                     if isempty(paths{thisPath})
@@ -753,36 +753,36 @@ classdef neuriteTracer<goggleBoxPlugin
 
             end % for ii=length(paths):-1:1
             if ~showRemovalDetails & ~pathToRoot
-                goggleDebugTimingInfo(2, sprintf('Removed %d segments out of x/y range paths',nRemoved),toc,'s')
+                masivDebugTimingInfo(2, sprintf('Removed %d segments out of x/y range paths',nRemoved),toc,'s')
             end
 
             %If no markers are visible from the current z-plane AND in the current view we will not attempt to draw.
             %TODO: This is because we want to draw "shadows" of points not in view if NO points are in the current z-plane.
             if ~any(idx) 
-                goggleDebugTimingInfo(2, 'No visible neurites',toc,'s')
+                masivDebugTimingInfo(2, 'No visible neurites',toc,'s')
                 return
             end
 
             %Paths contains the indices of all nodes in each branch that crosses this plane.
             %Some nodes from a given branch may be out of plane and so not all should be plotted.
             if isempty(paths)
-                goggleDebugTimingInfo(2, 'No neurite paths cross this plane',toc,'s')
+                masivDebugTimingInfo(2, 'No neurite paths cross this plane',toc,'s')
                 return
             end
-            goggleDebugTimingInfo(2, 'Found neurite paths that cross this plane',toc,'s')
+            masivDebugTimingInfo(2, 'Found neurite paths that cross this plane',toc,'s')
 
 
 
             % The following loop goes through each candidate branch and finds and plots the points 
             % visible to the current z-plane. 
-            hMainImgAx=obj.goggleViewer.hMainImgAx;
+            hMainImgAx=obj.MaSIV.hMainImgAx;
 
 
-            goggleDebugTimingInfo(2, 'NeuriteTracer.drawTree: Beginning drawing',toc,'s')
+            masivDebugTimingInfo(2, 'NeuriteTracer.drawTree: Beginning drawing',toc,'s')
 
             %Extract some constants here that we don't need to recalculate each time time in the loop
-            markerDimXY=gbSetting('neuriteTracer.markerDiameter.xy');
-            markerMinSize=gbSetting('neuriteTracer.minimumSize');
+            markerDimXY=masivSetting('neuriteTracer.markerDiameter.xy');
+            markerMinSize=masivSetting('neuriteTracer.minimumSize');
             markerCol=nodes(1).color; %Get the tree's colour from the root node.
 
             for ii=1:length(paths) %Main drawing loop
@@ -794,7 +794,7 @@ classdef neuriteTracer<goggleBoxPlugin
                     continue %Do not proceed if no nodes are visible from this path
                 end
 
-                goggleDebugTimingInfo(2, sprintf('===> Plotting path %d',ii),toc,'s')
+                masivDebugTimingInfo(2, sprintf('===> Plotting path %d',ii),toc,'s')
 
 
                 visibleNodesInPathIdx=paths{ii}(visiblePathIdx); %Index values of nodes in the full tree which are also visible nodes
@@ -803,7 +803,7 @@ classdef neuriteTracer<goggleBoxPlugin
                 visibleNodesInPath=nodes(visibleNodesInPathIdx); %Extract the visible nodes from the list of all nodes
 
 
-                goggleDebugTimingInfo(2, sprintf('     Found visible %d nodes in current branch',length(visibleNodesInPathIdx)), toc, 's')
+                masivDebugTimingInfo(2, sprintf('     Found visible %d nodes in current branch',length(visibleNodesInPathIdx)), toc, 's')
 
 
                 %embed into a nan vector to handle lines that leave and re-enter the plane
@@ -828,20 +828,20 @@ classdef neuriteTracer<goggleBoxPlugin
                 [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ); %Shift coords in the event of a section being translation corrected
 
                 visibleNodesInPathRelZ=abs(markerZ-obj.cursorZVoxels);%relative z position of each node
-                markerSz=(markerDimXY*(1-visibleNodesInPathRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
+                markerSz=(markerDimXY*(1-visibleNodesInPathRelZ/zRadius)*obj.MaSIV.mainDisplay.viewPixelSizeOriginalVoxels).^2;
                 markerSz=max(markerSz, markerMinSize);
 
                 %% Draw basic markers and lines 
                 obj.neuriteTraceHandles(obj.currentTree).hDisplayedLines = ...
                      plot(hMainImgAx, markerX , markerY, '-','color',markerCol,...
                     'Tag', 'NeuriteTracer','HitTest', 'off');
-                %goggleDebugTimingInfo(2, '     Plotted trace', toc, 's')
+                %masivDebugTimingInfo(2, '     Plotted trace', toc, 's')
 
                 obj.neuriteTraceHandles(obj.currentTree).hDisplayedMarkers =  ...
                     scatter(hMainImgAx, markerX , markerY, markerSz, markerCol,...
                     'filled', 'HitTest', 'off', 'Tag', 'NeuriteTracer');
 
-                goggleDebugTimingInfo(2, '     Plotted points and lines', toc, 's')
+                masivDebugTimingInfo(2, '     Plotted points and lines', toc, 's')
 
 
                 %Points that are not the root or leaves should all have at least one parent and child. 
@@ -977,7 +977,7 @@ classdef neuriteTracer<goggleBoxPlugin
                 if obj.currentTree ~= obj.selectedTreeIdx, continue, end %nothing more to do unless this is the user's current tree
 
                 if ~isempty(find(visibleNodesInPathIdx==obj.lastNode(obj.selectedTreeIdx)))
-                    goggleDebugTimingInfo(2, sprintf('Plotting node highlighter on path %d',ii), toc, 's')
+                    masivDebugTimingInfo(2, sprintf('Plotting node highlighter on path %d',ii), toc, 's')
 
                     highlightNode = obj.neuriteTrees{obj.currentTree}.Node{obj.lastNode(obj.selectedTreeIdx)}; %The highlighted node
 
@@ -987,7 +987,7 @@ classdef neuriteTracer<goggleBoxPlugin
                     %Calculate marker size. 
                     %TODO: use the markerNodeIdx vector to neaten the size calculation 
                     lastNodeRelZ=abs(highlightNode.zVoxel-obj.cursorZVoxels);
-                    mSize=(markerDimXY*(1-lastNodeRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
+                    mSize=(markerDimXY*(1-lastNodeRelZ/zRadius)*obj.MaSIV.mainDisplay.viewPixelSizeOriginalVoxels).^2;
                     mSize = mSize/10;
                     if mSize<5
                         mSize=7;
@@ -1025,14 +1025,14 @@ classdef neuriteTracer<goggleBoxPlugin
             end
 
 
-            lastNodeObj = findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'LastNode') ;
+            lastNodeObj = findobj(obj.MaSIV.hMainImgAx, 'Tag', 'LastNode') ;
             verbose=1;
             if ~isempty(lastNodeObj) %The tree has not been changed and the marker only moved
                 thisMarker = obj.neuriteTrees{obj.selectedTreeIdx}.Node{idx};
                 set(obj.neuriteTraceHandles(obj.selectedTreeIdx).hHighlightedMarker,...
                  'XData', thisMarker.xVoxel,...
                  'YData', thisMarker.yVoxel);
-                if verbose, goggleDebugTimingInfo(2, sprintf('Moved lastnode marker to node %d',idx),toc,'s'), end
+                if verbose, masivDebugTimingInfo(2, sprintf('Moved lastnode marker to node %d',idx),toc,'s'), end
 
                 % If possible, enable the meta-data boxes so the user can edit the properties of the selected tree node
                 if isa(obj.neuriteTrees{obj.selectedTreeIdx}.Node{1},'neuriteTracerNode') & idx>1
@@ -1068,13 +1068,13 @@ classdef neuriteTracer<goggleBoxPlugin
             end
 
             if any(~isempty([obj.neuriteTraceHandles.hDisplayedMarkers]))
-                delete(findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'NeuriteTracer'))
+                delete(findobj(obj.MaSIV.hMainImgAx, 'Tag', 'NeuriteTracer'))
             end
             if any(~isempty([obj.neuriteTraceHandles.hDisplayedMarkerHighlights]))
-                delete(findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'NeuriteTracerHighlights'))
+                delete(findobj(obj.MaSIV.hMainImgAx, 'Tag', 'NeuriteTracerHighlights'))
             end
             if  any(~isempty([obj.neuriteTraceHandles.hHighlightedMarker]))
-                 delete(findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'LastNode'))
+                 delete(findobj(obj.MaSIV.hMainImgAx, 'Tag', 'LastNode'))
             end
         end
 
@@ -1098,14 +1098,14 @@ classdef neuriteTracer<goggleBoxPlugin
             yVoxel = obj.neuriteTrees{selectedIDX}.Node{nodeId}.yVoxel;
             zVoxel = obj.neuriteTrees{selectedIDX}.Node{nodeId}.zVoxel;
 
-            moved=obj.goggleViewer.centreViewOnCoordinate(xVoxel,yVoxel);
+            moved=obj.MaSIV.centreViewOnCoordinate(xVoxel,yVoxel);
 
-            deltaZ=zVoxel-obj.goggleViewer.mainDisplay.currentIndex;
+            deltaZ=zVoxel-obj.MaSIV.mainDisplay.currentIndex;
 
             %Seek to this z-depth TODO: is this the best way?
-            stdout=obj.goggleViewer.mainDisplay.seekZ(deltaZ);
+            stdout=obj.MaSIV.mainDisplay.seekZ(deltaZ);
             if stdout
-                obj.goggleViewer.mainDisplay.updateZoomedView;
+                obj.MaSIV.mainDisplay.updateZoomedView;
             end
 
             %By not having an if statement here to check for changes, we slow things down a little.
@@ -1176,7 +1176,7 @@ classdef neuriteTracer<goggleBoxPlugin
             end
             totalDistance=0;
 
-            distanceBetweenPlanes = obj.goggleViewer.Meta.metaData.zres * 2;
+            distanceBetweenPlanes = obj.MaSIV.Meta.metaData.zres * 2;
             if distanceBetweenPlanes==0
                 fprintf('\n\n\t WARNING! distance between planes is zero. There is a bug in the code!\n\n')
             end
@@ -1391,15 +1391,15 @@ classdef neuriteTracer<goggleBoxPlugin
         end
 
         function z=get.cursorZVoxels(obj)
-            z=obj.goggleViewer.mainDisplay.currentZPlaneOriginalVoxels;
+            z=obj.MaSIV.mainDisplay.currentZPlaneOriginalVoxels;
         end
 
         function z=get.cursorZUnits(obj)
-            z=obj.goggleViewer.mainDisplay.currentZPlaneUnits;
+            z=obj.MaSIV.mainDisplay.currentZPlaneUnits;
         end
 
         function offset=get.correctionOffset(obj)
-            zvm=obj.goggleViewer.mainDisplay.zoomedViewManager;
+            zvm=obj.MaSIV.mainDisplay.zoomedViewManager;
             if isempty(zvm.xyPositionAdjustProfile)
                 offset=[0 0];
             else
@@ -1447,7 +1447,7 @@ end
 %% Callbacks
 
 function deleteRequest(~, ~, obj, forceQuit)
-    gbSetting('neuriteTracer.figurePosition', obj.hFig.Position)
+    masivSetting('neuriteTracer.figurePosition', obj.hFig.Position)
     if obj.changeFlag && ~(nargin>3 && forceQuit ==1)
         agree=questdlg(sprintf('There are unsaved changes that will be lost.\nAre you sure you want to end this session?'), 'Neurite tracer', 'Yes', 'No', 'Yes');
         if strcmp(agree, 'No')
@@ -1456,8 +1456,8 @@ function deleteRequest(~, ~, obj, forceQuit)
     end
     obj.clearMarkers;
     obj.deregisterPluginAsOpenWithParentViewer;
-    deleteRequest@goggleBoxPlugin(obj);
-    obj.goggleViewer.hFig.Pointer='arrow';
+    deleteRequest@masivPlugin(obj);
+    obj.MaSIV.hFig.Pointer='arrow';
     delete(obj.hFig);
     delete(obj);
 end
@@ -1465,7 +1465,7 @@ end
 
 function exportData(~, ~, obj)
 
-    [f,p]=uiputfile('*.mat', 'Export Markers', gbSetting('neuriteTracer.importExportDefault'));
+    [f,p]=uiputfile('*.mat', 'Export Markers', masivSetting('neuriteTracer.importExportDefault'));
     if isnumeric(f)&&f==0
         return
     end
@@ -1488,7 +1488,7 @@ function importData(~, ~, obj)
             return
         end
     end
-    [f,p]=uigetfile('*.mat', 'Import Markers', gbSetting('neuriteTracer.importExportDefault'));
+    [f,p]=uigetfile('*.mat', 'Import Markers', masivSetting('neuriteTracer.importExportDefault'));
 
 
     fileToLoad = fullfile(p, f);
@@ -1596,7 +1596,7 @@ function neuriteTypeCallback(~,~,obj)
             obj.neuriteTrees{obj.selectedTreeIdx}.Node{p(n)}.branchType=neuriteName;
         end
     end
-    goggleDebugTimingInfo(2, ['Setting neurite type to ',neuriteName], toc, 's')
+    masivDebugTimingInfo(2, ['Setting neurite type to ',neuriteName], toc, 's')
 
 
 end
@@ -1616,14 +1616,14 @@ end
 %which points are in the x/y view (may still be in a different z plane)
 function varargout = pointsInView(obj,xPoints,yPoints)
     %Inputs
-    %obj - the goggleViewer object
+    %obj - the MaSIV object
     %xPoints and yPoints are scalars or vectors of points to be tested WRT to the first 2 args
     %Outputs
     %If two outputs: inViewX and inViewY vectors 
     %If 0 or 1 arguments, we return which points are in view in both dims
 
-    xView=obj.goggleViewer.mainDisplay.viewXLimOriginalCoords;
-    yView=obj.goggleViewer.mainDisplay.viewYLimOriginalCoords;
+    xView=obj.MaSIV.mainDisplay.viewXLimOriginalCoords;
+    yView=obj.MaSIV.mainDisplay.viewYLimOriginalCoords;
 
     inViewX = xPoints>=xView(1) & xPoints<=xView(2);
     inViewY = yPoints>=yView(1) & yPoints<=yView(2);
@@ -1688,20 +1688,20 @@ end
 
 function [m, t]=convertStructArrayToMarkerAndTypeArrays(s)
     f=fieldnames(s);
-    t(numel(f))=goggleMarkerType;
+    t(numel(f))=masivMarkerType;
     m=[];
     for ii=1:numel(f)
         t(ii).name=f{ii};
         t(ii).color=s.(f{ii}).color;
         if isfield(s.(f{ii}), 'markers')
             sm=s.(f{ii}).neuriteTrees;
-            m=[m goggleMarker(t(ii), [sm.x], [sm.y], [sm.z])]; %#ok<AGROW>
+            m=[m masivMarker(t(ii), [sm.x], [sm.y], [sm.z])]; %#ok<AGROW>
         end
     end
 end
 
 function [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ)
-    zvm=obj.goggleViewer.mainDisplay.zoomedViewManager;
+    zvm=obj.MaSIV.mainDisplay.zoomedViewManager;
     if isempty(zvm.xyPositionAdjustProfile)
         return
     else
@@ -1788,8 +1788,8 @@ end
 
 %% Settings change
 function setUpSettingBox(displayName, settingName, yPosition, parentPanel, parentObject)
-    fn=gbSetting('font.name');
-    fs=gbSetting('font.size');
+    fn=masivSetting('font.name');
+    fs=masivSetting('font.size');
 
     hEdit=uicontrol(...
         'Style', 'edit', ...
@@ -1798,11 +1798,11 @@ function setUpSettingBox(displayName, settingName, yPosition, parentPanel, paren
         'Position', [0.66 yPosition+0.05 0.32 0.09], ...
         'FontName', fn, ...
         'FontSize', fs, ...
-        'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-        'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+        'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+        'ForegroundColor', masivSetting('viewer.textMainColor'), ...
         'UserData', settingName);
 
-    hEdit.String=num2str(gbSetting(settingName));
+    hEdit.String=num2str(masivSetting(settingName));
     hEdit.Callback={@checkAndUpdateNewNumericSetting, parentObject};
 
     uicontrol(...
@@ -1813,8 +1813,8 @@ function setUpSettingBox(displayName, settingName, yPosition, parentPanel, paren
         'HorizontalAlignment', 'right', ...
         'FontName', fn, ...
         'FontSize', fs-1, ...
-        'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-        'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+        'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+        'ForegroundColor', masivSetting('viewer.textMainColor'), ...
         'String', displayName);
 
 end
@@ -1822,9 +1822,9 @@ end
 function checkAndUpdateNewNumericSetting(obj,ev, parentObject)
     numEquiv=(str2num(ev.Source.String)); %#ok<ST2NM>
     if ~isempty(numEquiv)
-        gbSetting(obj.UserData, numEquiv)
+        masivSetting(obj.UserData, numEquiv)
     else
-        obj.String=num2str(gbSetting(obj.UserData));
+        obj.String=num2str(masivSetting(obj.UserData));
     end
     parentObject.drawAllTrees();
 end

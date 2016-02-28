@@ -1,4 +1,4 @@
-classdef goggleCellCounter<goggleBoxPlugin
+classdef masivCellCounter<masivPlugin
     properties
         hFig
         
@@ -51,26 +51,26 @@ classdef goggleCellCounter<goggleBoxPlugin
     
     methods
         %% Constructor
-        function obj=goggleCellCounter(caller, ~)
-            obj=obj@goggleBoxPlugin(caller);
-            obj.goggleViewer=caller.UserData;
+        function obj=masivCellCounter(caller, ~)
+            obj=obj@masivPlugin(caller);
+            obj.MaSIV=caller.UserData;
             
             %% Settings
-            obj.fontName=gbSetting('font.name');
-            obj.fontSize=gbSetting('font.size');
+            obj.fontName=masivSetting('font.name');
+            obj.fontSize=masivSetting('font.size');
             try
-                pos=gbSetting('cellCounter.figurePosition');
+                pos=masivSetting('cellCounter.figurePosition');
             catch
                 ssz=get(0, 'ScreenSize');
                 lb=[ssz(3)/3 ssz(4)/3];
                 pos=round([lb 400 550]);
-                gbSetting('cellCounter.figurePosition', pos)
-                gbSetting('cellCounter.markerDiameter.xy', 20);
-                gbSetting('cellCounter.markerDiameter.z', 30);
-                gbSetting('cellCounter.minimumSize', 20)
-                gbSetting('cellCounter.maximumDistanceVoxelsForDeletion', 500)
+                masivSetting('cellCounter.figurePosition', pos)
+                masivSetting('cellCounter.markerDiameter.xy', 20);
+                masivSetting('cellCounter.markerDiameter.z', 30);
+                masivSetting('cellCounter.minimumSize', 20)
+                masivSetting('cellCounter.maximumDistanceVoxelsForDeletion', 500)
             end
-            gbSetting('cellCounter.importExportDefault', gbSetting('defaultDirectory'))
+            masivSetting('cellCounter.importExportDefault', masivSetting('defaultDirectory'))
 
             %% Main UI initialisation
             obj.hFig=figure(...
@@ -78,8 +78,8 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'CloseRequestFcn', {@deleteRequest, obj}, ...
                 'MenuBar', 'none', ...
                 'NumberTitle', 'off', ...
-                'Name', ['Cell Counter: ' obj.goggleViewer.Meta.experimentName], ...
-                'Color', gbSetting('viewer.panelBkgdColor'), ...
+                'Name', ['Cell Counter: ' obj.MaSIV.Meta.stackName], ...
+                'Color', masivSetting('viewer.panelBkgdColor'), ...
                 'KeyPressFcn', {@keyPress, obj});
             
             %% Marker selection initialisation
@@ -87,8 +87,8 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'Parent', obj.hFig, ...
                 'Units', 'normalized', ...
                 'Position', [0.02 0.02 0.6 0.96], ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'), ...
                 'Title', 'Marker Type', ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize);
@@ -100,8 +100,8 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'Parent', obj.hFig, ...
                 'Units', 'normalized', ...
                 'Position', [0.64 0.86 0.34 0.12], ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'), ...
                 'Title', 'Placement Mode', ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize);
@@ -114,8 +114,8 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
                 'Value', 1, ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'));
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'));
             obj.hModeDelete=uicontrol(...
                 'Parent', obj.hModeButtonGroup, ...
                 'Style', 'radiobutton', ...
@@ -125,16 +125,16 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
                 'Value', 0, ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'));
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'));
             
             %% Settings panel
             hSettingPanel=uipanel(...
                 'Parent', obj.hFig, ...
                 'Units', 'normalized', ...
                 'Position', [0.64 0.17 0.34 0.67], ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'), ...
                 'Title', 'Display Settings', ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize);
@@ -148,8 +148,8 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'Style', 'checkbox', ...
                 'Units', 'Normalized', ...
                 'Position', [0.05 0.38 0.9 0.08], ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'), ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize - 1, ...
                 'String', 'Hide (h)', ...
@@ -166,8 +166,8 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
                 'Value', 1, ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'), ...
                 'Callback', {@importData, obj});
             uicontrol(...
                 'Parent', obj.hFig, ...
@@ -178,19 +178,19 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
                 'Value', 0, ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'), ...
                 'Callback', {@exportData, obj});
             
             %% Listener Declarations
-            obj.cursorListenerInsideAxes=event.listener(obj.goggleViewer, 'CursorPositionChangedWithinImageAxes', @obj.updateCursorWithinAxes);
-            obj.cursorListenerOutsideAxes=event.listener(obj.goggleViewer, 'CursorPositionChangedOutsideImageAxes', @obj.updateCursorOutsideAxes);
-            obj.cursorListenerClick=event.listener(obj.goggleViewer, 'ViewClicked', @obj.mouseClickInMainWindowAxes);
-            obj.scrolledListener=event.listener(obj.goggleViewer, 'Scrolled', @obj.drawMarkers);
-            obj.zoomedListener=event.listener(obj.goggleViewer, 'Zoomed', @obj.drawMarkers);
-            obj.pannedListener=event.listener(obj.goggleViewer, 'Panned', @obj.drawMarkers);
-            obj.keyPressListener=event.listener(obj.goggleViewer, 'KeyPress', @obj.parentKeyPress);
-            obj.gvClosingListener=event.listener(obj.goggleViewer, 'ViewerClosing', @obj.parentClosing);
+            obj.cursorListenerInsideAxes=event.listener(obj.MaSIV, 'CursorPositionChangedWithinImageAxes', @obj.updateCursorWithinAxes);
+            obj.cursorListenerOutsideAxes=event.listener(obj.MaSIV, 'CursorPositionChangedOutsideImageAxes', @obj.updateCursorOutsideAxes);
+            obj.cursorListenerClick=event.listener(obj.MaSIV, 'ViewClicked', @obj.mouseClickInMainWindowAxes);
+            obj.scrolledListener=event.listener(obj.MaSIV, 'Scrolled', @obj.drawMarkers);
+            obj.zoomedListener=event.listener(obj.MaSIV, 'Zoomed', @obj.drawMarkers);
+            obj.pannedListener=event.listener(obj.MaSIV, 'Panned', @obj.drawMarkers);
+            obj.keyPressListener=event.listener(obj.MaSIV, 'KeyPress', @obj.parentKeyPress);
+            obj.gvClosingListener=event.listener(obj.MaSIV, 'ViewerClosing', @obj.parentClosing);
             
         
         end
@@ -219,8 +219,8 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'UserData', ii, ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
-                'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'));
+                'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'));
             setNameChangeContextMenu(obj.hMarkerTypeSelection, obj)
             
             for ii=2:numel(obj.markerTypes)
@@ -233,8 +233,8 @@ classdef goggleCellCounter<goggleBoxPlugin
                     'UserData', ii, ...
                     'FontName', obj.fontName, ...
                     'FontSize', obj.fontSize, ...
-                    'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-                    'ForegroundColor', gbSetting('viewer.textMainColor'));
+                    'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+                    'ForegroundColor', masivSetting('viewer.textMainColor'));
                 setNameChangeContextMenu(obj.hMarkerTypeSelection(ii), obj)
                 
             end
@@ -278,7 +278,7 @@ classdef goggleCellCounter<goggleBoxPlugin
                 'UserData', ii, ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize+2, ...
-                'Color', gbSetting('viewer.textMainColor'), ...
+                'Color', masivSetting('viewer.textMainColor'), ...
                 'HorizontalAlignment', 'center');
             
             obj.hMarkerTypeSelection(ii).Value=1;
@@ -293,7 +293,7 @@ classdef goggleCellCounter<goggleBoxPlugin
                     'UserData', ii, ...
                     'FontName', obj.fontName, ...
                     'FontSize', obj.fontSize+2, ...
-                    'Color', gbSetting('viewer.textMainColor'), ...
+                    'Color', masivSetting('viewer.textMainColor'), ...
                     'HorizontalAlignment', 'center');
                 obj.hMarkerTypeSelection(ii).Value=1;
                 obj.updateMarkerCount(obj.currentType);
@@ -309,16 +309,16 @@ classdef goggleCellCounter<goggleBoxPlugin
         function updateCursorWithinAxes(obj, ~, evData)
             obj.cursorX=round(evData.CursorPosition(1,1));
             obj.cursorY=round(evData.CursorPosition(2,2));
-            if ~ obj.goggleViewer.contrastMode
-                obj.goggleViewer.hFig.Pointer='crosshair';
+            if ~ obj.MaSIV.contrastMode
+                obj.MaSIV.hFig.Pointer='crosshair';
             end
         end
         function updateCursorOutsideAxes(obj, ~, ~)
-            obj.goggleViewer.hFig.Pointer='arrow';
+            obj.MaSIV.hFig.Pointer='arrow';
         end
         function mouseClickInMainWindowAxes(obj, ~, ~)
             tic
-            if ~obj.goggleViewer.contrastMode
+            if ~obj.MaSIV.contrastMode
                 if obj.hModeAdd.Value
                     obj.UIaddMarker
                 elseif obj.hModeDelete.Value
@@ -337,22 +337,22 @@ classdef goggleCellCounter<goggleBoxPlugin
         
         %% Functions
         function UIaddMarker(obj)
-            goggleDebugTimingInfo(2, 'CellCounter.UIaddMarker: Beginning',toc,'s')
-            newMarker=goggleMarker(obj.currentType, obj.deCorrectedCursorX, obj.deCorrectedCursorY, obj.cursorZVoxels);
-            goggleDebugTimingInfo(2, 'CellCounter.UIaddMarker: New marker created',toc,'s')
+            masivDebugTimingInfo(2, 'CellCounter.UIaddMarker: Beginning',toc,'s')
+            newMarker=masivMarker(obj.currentType, obj.deCorrectedCursorX, obj.deCorrectedCursorY, obj.cursorZVoxels);
+            masivDebugTimingInfo(2, 'CellCounter.UIaddMarker: New marker created',toc,'s')
 
             if isempty(obj.markers)
                 obj.markers=newMarker;
             else
                 obj.markers(end+1)=newMarker;
             end
-            goggleDebugTimingInfo(2, 'CellCounter.UIaddMarker: Marker added to collection',toc,'s')
+            masivDebugTimingInfo(2, 'CellCounter.UIaddMarker: Marker added to collection',toc,'s')
             drawMarkers(obj)
-            goggleDebugTimingInfo(2, 'CellCounter.UIaddMarker: Markers Drawn',toc,'s')
+            masivDebugTimingInfo(2, 'CellCounter.UIaddMarker: Markers Drawn',toc,'s')
 
             %% Update count
             obj.incrementMarkerCount(obj.currentType);
-            goggleDebugTimingInfo(2, 'CellCounter.UIaddMarker: Count updated',toc,'s')
+            masivDebugTimingInfo(2, 'CellCounter.UIaddMarker: Count updated',toc,'s')
             %% Set change flag
             obj.changeFlag=1;
         end
@@ -368,7 +368,7 @@ classdef goggleCellCounter<goggleBoxPlugin
                 
                 [dist, closestIdx]=minEucDist2DToMarker(markersOfCurrentType, obj);
                 
-                if dist<gbSetting('cellCounter.maximumDistanceVoxelsForDeletion')
+                if dist<masivSetting('cellCounter.maximumDistanceVoxelsForDeletion')
                     idxToDelete=matchIdx(closestIdx);
                     obj.markers(idxToDelete)=[];
                     obj.drawMarkers;
@@ -388,11 +388,11 @@ classdef goggleCellCounter<goggleBoxPlugin
                     obj.clearMarkers();
                     return
                 else
-                    goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Beginning',toc,'s')
+                    masivDebugTimingInfo(2, 'CellCounter.drawMarkers: Beginning',toc,'s')
                     obj.clearMarkers;
-                    goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Markers cleared',toc,'s')
+                    masivDebugTimingInfo(2, 'CellCounter.drawMarkers: Markers cleared',toc,'s')
                     %% Calculate position and size
-                    zRadius=(gbSetting('cellCounter.markerDiameter.z')/2);
+                    zRadius=(masivSetting('cellCounter.markerDiameter.z')/2);
                     
                     allMarkerZVoxel=[obj.markers.zVoxel];
                     
@@ -410,18 +410,18 @@ classdef goggleCellCounter<goggleBoxPlugin
                     
                     [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ);
                     markerRelZ=allMarkerZRelativeToCurrentPlaneVoxels(idx);
-                    markerSz=(gbSetting('cellCounter.markerDiameter.xy')*(1-markerRelZ/zRadius)*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels).^2;
+                    markerSz=(masivSetting('cellCounter.markerDiameter.xy')*(1-markerRelZ/zRadius)*obj.MaSIV.mainDisplay.viewPixelSizeOriginalVoxels).^2;
                     
-                    markerSz=max(markerSz, gbSetting('cellCounter.minimumSize'));
+                    markerSz=max(markerSz, masivSetting('cellCounter.minimumSize'));
                     
                     markerCol=cat(1, markersWithinViewOfThisPlane.color);
                     
-                    hMainImgAx=obj.goggleViewer.hMainImgAx;
+                    hMainImgAx=obj.MaSIV.hMainImgAx;
                     prevhold=ishold(hMainImgAx);
                     hold(hMainImgAx, 'on')
                     %% Eliminate markers not in the current x y view
-                    xView=obj.goggleViewer.mainDisplay.viewXLimOriginalCoords;
-                    yView=obj.goggleViewer.mainDisplay.viewYLimOriginalCoords;
+                    xView=obj.MaSIV.mainDisplay.viewXLimOriginalCoords;
+                    yView=obj.MaSIV.mainDisplay.viewYLimOriginalCoords;
                     
                     inViewX=(markerX>=xView(1))&(markerX<=xView(2));
                     inViewY=(markerY>=yView(1))&(markerY<=yView(2));
@@ -433,13 +433,13 @@ classdef goggleCellCounter<goggleBoxPlugin
                     markerSz=markerSz(inViewIdx);
                     markerCol=markerCol(inViewIdx, :);
                     %% Draw
-                    goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Beginning drawing',toc,'s')
-                    obj.hDisplayedMarkers=scatter(obj.goggleViewer.hMainImgAx, markerX , markerY, markerSz, markerCol, 'filled', 'HitTest', 'off', 'Tag', 'CellCounter');
-                    goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Drawing complete',toc,'s')
+                    masivDebugTimingInfo(2, 'CellCounter.drawMarkers: Beginning drawing',toc,'s')
+                    obj.hDisplayedMarkers=scatter(obj.MaSIV.hMainImgAx, markerX , markerY, markerSz, markerCol, 'filled', 'HitTest', 'off', 'Tag', 'CellCounter');
+                    masivDebugTimingInfo(2, 'CellCounter.drawMarkers: Drawing complete',toc,'s')
                     %% Draw highlights on this plane if we're not too zoomed out
                     
                     obj.drawMarkerHighlights;
-                    goggleDebugTimingInfo(2, 'CellCounter.drawMarkers: Complete',toc,'s')
+                    masivDebugTimingInfo(2, 'CellCounter.drawMarkers: Complete',toc,'s')
                     %% Restore hold
                 if ~prevhold
                     hold(hMainImgAx, 'off')
@@ -462,19 +462,19 @@ classdef goggleCellCounter<goggleBoxPlugin
             if~isempty(markerX)
                 [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ);
             end
-            markerSz=(gbSetting('cellCounter.markerDiameter.xy')*obj.goggleViewer.mainDisplay.viewPixelSizeOriginalVoxels)^2;
+            markerSz=(masivSetting('cellCounter.markerDiameter.xy')*obj.MaSIV.mainDisplay.viewPixelSizeOriginalVoxels)^2;
             
-            if markerSz>=gbSetting('cellCounter.minimumSize')
-                obj.hDisplayedMarkerHighlights=scatter(obj.goggleViewer.hMainImgAx, markerX , markerY, markerSz/4, [1 1 1], 'filled', 'HitTest', 'off', 'Tag', 'CellCounterHighlights');
+            if markerSz>=masivSetting('cellCounter.minimumSize')
+                obj.hDisplayedMarkerHighlights=scatter(obj.MaSIV.hMainImgAx, markerX , markerY, markerSz/4, [1 1 1], 'filled', 'HitTest', 'off', 'Tag', 'CellCounterHighlights');
             end
         end
         
         function clearMarkers(obj)
             if ~isempty(obj.hDisplayedMarkers)
-                delete(findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'CellCounter'))
+                delete(findobj(obj.MaSIV.hMainImgAx, 'Tag', 'CellCounter'))
             end
             if ~isempty(obj.hDisplayedMarkerHighlights)
-                delete(findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'CellCounterHighlights'))
+                delete(findobj(obj.MaSIV.hMainImgAx, 'Tag', 'CellCounterHighlights'))
             end
         end
         
@@ -507,14 +507,14 @@ classdef goggleCellCounter<goggleBoxPlugin
             type=obj.markerTypes(obj.hMarkerButtonGroup.SelectedObject.UserData);
         end
         function z=get.cursorZVoxels(obj)
-            z=obj.goggleViewer.mainDisplay.currentZPlaneOriginalVoxels;
+            z=obj.MaSIV.mainDisplay.currentZPlaneOriginalVoxels;
         end
         function z=get.cursorZUnits(obj)
-            z=obj.goggleViewer.mainDisplay.currentZPlaneUnits;
+            z=obj.MaSIV.mainDisplay.currentZPlaneUnits;
         end
         
         function offset=get.correctionOffset(obj)
-            zvm=obj.goggleViewer.mainDisplay.zoomedViewManager;
+            zvm=obj.MaSIV.mainDisplay.zoomedViewManager;
             if isempty(zvm.xyPositionAdjustProfile)
                 offset=[0 0];
             else
@@ -581,7 +581,7 @@ end
 
 
 function deleteRequest(~, ~, obj, forceQuit)
-    gbSetting('cellCounter.figurePosition', obj.hFig.Position)
+    masivSetting('cellCounter.figurePosition', obj.hFig.Position)
     if obj.changeFlag && ~(nargin>3 && forceQuit ==1)
         agree=questdlg(sprintf('There are unsaved changes that will be lost.\nAre you sure you want to end this session?'), 'Cell Counter', 'Yes', 'No', 'Yes');
         if strcmp(agree, 'No')
@@ -590,14 +590,14 @@ function deleteRequest(~, ~, obj, forceQuit)
     end
     obj.clearMarkers;
     obj.deregisterPluginAsOpenWithParentViewer;
-    deleteRequest@goggleBoxPlugin(obj);
-    obj.goggleViewer.hFig.Pointer='arrow';
+    deleteRequest@masivPlugin(obj);
+    obj.MaSIV.hFig.Pointer='arrow';
     delete(obj.hFig);
     delete(obj);
 end
 
 function exportData(~, ~, obj)
-    [f,p]=uiputfile('*.yml', 'Export Markers', gbSetting('cellCounter.importExportDefault'));
+    [f,p]=uiputfile('*.yml', 'Export Markers', masivSetting('cellCounter.importExportDefault'));
     if isnumeric(f)&&f==0
         return
     end
@@ -622,7 +622,7 @@ function exportData(~, ~, obj)
     
     obj.changeFlag=0;
     
-    gbSetting('cellCounter.importExportDefault', fullfile(p, f))
+    masivSetting('cellCounter.importExportDefault', fullfile(p, f))
     %% Read it back in to check it's OK
     try
         s=YAML.read(fullfile(p,f));
@@ -645,7 +645,7 @@ function importData(~, ~, obj)
             return
         end
      end
-    [f,p]=uigetfile('*.yml', 'Import Markers', gbSetting('cellCounter.importExportDefault'));
+    [f,p]=uigetfile('*.yml', 'Import Markers', masivSetting('cellCounter.importExportDefault'));
     
     try
         s=YAML.read(fullfile(p, f));
@@ -662,7 +662,7 @@ end
 
 %% Utilities
 function ms=defaultMarkerTypes(nTypes)
-ms(nTypes)=goggleMarkerType;
+ms(nTypes)=masivMarkerType;
 cols=lines(nTypes);
 for ii=1:nTypes
     ms(ii).name=sprintf('Type%u', ii);
@@ -683,20 +683,20 @@ end
 
 function [m, t]=convertStructArrayToMarkerAndTypeArrays(s)
     f=fieldnames(s);
-    t(numel(f))=goggleMarkerType;
+    t(numel(f))=masivMarkerType;
     m=[];
     for ii=1:numel(f)
         t(ii).name=f{ii};
         t(ii).color=s.(f{ii}).color;
         if isfield(s.(f{ii}), 'markers')
             sm=s.(f{ii}).markers;
-            m=[m goggleMarker(t(ii), [sm.x], [sm.y], [sm.z])]; %#ok<AGROW>
+            m=[m masivMarker(t(ii), [sm.x], [sm.y], [sm.z])]; %#ok<AGROW>
         end
     end
 end
 
 function [markerX, markerY]=correctXY(obj, markerX, markerY, markerZ)
-    zvm=obj.goggleViewer.mainDisplay.zoomedViewManager;
+    zvm=obj.MaSIV.mainDisplay.zoomedViewManager;
     if isempty(zvm.xyPositionAdjustProfile)
         return
     else
@@ -781,8 +781,8 @@ end
 
 %% Settings change
 function setUpSettingBox(displayName, settingName, yPosition, parentPanel, parentObject)
-    fn=gbSetting('font.name');
-    fs=gbSetting('font.size');
+    fn=masivSetting('font.name');
+    fs=masivSetting('font.size');
     
     hEdit=uicontrol(...
         'Style', 'edit', ...
@@ -791,11 +791,11 @@ function setUpSettingBox(displayName, settingName, yPosition, parentPanel, paren
         'Position', [0.66 yPosition+0.05 0.32 0.09], ...
         'FontName', fn, ...
         'FontSize', fs, ...
-        'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-        'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+        'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+        'ForegroundColor', masivSetting('viewer.textMainColor'), ...
         'UserData', settingName);
     
-    hEdit.String=num2str(gbSetting(settingName));
+    hEdit.String=num2str(masivSetting(settingName));
     hEdit.Callback={@checkAndUpdateNewNumericSetting, parentObject};
     
     uicontrol(...
@@ -806,8 +806,8 @@ function setUpSettingBox(displayName, settingName, yPosition, parentPanel, paren
         'HorizontalAlignment', 'right', ...
         'FontName', fn, ...
         'FontSize', fs-1, ...
-        'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-        'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+        'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+        'ForegroundColor', masivSetting('viewer.textMainColor'), ...
         'String', displayName);
 
 end
@@ -815,9 +815,9 @@ end
 function checkAndUpdateNewNumericSetting(obj,ev, parentObject)
     numEquiv=(str2num(ev.Source.String)); %#ok<ST2NM>
     if ~isempty(numEquiv)
-        gbSetting(obj.UserData, numEquiv)
+        masivSetting(obj.UserData, numEquiv)
     else
-        obj.String=num2str(gbSetting(obj.UserData));
+        obj.String=num2str(masivSetting(obj.UserData));
     end
     parentObject.drawMarkers();
 end

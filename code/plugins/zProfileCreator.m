@@ -1,4 +1,4 @@
-classdef zProfileCreator<goggleBoxPlugin
+classdef zProfileCreator<masivPlugin
     %ZPROFILECREATOR Creates a z profile for precise x y adjustment
     %#ok<*ST2NM>
     properties
@@ -6,10 +6,10 @@ classdef zProfileCreator<goggleBoxPlugin
     
     methods
         function obj=zProfileCreator(caller, ~)
-            obj=obj@goggleBoxPlugin(caller);
-            mainDisp=obj.goggleViewer.mainDisplay;
+            obj=obj@masivPlugin(caller);
+            mainDisp=obj.MaSIV.mainDisplay;
             t=obj.Meta;
-            dss=obj.goggleViewer.MainStack;
+            dss=obj.MaSIV.MainStack;
             %% Default view
             x=num2str(round(mainDisp.viewXLimOriginalCoords(1)));
             y=num2str(round(mainDisp.viewYLimOriginalCoords(1)));
@@ -47,7 +47,7 @@ classdef zProfileCreator<goggleBoxPlugin
             o=round(o);
             
             %%
-            [f,p]=uiputfile({'*.zpfl', 'Z-Profile (*.zpfl)'; '*.csv', 'CSV-File (*.csv)'; '*.*', 'All Files (*.*)'}, 'Select path to save profile', gbSetting('defaultDirectory'));
+            [f,p]=uiputfile({'*.zpfl', 'Z-Profile (*.zpfl)'; '*.csv', 'CSV-File (*.csv)'; '*.*', 'All Files (*.*)'}, 'Select path to save profile', masivSetting('defaultDirectory'));
             if isempty(f)||isempty(p)||isnumeric(p)||~exist(p, 'dir')
                 deleteRequest(obj)
             else
@@ -57,7 +57,7 @@ classdef zProfileCreator<goggleBoxPlugin
         end
         
         function deleteRequest(obj)
-            deleteRequest@goggleBoxPlugin(obj);
+            deleteRequest@masivPlugin(obj);
         end
     end
     methods(Static)

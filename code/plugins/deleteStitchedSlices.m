@@ -1,4 +1,4 @@
-classdef  deleteStitchedSlices<goggleBoxPlugin
+classdef  deleteStitchedSlices<masivPlugin
 %DELETESTITCHEDSLICES Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -7,15 +7,15 @@ properties
 end
 methods
     function obj=deleteStitchedSlices(caller, ~, channels, slices)
-        obj=obj@goggleBoxPlugin(caller);
+        obj=obj@masivPlugin(caller);
         %% Parse input
-        if isa(caller, 'MaSIVMeta')
+        if isa(caller, 'masivMeta')
             Meta=caller;
         elseif isa(caller, 'matlab.ui.container.Menu')
             gvObj=caller.UserData;
             Meta=gvObj.Meta;
         else
-            error('Unrecognised parameter. First argument should either be a MaSIVMeta object, or a plugins menu objext')
+            error('Unrecognised parameter. First argument should either be a masivMeta object, or a plugins menu objext')
         end
         if nargin<4
             slices=[];
@@ -39,14 +39,14 @@ methods
                 doDelete(Meta, filesToDelete)
                 
             else
-                goggleDebugTimingInfo(0, 'File Deletion Cancelled')
+                masivDebugTimingInfo(0, 'File Deletion Cancelled')
             end
             deleteRequest(obj)
         end
        
     end
     function deleteRequest(obj)
-        deleteRequest@goggleBoxPlugin(obj);
+        deleteRequest@masivPlugin(obj);
     end
 end
 methods(Static)
@@ -64,7 +64,7 @@ function [channels, slices]=getSlicesForDeletion(Meta, channels, slices)
     initialChannelSelection={'Ch01', 'Ch03'};
     %% Declarations: Main
     hFig=dialog(...
-        'Name', sprintf('Delete full-resolution stitched images... %s',Meta.experimentName), ...
+        'Name', sprintf('Delete full-resolution stitched images... %s',Meta.stackName), ...
         'ButtonDownFcn', '', 'CloseRequestFcn', @cancelButtonClick);
      hOKButton=uicontrol(...
         'Parent', hFig, ...
@@ -300,12 +300,12 @@ filesToDelete=sort(filesToDelete);
 end
 
 function doDelete(Meta, filesToDelete)
-goggleDebugTimingInfo(0, 'Deleting Files:')
+masivDebugTimingInfo(0, 'Deleting Files:')
                 swb=SuperWaitBar(numel(filesToDelete), 'Deleting Files');
                 for ii=1:numel(filesToDelete)
                     fullFilePath=fullfile(Meta.baseDirectory, filesToDelete{ii});
                     delete(fullFilePath)
-                    goggleDebugTimingInfo(1, fullFilePath)
+                    masivDebugTimingInfo(1, fullFilePath)
                     swb.progress;
                 end
                 delete(swb)

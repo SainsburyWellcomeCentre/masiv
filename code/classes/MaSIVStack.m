@@ -1,4 +1,4 @@
-classdef MaSIVStack<handle
+classdef masivStack<handle
     % MASIVSTACKS represents a downscaled stack used by MaSIV
     %
     % This class handles the creation, use, and deletion of a particular
@@ -12,7 +12,7 @@ classdef MaSIVStack<handle
     end
     
     properties(SetAccess=protected)
-        MetaObject  % Reference to the MaSIVMeta object used to create this stack
+        MetaObject  % Reference to the masivMeta object used to create this stack
         channel     % The name of the channel on which this stack is generated
         idx         % The index of each stack slice, in the original dataset
         xyds        % The downsampling factor, in xy, for the stack
@@ -44,12 +44,12 @@ classdef MaSIVStack<handle
     
     methods
         %% Constructor
-        function obj=MaSIVStack(metaObject, varargin)
+        function obj=masivStack(metaObject, varargin)
             % MaSIV Stacks can be created either interactively or by specifying channel and, optionally, index and downsampling
             %
-            % 1. MaSIVStack(metaObject)
-            %       Will create a MaSIVStack, prompting the user for the channel, indices, and downsampling
-            % 2. MaSIVStack(metaObject, channel, [idx], [xyds])
+            % 1. masivStack(metaObject)
+            %       Will create a masivStack, prompting the user for the channel, indices, and downsampling
+            % 2. masivStack(metaObject, channel, [idx], [xyds])
             %       Will create a MaSIV stack in the specified channel.
             %       Index should be an array, if specified, otherwise all images will be used
             %       xyds should be a scalar, if specified, otherwise it will be set to 1
@@ -57,7 +57,7 @@ classdef MaSIVStack<handle
             if nargin < 1
                return
             else
-                if isa(metaObject, 'MaSIVMeta')
+                if isa(metaObject, 'masivMeta')
                     obj.MetaObject=metaObject;
                     
                     if nargin > 1
@@ -94,7 +94,7 @@ classdef MaSIVStack<handle
                         end
                     end
                 else
-                    error('MaSIVStack requires a MaSIVMeta object to create')
+                    error('masivStack requires a masivMeta object to create')
                 end
             end
             
@@ -116,11 +116,11 @@ classdef MaSIVStack<handle
             for ii=1:numel(possibleMatchesForThisObject)
                 fullFilePath=fullfile(obj.MetaObject.masivDirectory, possibleMatchesForThisObject(ii).name);
 
-                masivImageDescription=MaSIVStack.infoFromTifFile(fullFilePath);
+                masivImageDescription=masivStack.infoFromTifFile(fullFilePath);
                 
                 if ~isempty(masivImageDescription)
                     %% get parameters
-                    [file_channel,file_idx,file_xyds]=MaSIVStack.paramsFromText(masivImageDescription);
+                    [file_channel,file_idx,file_xyds]=masivStack.paramsFromText(masivImageDescription);
                     %% check they match. If so, set file name and break
                     if strcmp(file_channel, obj.channel) && ...
                             numel(file_idx)==numel(obj.idx) && ...
@@ -300,7 +300,7 @@ classdef MaSIVStack<handle
 end
 
 function [channel, idx, xyds]=getStackSpec(metaObject)
-    %GETSTACKSPEC Gets user-specified parameters to create a MaSIVStack
+    %GETSTACKSPEC Gets user-specified parameters to create a masivStack
     %% Channel
     availableChannels=metaObject.channelNames;
     resp=menu('Select channel to create stack from:', availableChannels{:}, 'Cancel');
@@ -361,8 +361,8 @@ function I = createDownscaledStack(obj)
     %CREATEDOWNSAMPLEDSTACK Generates the stack from original image files
     %
     % Uses parallel toolbox to perform generation in a reasonable time
-    if nargin < 1 || isempty(obj) || ~isa(obj, 'MaSIVStack')
-       error('Requires a valid MaSIVStack object')
+    if nargin < 1 || isempty(obj) || ~isa(obj, 'masivStack')
+       error('Requires a valid masivStack object')
     end
     
     %% Start default parallel pool if not already

@@ -1,4 +1,4 @@
-classdef gogglePreLoader<handle
+classdef masivPreLoader<handle
     properties
         parent
         position
@@ -14,21 +14,21 @@ classdef gogglePreLoader<handle
     end
     
     methods
-        function obj=gogglePreLoader(parent, position)
+        function obj=masivPreLoader(parent, position)
             obj.parent=parent;
             obj.position=position;
             %% Settings
             try
-                gbSetting('preLoader');
+                masivSetting('preLoader');
             catch
-                gbSetting('preLoader.nBefore', 10)
-                gbSetting('preLoader.nAfter', 10)
-                gbSetting('preLoader.position', [1000 500 200 200]);
+                masivSetting('preLoader.nBefore', 10)
+                masivSetting('preLoader.nAfter', 10)
+                masivSetting('preLoader.position', [1000 500 200 200]);
             end
             obj.hMainPanel=uipanel(...
                 'Units', 'normalized', ...
                 'Position',obj.position , ...
-                'BackgroundColor', gbSetting('viewer.panelBkgdColor'), ...
+                'BackgroundColor', masivSetting('viewer.panelBkgdColor'), ...
                 'HitTest', 'off');
                 
              uicontrol(...
@@ -36,13 +36,13 @@ classdef gogglePreLoader<handle
                 'Style', 'text', ...
                 'Units', 'normalized', ...
                 'Position', [0.02 0.8 0.96 0.17], ...
-                'FontSize',gbSetting('font.size'), ...
-                'FontName', gbSetting('font.name'), ...
+                'FontSize',masivSetting('font.size'), ...
+                'FontName', masivSetting('font.name'), ...
                 'FontWeight', 'bold', ...
                 'String', 'Z-PreCaching', ...
                 'HorizontalAlignment', 'center', ...
-                'BackgroundColor', gbSetting('viewer.panelBkgdColor'), ...
-                'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+                'BackgroundColor', masivSetting('viewer.panelBkgdColor'), ...
+                'ForegroundColor', masivSetting('viewer.textMainColor'), ...
                 'HitTest', 'off');
             
            setUpSettingBox('Before:', 'preLoader.nBefore', 0.35, obj, 'nBefore')
@@ -55,10 +55,10 @@ classdef gogglePreLoader<handle
                'Units', 'normalized', ...
                'Position', [0.05 0.4 0.45 0.15], ...
                'HorizontalAlignment', 'center', ...
-               'FontName', gbSetting('font.name'), ...
-               'FontSize', gbSetting('font.size')+1, ...
-               'BackgroundColor', gbSetting('viewer.panelBkgdColor'), ...
-               'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+               'FontName', masivSetting('font.name'), ...
+               'FontSize', masivSetting('font.size')+1, ...
+               'BackgroundColor', masivSetting('viewer.panelBkgdColor'), ...
+               'ForegroundColor', masivSetting('viewer.textMainColor'), ...
                'String', 'Enable (p)', ...
                'Value', 0, ...
                'Callback', {@enabledCheckboxValueChange, obj});
@@ -72,12 +72,12 @@ classdef gogglePreLoader<handle
         function doPreLoading(obj)
             if obj.hEnabledCheckBox.Value
                 
-                goggleDebugTimingInfo(1, 'PreLoader: starting', toc, 's')
+                masivDebugTimingInfo(1, 'PreLoader: starting', toc, 's')
                 
                 currentView_spec=getCurrentView(obj);                                                 
                 newViewsToCreate_spec=createNewViewSpecs(obj, currentView_spec);
                 newViewsToCreate_spec=excludeViewSpecsMatchingAlreadyLoadedGZV(obj, newViewsToCreate_spec);    
-                 goggleDebugTimingInfo(1, 'PreLoader: Views to create calculated', toc, 's')
+                 masivDebugTimingInfo(1, 'PreLoader: Views to create calculated', toc, 's')
                  
                 
                
@@ -85,7 +85,7 @@ classdef gogglePreLoader<handle
                 if ~isempty(newViewsToCreate_spec)
                     newViewsToCreate_spec=sortByDistanceFromCurrentPlace(newViewsToCreate_spec, currentView_spec);
                     % Initialise
-                    newViews(numel(newViewsToCreate_spec))=goggleZoomedView;
+                    newViews(numel(newViewsToCreate_spec))=masivZoomedView;
                     
                     for ii=1:numel(newViewsToCreate_spec)
                         newViews(ii)=createGZV(obj, newViewsToCreate_spec(ii));
@@ -93,15 +93,15 @@ classdef gogglePreLoader<handle
                         prepareTimer(newViews(ii), 1);
                     end
                     
-                    goggleDebugTimingInfo(1, 'PreLoader: Views created', toc, 's')
+                    masivDebugTimingInfo(1, 'PreLoader: Views created', toc, 's')
                     addNewViewsToZVMArray(obj, newViews)
                     
                     for ii=1:numel(newViews)
                         start(newViews(ii).checkForLoadedImageTimer);
                     end
-                    goggleDebugTimingInfo(1, 'PreLoader: All timers started', toc, 's')
+                    masivDebugTimingInfo(1, 'PreLoader: All timers started', toc, 's')
                 else
-                    goggleDebugTimingInfo(1, 'PreLoader: All views in memory', toc, 's')
+                    masivDebugTimingInfo(1, 'PreLoader: All views in memory', toc, 's')
                 end
                 
             end
@@ -145,8 +145,8 @@ end
 
 %% Settings changes
 function setUpSettingBox(displayName, settingName, yPosition, parentObject, objectFieldName)
-    fn=gbSetting('font.name');
-    fs=gbSetting('font.size');
+    fn=masivSetting('font.name');
+    fs=masivSetting('font.size');
     
     hEdit=uicontrol(...
         'Style', 'edit', ...
@@ -155,14 +155,14 @@ function setUpSettingBox(displayName, settingName, yPosition, parentObject, obje
         'Position', [0.76 yPosition 0.2 0.24], ...
         'FontName', fn, ...
         'FontSize', fs, ...
-        'BackgroundColor', gbSetting('viewer.panelBkgdColor'), ...
-        'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+        'BackgroundColor', masivSetting('viewer.panelBkgdColor'), ...
+        'ForegroundColor', masivSetting('viewer.textMainColor'), ...
         'UserData', settingName);
     
-    hEdit.String=num2str(gbSetting(settingName));
+    hEdit.String=num2str(masivSetting(settingName));
     if nargin>4 && ~isempty(objectFieldName)
         hEdit.Callback={@checkAndUpdateNewNumericSetting, parentObject, objectFieldName};
-        parentObject.(objectFieldName)=gbSetting(settingName);
+        parentObject.(objectFieldName)=masivSetting(settingName);
     else
          hEdit.Callback=@checkAndUpdateNewNumericSetting;
     end
@@ -175,8 +175,8 @@ function setUpSettingBox(displayName, settingName, yPosition, parentObject, obje
         'HorizontalAlignment', 'right', ...
         'FontName', fn, ...
         'FontSize', fs-1, ...
-        'BackgroundColor', gbSetting('viewer.panelBkgdColor'), ...
-        'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+        'BackgroundColor', masivSetting('viewer.panelBkgdColor'), ...
+        'ForegroundColor', masivSetting('viewer.textMainColor'), ...
         'String', displayName);
 
 end
@@ -184,12 +184,12 @@ end
 function checkAndUpdateNewNumericSetting(obj,ev, parentObject, fieldName)
     numEquiv=(str2num(ev.Source.String)); %#ok<ST2NM>
     if ~isempty(numEquiv)
-        gbSetting(obj.UserData, numEquiv)
+        masivSetting(obj.UserData, numEquiv)
         if nargin>3&&~isempty(fieldName)
             parentObject.(fieldName)=numEquiv;
         end
     else
-        obj.String=num2str(gbSetting(obj.UserData));
+        obj.String=num2str(masivSetting(obj.UserData));
     end
 end
 
@@ -231,9 +231,9 @@ function z=calculateZVoxels_ofSlicesToLoad(obj, currentViewZ)
 end
 
 function specsToCreate=excludeViewSpecsMatchingAlreadyLoadedGZV(obj,specsToCreate) 
-    goggleDebugTimingInfo(1, 'PreLoader: Checking for existing matching views', toc, 's')
+    masivDebugTimingInfo(1, 'PreLoader: Checking for existing matching views', toc, 's')
     viewsInMemory_spec=getLoadedViewSpecs(obj);
-    goggleDebugTimingInfo(1, 'PreLoader: existing matching viewspecs retrieved', toc, 's')
+    masivDebugTimingInfo(1, 'PreLoader: existing matching viewspecs retrieved', toc, 's')
     specsThatAlreadyExist=[];
     
     for ii=1:numel(specsToCreate)

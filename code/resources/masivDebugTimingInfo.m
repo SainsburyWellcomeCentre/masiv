@@ -1,9 +1,9 @@
-function goggleDebugTimingInfo(indentLevel, message, value, unit)
+function masivDebugTimingInfo(indentLevel, message, value, unit)
 
-    if ~(gbSetting('debug.logging')==1)
+    if ~(masivSetting('debug.logging')==1)
         return
     end
-    spacingToMessage=gbSetting('debug.outputSpacing');
+    spacingToMessage=masivSetting('debug.outputSpacing');
     %% Format value
     if nargin>2
         if nargin>3&&~isempty(unit)

@@ -1,6 +1,6 @@
-classdef goggleTreeNode < goggleMarker
-    % goggleTreeNode
-    % goggleTreeNode inherits goggleMarker but adds other meta-data too
+classdef masivTreeNode < masivMarker
+    % masivTreeNode
+    % masivTreeNode inherits masivMarker but adds other meta-data too
     
     properties
         branchType              %any string such as 'axon', 'dendrite', 'bulklabel', etc 
@@ -11,9 +11,9 @@ classdef goggleTreeNode < goggleMarker
     end
 
     methods
-        function obj=goggleTreeNode(thisType,xVoxel,yVoxel,zVoxel,branchType,isPrematureTermination,isBouton,data)
-            % Constructor of goggleTreeNode
-            obj = obj@goggleMarker(thisType,xVoxel,yVoxel,zVoxel); %call goggleMarker constructor
+        function obj=masivTreeNode(thisType,xVoxel,yVoxel,zVoxel,branchType,isPrematureTermination,isBouton,data)
+            % Constructor of masivTreeNode
+            obj = obj@masivMarker(thisType,xVoxel,yVoxel,zVoxel); %call masivMarker constructor
 
             %Define default properties
             if nargin<5

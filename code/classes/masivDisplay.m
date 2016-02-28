@@ -1,14 +1,14 @@
-classdef goggleViewerDisplay<handle
-    % Controls display of a goggleBox TissueVision dataset, managing the
+classdef masivDisplay<handle
+    % Controls display of a MaSIV dataset, managing the
     % overview (pre-generated, downscaled stack) and detail (less- or not-
     % downsampled images read from disk as needed) images
 
     properties(SetAccess=protected)
-        parentViewer
-        overviewStack
-        axes
-        currentIndex
-        hImg
+        parentViewer        % Handle to the owning MaSIV viewer
+        overviewStack       % Handle to the masivStack
+        axes                % Handle to the display axes
+        currentIndex        % Index of current image
+        hImg                % Handle to the image display
         zoomedViewManager
     end
 
@@ -47,7 +47,7 @@ classdef goggleViewerDisplay<handle
 
     methods
         %% Constructor
-        function obj=goggleViewerDisplay(parent, Stack, imageDisplayAxes)
+        function obj=masivDisplay(parent, Stack, imageDisplayAxes)
             obj.parentViewer=parent;
             obj.overviewStack=Stack;
             if ~obj.overviewStack.imageInMemory
@@ -67,7 +67,7 @@ classdef goggleViewerDisplay<handle
                 'HitTest', 'off', ...
                 'Tag', 'OverviewImage');
             obj.contrastLims=[0 65536];
-            obj.zoomedViewManager=goggleZoomedViewManager(obj);
+            obj.zoomedViewManager=masivZoomedViewManager(obj);
 
             obj.drawNewZ();
         end
@@ -75,7 +75,7 @@ classdef goggleViewerDisplay<handle
 
         %% Methods
         function stdout=seekZ(obj, n)
-            goggleDebugTimingInfo(1, 'GVD: seekZ starting',toc, 's')
+            masivDebugTimingInfo(1, 'GVD: seekZ starting',toc, 's')
             stdout=0;
             newIdx=obj.currentIndex+n;
             if newIdx>=1&&newIdx<=numel(obj.overviewStack.idx)
@@ -83,26 +83,26 @@ classdef goggleViewerDisplay<handle
                 obj.drawNewZ();
                 stdout=1;
             end
-            goggleDebugTimingInfo(1, 'GVD: seekZ finished',toc, 's')
+            masivDebugTimingInfo(1, 'GVD: seekZ finished',toc, 's')
         end
 
         function drawNewZ(obj)   
             % Draws the correct plane from the downscaled stack in to the
             % axes, reusing the main Image Object if available
-            goggleDebugTimingInfo(1, 'GVD: drawNewZ starting',toc, 's')
+            masivDebugTimingInfo(1, 'GVD: drawNewZ starting',toc, 's')
             obj.hImg.CData=obj.currentPlaneData;
-            goggleDebugTimingInfo(1, 'GVD: drawNewZ DS CData changed',toc, 's')
+            masivDebugTimingInfo(1, 'GVD: drawNewZ DS CData changed',toc, 's')
         end
 
         function updateZoomedView(obj)
             if obj.zoomedViewNeeded
-                goggleDebugTimingInfo(1, 'GVD.updateZoomedView: Zoomed image needed. Updating view...', toc, 's')
+                masivDebugTimingInfo(1, 'GVD.updateZoomedView: Zoomed image needed. Updating view...', toc, 's')
                 obj.zoomedViewManager.updateView()
-                goggleDebugTimingInfo(1, 'GVD.updateZoomedView: View updated', toc, 's')
+                masivDebugTimingInfo(1, 'GVD.updateZoomedView: View updated', toc, 's')
             else
-                goggleDebugTimingInfo(1, 'GVD.updateZoomedView: No zoomed image needed', toc, 's')
+                masivDebugTimingInfo(1, 'GVD.updateZoomedView: No zoomed image needed', toc, 's')
                 obj.zoomedViewManager.hide;
-                goggleDebugTimingInfo(1, 'GVD.updateZoomedView: Zoomed image hidden', toc, 's')
+                masivDebugTimingInfo(1, 'GVD.updateZoomedView: Zoomed image hidden', toc, 's')
             end
         end
 
@@ -110,7 +110,7 @@ classdef goggleViewerDisplay<handle
         %% Getters    
         function n=get.zoomedViewNeeded(obj)
             z=obj.zoomLevel;
-            n=(z>gbSetting('viewerDisplay.minZoomLevelForDetailedLoad'));
+            n=(z>masivSetting('viewerDisplay.minZoomLevelForDetailedLoad'));
         end
 
         function cpd=get.currentPlaneData(obj)
@@ -153,7 +153,7 @@ classdef goggleViewerDisplay<handle
 
         function dsfczl=get.downSamplingForCurrentZoomLevel(obj)
             xl=round(xlim(obj.axes));
-            dsfczl=ceil(range(xl)/gbSetting('viewerDisplay.nPixelsWidthForZoomedView'));
+            dsfczl=ceil(range(xl)/masivSetting('viewerDisplay.nPixelsWidthForZoomedView'));
         end
 
         % Image and view in pixels and original

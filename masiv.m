@@ -1,4 +1,4 @@
-classdef goggleViewer<handle
+classdef masiv < handle
     
     properties(Access=protected, Hidden)        
         %% Internal tracking
@@ -28,8 +28,8 @@ classdef goggleViewer<handle
         mnuTutPlugins
 
         %% Data
-        Meta      %will be changed to Meta
-        MainStack %will be changed to Stack
+        Meta      
+        MainStack 
         mainDisplay
         additionalDisplays
         contrastMode=0;
@@ -51,7 +51,7 @@ classdef goggleViewer<handle
     end
    
     methods % Constructor
-        function obj=goggleViewer(MetaIn, idx)
+        function obj=masiv(MetaIn, idx)
             obj=obj@handle; % base class initialisation
             
             startDebugOutput();
@@ -67,7 +67,7 @@ classdef goggleViewer<handle
             if nargin<2||isempty(idx)
                 getDownsampledStackChoice(obj)
             else
-                obj.MainStack=obj.Meta.downscaledStacks(idx);
+                obj.MainStack=obj.Meta.masivStacks(idx);
             end
             
             if isempty(obj.MainStack)
@@ -93,12 +93,12 @@ classdef goggleViewer<handle
         
         %% ---Scrolling
         function formatKeyScrollAndAddToQueue(obj, eventdata)
-            goggleDebugTimingInfo(0, 'GV: KeyScroll event fired',toc, 's')
+            masivDebugTimingInfo(0, 'GV: KeyScroll event fired',toc, 's')
             mods=eventdata.Modifier;
             if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
-                p=gbSetting('navigation.scrollIncrement');p=p(1);
+                p=masivSetting('navigation.scrollIncrement');p=p(1);
             else
-                p=gbSetting('navigation.scrollIncrement');p=p(2);
+                p=masivSetting('navigation.scrollIncrement');p=p(2);
             end
             switch eventdata.Key
                 case 'leftarrow'
@@ -111,7 +111,7 @@ classdef goggleViewer<handle
         function keyScrollQueue(obj, dir)
             
             obj.numScrolls=obj.numScrolls+dir;
-            pause(gbSetting('navigation.keyboardUpdatePeriod'))
+            pause(masivSetting('navigation.keyboardUpdatePeriod'))
             if obj.numScrolls~=0
                 p=obj.numScrolls;
                 obj.numScrolls=0;
@@ -129,7 +129,7 @@ classdef goggleViewer<handle
             
             switch scrollAction
             case 'zAxisScroll'
-                if gbSetting('navigation.scrollLayerInvert')
+                if masivSetting('navigation.scrollLayerInvert')
                     nScrolls=nScrolls*-1;
                 end
                 stdout=obj.mainDisplay.seekZ(nScrolls);
@@ -140,11 +140,11 @@ classdef goggleViewer<handle
                     obj.changeAxes;
                     notify(obj, 'Scrolled')
                 else
-                    goggleDebugTimingInfo(0, 'GV: Scroll did not cause an axis change',toc, 's')
+                    masivDebugTimingInfo(0, 'GV: Scroll did not cause an axis change',toc, 's')
                 end
             case 'zoomScroll'
-                zoomRate=gbSetting('navigation.zoomRate'); %to zoom out
-                if gbSetting('navigation.scrollZoomInvert')
+                zoomRate=masivSetting('navigation.zoomRate'); %to zoom out
+                if masivSetting('navigation.scrollZoomInvert')
                     nScrolls=nScrolls*-1;
                 end
                 if nScrolls<0
@@ -159,12 +159,12 @@ classdef goggleViewer<handle
         
         %% ---Panning
         function formatKeyPanAndAddToQueue(obj, eventdata)
-            goggleDebugTimingInfo(0, 'GV: KeyPan event fired',toc, 's')
+            masivDebugTimingInfo(0, 'GV: KeyPan event fired',toc, 's')
             mods=eventdata.Modifier;
             if ~isempty(mods)&& any(~cellfun(@isempty, strfind(mods, 'shift')))
-                p=gbSetting('navigation.panIncrement'); p=p(1);
+                p=masivSetting('navigation.panIncrement'); p=p(1);
             else
-                p=gbSetting('navigation.panIncrement');p=p(2);
+                p=masivSetting('navigation.panIncrement');p=p(2);
             end
             switch eventdata.Key
                 case 'w'
@@ -182,7 +182,7 @@ classdef goggleViewer<handle
            
             obj.panxInt=obj.panxInt+xChange;
             obj.panyInt=obj.panyInt+yChange;
-            pause(gbSetting('navigation.keyboardUpdatePeriod'))
+            pause(masivSetting('navigation.keyboardUpdatePeriod'))
             
             if obj.panxInt~=0 || obj.panyInt~=0
                 xOut=obj.panxInt;
@@ -194,7 +194,7 @@ classdef goggleViewer<handle
         end
         
         function executePan(obj, xMove,yMove)
-            if gbSetting('navigation.panModeInvert')
+            if masivSetting('navigation.panModeInvert')
                 xMove=-xMove;
                 yMove=-yMove;
             end
@@ -219,7 +219,7 @@ classdef goggleViewer<handle
                 obj.changeAxes;
                 notify(obj, 'Panned')
             else
-                goggleDebugTimingInfo(0, 'GV: Pan did not cause an axis change',toc, 's')
+                masivDebugTimingInfo(0, 'GV: Pan did not cause an axis change',toc, 's')
             end
         end
         
@@ -301,15 +301,15 @@ classdef goggleViewer<handle
         
         %% ---Update axes
         function changeAxes(obj)
-            goggleDebugTimingInfo(0, 'GV: Calling mainDisplay updateZoomedView...',toc, 's')
+            masivDebugTimingInfo(0, 'GV: Calling mainDisplay updateZoomedView...',toc, 's')
             obj.mainDisplay.updateZoomedView
-            goggleDebugTimingInfo(0, 'GV: mainDisplay updateZoomedView complete',toc, 's')
+            masivDebugTimingInfo(0, 'GV: mainDisplay updateZoomedView complete',toc, 's')
             for ii=obj.additionalDisplays
-                goggleDebugTimingInfo(0, 'GV: Calling additional display updateZoomedView...',toc, 's')
+                masivDebugTimingInfo(0, 'GV: Calling additional display updateZoomedView...',toc, 's')
                 ii.updateZoomedView
-                goggleDebugTimingInfo(0, 'GV: additional display updateZoomedView complete',toc, 's')
+                masivDebugTimingInfo(0, 'GV: additional display updateZoomedView complete',toc, 's')
             end
-            goggleDebugTimingInfo(0, 'GV: Firing ViewChanged Event',toc, 's')
+            masivDebugTimingInfo(0, 'GV: Firing ViewChanged Event',toc, 's')
             obj.updateMouseCoordsInPanel;
             notify(obj, 'ViewChanged')
         end
@@ -388,7 +388,7 @@ classdef goggleViewer<handle
             deleteInfoPanel(obj, 'all')
             delete(timerfind);
             if ishandle(obj.hFig)
-                gbSetting('viewer.mainFigurePosition', obj.hFig.Position)
+                masivSetting('viewer.mainFigurePosition', obj.hFig.Position)
                 delete(obj.hFig);
             end
         end
@@ -411,9 +411,9 @@ function hFigMain_KeyPress (~, eventdata, obj)
     if ~ctrlMod
         switch eventdata.Key
             case 'uparrow'
-                obj.executeZoom(gbSetting('navigation.zoomRate'))
+                obj.executeZoom(masivSetting('navigation.zoomRate'))
             case 'downarrow'
-                obj.executeZoom(1/gbSetting('navigation.zoomRate'))
+                obj.executeZoom(1/masivSetting('navigation.zoomRate'))
             case {'leftarrow', 'rightarrow'}
                 obj.formatKeyScrollAndAddToQueue(eventdata);
             case {'w' 'a' 's' 'd'}
@@ -504,7 +504,7 @@ end
 function hFigMain_ScrollWheel(~, eventdata, obj)
     startDebugOutput
 
-    goggleDebugTimingInfo(0, 'GV: WheelScroll event fired',toc, 's')
+    masivDebugTimingInfo(0, 'GV: WheelScroll event fired',toc, 's')
     
     modifiers = get(obj.hFig,'currentModifier');          
     %If user ctrl-scrolls we zoom instead of change z-level
@@ -513,7 +513,7 @@ function hFigMain_ScrollWheel(~, eventdata, obj)
         return
     end
 
-    p=gbSetting('navigation.scrollIncrement');
+    p=masivSetting('navigation.scrollIncrement');
     if ismember('shift',modifiers);
         p=p(1);
     else
@@ -639,7 +639,7 @@ function exportViewToWorkspace(~,~,obj)
 end
 
 function zProfile=loadXYAlignmentProfile
-    [f,p]=uigetfile({'*.zpfl', 'Z-Profile (*.zpfl)'; '*.csv', 'CSV-File (*.csv)'; '*.*', 'All Files (*.*)'}, 'Select Z Profile To Register To', gbSetting('defaultDirectory'));
+    [f,p]=uigetfile({'*.zpfl', 'Z-Profile (*.zpfl)'; '*.csv', 'CSV-File (*.csv)'; '*.*', 'All Files (*.*)'}, 'Select Z Profile To Register To', masivSetting('defaultDirectory'));
     pathToCSVFile=fullfile(p,f);
     if exist(pathToCSVFile, 'file')
         zProfile=dlmread(pathToCSVFile);
@@ -649,7 +649,9 @@ function zProfile=loadXYAlignmentProfile
 end
 
 function v=getPixelValueAtCoordinate(obj, x, y)
-    zoomedViewStatus=obj.mainDisplay.zoomedViewNeeded&&obj.mainDisplay.zoomedViewManager.currentSliceFileExistsOnDisk;
+    zoomedViewStatus=obj.mainDisplay.zoomedViewNeeded &&... %Are we at a zoom level?
+                     obj.mainDisplay.zoomedViewManager.currentSliceFileExistsOnDisk && ... %Can we find the file?
+                     ~strcmp(obj.mainDisplay.zoomedViewManager.hImg.Visible, 'off'); %Has it been successfully loaded?
     if zoomedViewStatus
         [~, xIdx]=min(abs(x-obj.mainDisplay.zoomedViewManager.hImg.XData));
         [~, yIdx]=min(abs(y-obj.mainDisplay.zoomedViewManager.hImg.YData));
@@ -692,7 +694,7 @@ function addPlugins(hMenuBase, obj, pluginsDir, separateFirstEntry)
     end
     
     for ii=1:numel(filesInPluginsDirectory)
-        if isValidGoggleBoxPlugin(pluginsDir, filesInPluginsDirectory(ii).name)
+        if isValidMasivPlugin(pluginsDir, filesInPluginsDirectory(ii).name)
             
             [pluginDisplayString, pluginStartCallback]=getPluginInfo(filesInPluginsDirectory(ii));
                        
@@ -704,14 +706,14 @@ function addPlugins(hMenuBase, obj, pluginsDir, separateFirstEntry)
     end
 end
 
-function isGBPlugin=isValidGoggleBoxPlugin(pluginsDir, pluginsFile)
+function isGBPlugin=isValidMasivPlugin(pluginsDir, pluginsFile)
     fName=fullfile(pluginsDir, pluginsFile);
     if isdir(fName)
         isGBPlugin=0;
     else
         f=fopen(fullfile(pluginsDir, pluginsFile));
         codeStr=fread(f, Inf, '*char')';
-        hasGBPAsSuperClass=~isempty(strfind(codeStr, '<goggleBoxPlugin'));
+        hasGBPAsSuperClass=~isempty(strfind(codeStr, '<masivPlugin'));
         if hasGBPAsSuperClass
             isGBPlugin=~isAbstractCode(codeStr);
         else
@@ -743,30 +745,30 @@ function runStartupTests()
 end
 
 function setupPath()
-    goggleViewerPath = fileparts(which('goggleViewer'));
-    goggleViewerDirs = fullfile(goggleViewerPath,'code');
-    if isempty(strfind(path, goggleViewerDirs)) %only add to path if dirs aren't already present
-        fprintf('Adding goggleViewer to path for this session\n')
-        addpath(genpath(goggleViewerDirs),'-end')
+    MaSIVPath = fileparts(which('MaSIV'));
+    MaSIVDirs = fullfile(MaSIVPath,'code');
+    if isempty(strfind(path, MaSIVDirs)) %only add to path if dirs aren't already present
+        fprintf('Adding MaSIV to path for this session\n')
+        addpath(genpath(MaSIVDirs),'-end')
     end
 end
 
 function chooseDataset(obj)
-%      gbSetting('defaultDirectory', fileparts(fp))
-     obj.Meta=MaSIVMeta;
+%      masivSetting('defaultDirectory', fileparts(fp))
+     obj.Meta=masivMeta;
 end
 
 function getDownsampledStackChoice(obj)
-    obj.MainStack=selectMaSIVStack(obj.Meta);
+    obj.MainStack=selectmasivStack(obj.Meta);
 end
 
 function setupGUI(obj)
     obj.hFig=figure(...
-                'Name', sprintf('GoggleBox: %s', obj.Meta.stackName), ...
+                'Name', sprintf('MaSIV: %s', obj.Meta.stackName), ...
                 'NumberTItle', 'off', ...
                 'MenuBar', 'none', ...
-                'Position', gbSetting('viewer.mainFigurePosition'), ...
-                'Color', gbSetting('viewer.mainBkgdColor'), ...
+                'Position', masivSetting('viewer.mainFigurePosition'), ...
+                'Color', masivSetting('viewer.mainBkgdColor'), ...
                 'ColorMap', gray(256), ...
                 'KeyPressFcn', {@hFigMain_KeyPress, obj}, ...
                 'KeyReleaseFcn', {@hFigMain_KeyRelease, obj}, ...
@@ -799,23 +801,23 @@ function setupMenus(obj)
 end
 
 function setupPlugins(obj)
-     baseDir=fileparts(which('goggleViewer')); %viewer installation base directory
+     baseDir=fileparts(which('MaSIV')); %viewer installation base directory
      addPlugins(obj.mnuImage, obj, fullfile(baseDir,'code','resources','corePlugins'), 1);
      obj.mnuPlugins=uimenu(obj.hFig, 'Label', 'Plugins');
      
      %Optionally add tutorial plugins
-     if ~gbSetting('plugins.hideTutorialPlugins')
+     if ~masivSetting('plugins.hideTutorialPlugins')
          obj.mnuTutPlugins=uimenu(obj.mnuPlugins,'label','Tutorials');
-         addPlugins(obj.mnuTutPlugins, obj, fullfile(baseDir,gbSetting('plugins.bundledPluginsDirPath'),'tutorials'))
+         addPlugins(obj.mnuTutPlugins, obj, fullfile(baseDir,masivSetting('plugins.bundledPluginsDirPath'),'tutorials'))
      else
          fprintf('Skipping addition of tutorial plugins\n')
      end
      
      %Add bundled plugins
-     addPlugins(obj.mnuPlugins, obj, fullfile(baseDir,gbSetting('plugins.bundledPluginsDirPath')));
+     addPlugins(obj.mnuPlugins, obj, fullfile(baseDir,masivSetting('plugins.bundledPluginsDirPath')));
      
      %Add external plugins
-     for externalPlugin = gbSetting('plugins.externalPluginsDirs')
+     for externalPlugin = masivSetting('plugins.externalPluginsDirs')
          thisExternalPlugin=externalPlugin{1};
          
          if isempty(strfind(thisExternalPlugin,'~')) %TODO: hack. fix when we know where the plugins will be
@@ -850,7 +852,7 @@ end
 function setupContrastController(obj)
     obj.hAxContrastHist=axes(...
                 'Box', 'on', ...
-                'Color', gbSetting('viewer.panelBkgdColor'), ...
+                'Color', masivSetting('viewer.panelBkgdColor'), ...
                 'XTick', [], 'YTick', [], ...
                 'Position', [0.83 0.89 0.16 0.09], ...
                 'Color', [0.1 0.1 0.1]);
@@ -900,11 +902,11 @@ function setupContrast(obj)
     m=y.*x;
     vals=cumsum(m)/sum(m);
     %% Set up high value
-    if gbSetting('contrastSlider.doAutoContrast') 
-        thresh = gbSetting('contrastSlider.highThresh');
+    if masivSetting('contrastSlider.doAutoContrast') 
+        thresh = masivSetting('contrastSlider.highThresh');
         if thresh>1 || thresh<0
-            gbSetting('contrastSlider.highThresh', {}) %reset value to default
-            thresh=gbSetting('contrastSlider.highThresh');
+            masivSetting('contrastSlider.highThresh', {}) %reset value to default
+            thresh=masivSetting('contrastSlider.highThresh');
         end
         
         f=find(vals>thresh);
@@ -926,15 +928,15 @@ function setupContrast(obj)
 end
 
 function setupInfoBoxes(obj)
-    obj.addInfoPanel(goggleViewInfoPanel(obj, obj.hFig, [0.83 0.49 0.16 0.31], obj.mainDisplay));
-    obj.addInfoPanel(gogglePreLoader(obj, [0.83 0.39 0.16 0.09]));
-    obj.addInfoPanel(goggleReadQueueInfoPanel(obj.hFig, [0.83 0.29 0.16 0.09], obj.mainDisplay.zoomedViewManager));
-    obj.addInfoPanel(goggleCacheInfoPanel(obj, [0.83 0.19 0.16 0.09]));
-    obj.addInfoPanel(goggleSystemMemoryUsageInfoPanel(obj.hFig, [0.83 0.03 0.16 0.15], obj.mainDisplay.zoomedViewManager));
+    obj.addInfoPanel(masivViewInfoPanel(obj, obj.hFig, [0.83 0.49 0.16 0.31], obj.mainDisplay));
+    obj.addInfoPanel(masivPreLoader(obj, [0.83 0.39 0.16 0.09]));
+    obj.addInfoPanel(masivReadQueueInfoPanel(obj.hFig, [0.83 0.29 0.16 0.09], obj.mainDisplay.zoomedViewManager));
+    obj.addInfoPanel(masivCacheInfoPanel(obj, [0.83 0.19 0.16 0.09]));
+    obj.addInfoPanel(masivSystemMemoryUsageInfoPanel(obj.hFig, [0.83 0.03 0.16 0.15], obj.mainDisplay.zoomedViewManager));
 end
 
 function startParallelPool()
-     h=splashWindow('Starting Parallel Pool', 'goggleViewer');
+     h=splashWindow('Starting Parallel Pool', 'MaSIV');
      drawnow;
      G=gcp;
      G.IdleTimeout=inf;
@@ -942,9 +944,9 @@ function startParallelPool()
 end
 
 function initialiseDisplay(obj) 
-    obj.mainDisplay=goggleViewerDisplay(obj, obj.MainStack, obj.hMainImgAx);
+    obj.mainDisplay=masivDisplay(obj, obj.MainStack, obj.hMainImgAx);
     obj.mainDisplay.drawNewZ();
     axis(obj.hMainImgAx, 'equal')
-    set(findall(gcf, '-property','FontName'), 'FontName', gbSetting('font.name'));
+    set(findall(gcf, '-property','FontName'), 'FontName', masivSetting('font.name'));
 end
 

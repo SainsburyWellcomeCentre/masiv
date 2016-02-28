@@ -1,4 +1,4 @@
-classdef goggleMarker
+classdef masivMarker
     properties
         type
         xVoxel
@@ -10,9 +10,9 @@ classdef goggleMarker
     end
     methods
         %% Constructor
-        function obj=goggleMarker(type, x, y, z)
+        function obj=masivMarker(type, x, y, z)
             if nargin>0
-                if isa(type, 'goggleMarkerType')
+                if isa(type, 'masivMarkerType')
                     obj.type=type;
                 else
                     error('Must be a valid marker type')
@@ -23,9 +23,9 @@ classdef goggleMarker
                     if any(diff([numel(x) numel(y) numel(z)]));
                         error('x y and z vectors must be of equal size')
                     end
-                    obj(numel(x))=goggleMarker;
+                    obj(numel(x))=masivMarker;
                     for ii=1:numel(x)
-                        obj(ii)=goggleMarker(type, x(ii), y(ii), z(ii));
+                        obj(ii)=masivMarker(type, x(ii), y(ii), z(ii));
                     end
                 elseif isnumeric(x)
                     obj.xVoxel=x;
@@ -60,8 +60,8 @@ classdef goggleMarker
                 return
             end
             if isscalar(obj)
-                if ~isa(obj2, 'goggleMarker')
-                    error('Comparator must be a goggleMarker object')
+                if ~isa(obj2, 'masivMarker')
+                    error('Comparator must be a masivMarker object')
                 end
                 if ~isscalar(obj2)
                     e=obj2==obj;

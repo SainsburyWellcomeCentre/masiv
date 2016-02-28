@@ -1,4 +1,4 @@
-classdef drawRandomPoints<goggleBoxPlugin %drawRandomPoints inherits goggleBoxPlugin
+classdef drawRandomPoints<masivPlugin %drawRandomPoints inherits masivPlugin
 
 
 	% Purpose 
@@ -12,7 +12,7 @@ classdef drawRandomPoints<goggleBoxPlugin %drawRandomPoints inherits goggleBoxPl
     % 4. A slider that allows the user to specify how many random points will be plotted. 
     %
 	%
-	% Markers are drawn using the goggleMarker class
+	% Markers are drawn using the masivMarker class
 	%
 	%
     % The plugin system is written using object oriented MATLAB code. If this is new
@@ -56,12 +56,12 @@ classdef drawRandomPoints<goggleBoxPlugin %drawRandomPoints inherits goggleBoxPl
 	methods 
 	   %Constructor - runs once when testPlug is loaded
 	   function obj = drawRandomPoints(caller,~)
-	   	obj=obj@goggleBoxPlugin(caller);
-	   	obj.goggleViewer=caller.UserData;            
+	   	obj=obj@masivPlugin(caller);
+	   	obj.MaSIV=caller.UserData;            
 
 	   	%% Get settings from main GUI so we can apply to plugin GUI
-        obj.fontName=gbSetting('font.name');
-        obj.fontSize=gbSetting('font.size');
+        obj.fontName=masivSetting('font.name');
+        obj.fontSize=masivSetting('font.size');
 
         %Create GUI window for plugin and position nicely on screen
         ssz=get(0, 'ScreenSize');
@@ -73,8 +73,8 @@ classdef drawRandomPoints<goggleBoxPlugin %drawRandomPoints inherits goggleBoxPl
                 'CloseRequestFcn', {@deleteRequest, obj}, ...
                 'MenuBar', 'none', ...
                 'NumberTitle', 'off', ...
-                'Name', ['Test Plugin: ' obj.goggleViewer.Meta.experimentName], ...
-                'Color', gbSetting('viewer.panelBkgdColor'), ...
+                'Name', ['Test Plugin: ' obj.MaSIV.Meta.stackName], ...
+                'Color', masivSetting('viewer.panelBkgdColor'), ...
                 'KeyPressFcn', {@keyPress, obj});
 
 
@@ -85,8 +85,8 @@ classdef drawRandomPoints<goggleBoxPlugin %drawRandomPoints inherits goggleBoxPl
             'Units', 'normalized', ...
             'FontName', obj.fontName, ...
             'FontSize', obj.fontSize, ...          
-            'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-            'ForegroundColor', gbSetting('viewer.textMainColor') };
+            'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+            'ForegroundColor', masivSetting('viewer.textMainColor') };
 
        uicontrol(...
        	buttonDefaults{:},...
@@ -133,19 +133,19 @@ classdef drawRandomPoints<goggleBoxPlugin %drawRandomPoints inherits goggleBoxPl
             'String',  [obj.sliderBaseString, num2str(get(obj.slider, 'value'))], ...
             'FontName', obj.fontName, ...
             'FontSize', obj.fontSize-1, ...    
-            'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
-            'ForegroundColor', gbSetting('viewer.textMainColor'), ...
+            'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
+            'ForegroundColor', masivSetting('viewer.textMainColor'), ...
             'HorizontalAlignment', 'left', ...
             'Position', [0.05 0.62 0.5 0.05]);
 
         %Set up a listener for the keyboard. This will allow the plugin to 
         %respond to key presses in order to build a short-cut system. 
-        obj.keyPressListener=event.listener(obj.goggleViewer, 'KeyPress', @obj.parentKeyPress);
+        obj.keyPressListener=event.listener(obj.MaSIV, 'KeyPress', @obj.parentKeyPress);
 
         %Respond to scroll, zoom, and pan events but re-drawing the markers on the screen
-        obj.scrolledListener=event.listener(obj.goggleViewer, 'Scrolled', @obj.drawMarkers);
-        obj.zoomedListener=event.listener(obj.goggleViewer, 'Zoomed', @obj.drawMarkers);
-        obj.pannedListener=event.listener(obj.goggleViewer, 'Panned', @obj.drawMarkers);
+        obj.scrolledListener=event.listener(obj.MaSIV, 'Scrolled', @obj.drawMarkers);
+        obj.zoomedListener=event.listener(obj.MaSIV, 'Zoomed', @obj.drawMarkers);
+        obj.pannedListener=event.listener(obj.MaSIV, 'Panned', @obj.drawMarkers);
 
 
 	   end %close constructor method
@@ -156,22 +156,22 @@ classdef drawRandomPoints<goggleBoxPlugin %drawRandomPoints inherits goggleBoxPl
             keyPress([], ev.KeyPressData, obj);
         end
         function parentClosing(obj, ~, ~)
-            deleteRequest([],[], obj,1) %force quit if the parent GUI (goggleViewer) closes
+            deleteRequest([],[], obj,1) %force quit if the parent GUI (MaSIV) closes
         end
 
 
         function clearMarkers(obj)
             if ~isempty(obj.hDisplayedMarkers)
-                delete(findobj(obj.goggleViewer.hMainImgAx, 'Tag', 'drawRandomPoints'))
+                delete(findobj(obj.MaSIV.hMainImgAx, 'Tag', 'drawRandomPoints'))
             end
         end
         
 
         function drawMarkers(obj, ~, ~)
             if ~isempty(obj.markers)
-                goggleDebugTimingInfo(2, 'drawRandomPoints.drawMarkers: Beginning',toc,'s')
+                masivDebugTimingInfo(2, 'drawRandomPoints.drawMarkers: Beginning',toc,'s')
                 obj.clearMarkers;
-                goggleDebugTimingInfo(2, 'drawRandomPoints.drawMarkers: Markers cleared',toc,'s')
+                masivDebugTimingInfo(2, 'drawRandomPoints.drawMarkers: Markers cleared',toc,'s')
 
 
                 %Concatenate all marker x and y coordinates into vectors
@@ -182,13 +182,13 @@ classdef drawRandomPoints<goggleBoxPlugin %drawRandomPoints inherits goggleBoxPl
                 
                 markerCol=cat(1, obj.markers.color);
                 
-                hImgAx=obj.goggleViewer.hMainImgAx; 
+                hImgAx=obj.MaSIV.hMainImgAx; 
                 prevhold=ishold(hImgAx);
                 hold(hImgAx, 'on')
 
                 %% Eliminate markers not in the current x y view
-                xView=obj.goggleViewer.mainDisplay.viewXLimOriginalCoords;
-                yView=obj.goggleViewer.mainDisplay.viewYLimOriginalCoords;
+                xView=obj.MaSIV.mainDisplay.viewXLimOriginalCoords;
+                yView=obj.MaSIV.mainDisplay.viewYLimOriginalCoords;
                 
                 inViewX=(markerX>=xView(1))&(markerX<=xView(2));
                 inViewY=(markerY>=yView(1))&(markerY<=yView(2));
@@ -200,11 +200,11 @@ classdef drawRandomPoints<goggleBoxPlugin %drawRandomPoints inherits goggleBoxPl
                 markerCol=markerCol(inViewIdx, :);
 
                 %% Draw markers
-                goggleDebugTimingInfo(2, 'drawRandomPoints.drawMarkers: Beginning drawing',toc,'s')
+                masivDebugTimingInfo(2, 'drawRandomPoints.drawMarkers: Beginning drawing',toc,'s')
                 obj.hDisplayedMarkers=scatter(hImgAx, markerX , markerY, markerSz, markerCol, 'filled', 'HitTest', 'off', 'Tag', 'drawRandomPoints');
-                goggleDebugTimingInfo(2, 'drawRandomPoints.drawMarkers: Drawing complete',toc,'s')
+                masivDebugTimingInfo(2, 'drawRandomPoints.drawMarkers: Drawing complete',toc,'s')
 
-                goggleDebugTimingInfo(2, 'drawRandomPoints.drawMarkers: Complete',toc,'s')
+                masivDebugTimingInfo(2, 'drawRandomPoints.drawMarkers: Complete',toc,'s')
 
                 %% Restore original hold state
                 if ~prevhold
@@ -218,7 +218,7 @@ classdef drawRandomPoints<goggleBoxPlugin %drawRandomPoints inherits goggleBoxPl
 
         %% Getters
         function z=get.cursorZVoxels(obj)
-            z=obj.goggleViewer.mainDisplay.currentZPlaneOriginalVoxels;
+            z=obj.MaSIV.mainDisplay.currentZPlaneOriginalVoxels;
         end
 
 
@@ -227,13 +227,13 @@ classdef drawRandomPoints<goggleBoxPlugin %drawRandomPoints inherits goggleBoxPl
 
 
     methods(Static)
-       %This is what the plugin is named in the goggleViewer "plugins" menu
+       %This is what the plugin is named in the MaSIV "plugins" menu
        function d=displayString
         d='Draw random markers';
        end % close displayString method
     end %close methods(Static)
 
-end %classdef testPlug<goggleBoxPlugin 
+end %classdef testPlug<masivPlugin 
 
 
 %----------------------------------------------------------------------------------------------
@@ -262,11 +262,11 @@ end
 
 
 
-%Closes the GUI and and detaches the plugin from goggleViewer. 
+%Closes the GUI and and detaches the plugin from MaSIV. 
 function deleteRequest(~, ~, obj, forceQuit)
     
-    obj.deregisterPluginAsOpenWithParentViewer; %inherited from goggleBoxPlugin
-    deleteRequest@goggleBoxPlugin(obj); %inherited from goggleBoxPlugin
+    obj.deregisterPluginAsOpenWithParentViewer; %inherited from masivPlugin
+    deleteRequest@masivPlugin(obj); %inherited from masivPlugin
     delete(obj.hFig);
     delete(obj);
     
@@ -274,10 +274,10 @@ end
 
 
 function addMarkers(~, ~, obj)
-    zvm=obj.goggleViewer.mainDisplay.zoomedViewManager;
+    zvm=obj.MaSIV.mainDisplay.zoomedViewManager;
 
     %We're going to make a marker object to plot. 
-    G = goggleMarkerType;
+    G = masivMarkerType;
 
     %Give all markers draw a single, randomly chosen, color
     nChoose=7; %Because there are only 7 unique colours in lines
@@ -298,7 +298,7 @@ function addMarkers(~, ~, obj)
         y=round(rand*range(YL) + YL(1));
 
         z=obj.cursorZVoxels;
-        newMarker=goggleMarker(G, x ,y, z); 
+        newMarker=masivMarker(G, x ,y, z); 
 
         %Append marker 
         if isempty(obj.markers) 

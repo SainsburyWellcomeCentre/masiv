@@ -1,4 +1,4 @@
-classdef goggleZoomedView<handle
+classdef masivZoomedView<handle
     properties(SetAccess=protected)
         rawImageData
     end
@@ -25,10 +25,10 @@ classdef goggleZoomedView<handle
     
     methods
         %% Constructor
-        function obj=goggleZoomedView(filePath, regionSpec, downSampling, z, parent, varargin)
+        function obj=masivZoomedView(filePath, regionSpec, downSampling, z, parent, varargin)
             if nargin>0
                 %% Output that we've started
-                goggleDebugTimingInfo(3, 'GZV Constructor: starting', toc,'s')
+                masivDebugTimingInfo(3, 'GZV Constructor: starting', toc,'s')
                 %% Input parsing
                 obj.parentZoomedViewManager=parent;
                 obj.regionSpec=regionSpec;
@@ -43,7 +43,7 @@ classdef goggleZoomedView<handle
                 obj.z=z;
                 %% Optional input parsing (processing functions and callbacks)
                 p=inputParser;
-                p.FunctionName='goggleZoomedViewManager.constructor';
+                p.FunctionName='masivZoomedViewManager.constructor';
                 addParameter(p, 'processingFcns', [], @checkValidPipeline);
                 addParameter(p, 'completedFcn', [], @(x) isempty(x)||isa(x, 'function_handle')||iscell(x));
                 addParameter(p, 'positionAdjustment', [0 0], @(x) isnumeric(x)&&numel(x)==2&&all(round(x)==x))
@@ -53,7 +53,7 @@ classdef goggleZoomedView<handle
                 obj.completedFcn=p.Results.completedFcn;
                 obj.positionAdjustment=p.Results.positionAdjustment;
                 %% Display that creation is done
-                goggleDebugTimingInfo(3, 'GZV Constructor: completed. Ready to load image.', toc,'s')
+                masivDebugTimingInfo(3, 'GZV Constructor: completed. Ready to load image.', toc,'s')
                 
             else
                 obj.z=-1;
@@ -66,7 +66,7 @@ classdef goggleZoomedView<handle
             % to check for completion of the load task, and execute
             % post-loading processing
             %
-            % obj:  a goggleZoomed view object
+            % obj:  a masivZoomed view object
             %
             % p:    (optional) a Parallel worker pool. If not specified,
             % the current worker pool will be used (and created, if
@@ -84,7 +84,7 @@ classdef goggleZoomedView<handle
                 p=gcp;
             end
             
-            goggleDebugTimingInfo(3, 'GZV.backgroundLoad starting', toc,'s')
+            masivDebugTimingInfo(3, 'GZV.backgroundLoad starting', toc,'s')
             %% Adjust spec if using precise xy adjustments
             rSpec=adjustRegionSpecUsingOffset(obj.regionSpec, obj.positionAdjustment);
             %% Check for crop and set up appropriate load
@@ -92,35 +92,35 @@ classdef goggleZoomedView<handle
             info=imfinfo(obj.filePath);
             
             if ~isfield(info, 'XPosition') % No crop so just load the whole thing
-                goggleDebugTimingInfo(3, 'GZV.backgroundLoad: Uncropped image. Performing standard load', toc,'s')
+                masivDebugTimingInfo(3, 'GZV.backgroundLoad: Uncropped image. Performing standard load', toc,'s')
                 f=parfeval(p, @openTiff, 1,obj.filePath, rSpec, obj.downSampling);
             else
-                goggleDebugTimingInfo(3, 'GZV.backgroundLoad: Cropped image. Checking status of requested region', toc,'s')
+                masivDebugTimingInfo(3, 'GZV.backgroundLoad: Cropped image. Checking status of requested region', toc,'s')
                 [xoffset, yoffset]=checkTiffFileForOffset(info);
                 rSpecAdjustedForCrop=rSpec-[xoffset yoffset 0 0];
 
                 switch checkRSpecImageStatus(info, rSpecAdjustedForCrop)
                     case 0 % requested region is not on disk
-                        goggleDebugTimingInfo(3, 'GZV.backgroundLoad: Region not on disk; upscaling DSS', toc,'s')
+                        masivDebugTimingInfo(3, 'GZV.backgroundLoad: Region not on disk; upscaling DSS', toc,'s')
                         f=parfeval(p, @upsampleDSSToRegionSpec, 1, currentDownscaleFactor, obj.filePath, rSpec);
                     case 1 % requested region is partly on disk
-                        goggleDebugTimingInfo(3, 'GZV.backgroundLoad: Region partially on disk; performing partial load', toc,'s')
+                        masivDebugTimingInfo(3, 'GZV.backgroundLoad: Region partially on disk; performing partial load', toc,'s')
                         f=setUpAsyncPartialLoad(obj, info, rSpec, rSpecAdjustedForCrop);
                     case 2 % requested region is fully on disk
-                        goggleDebugTimingInfo(3, 'GZV.backgroundLoad: Region fully on disk; loading', toc,'s')
+                        masivDebugTimingInfo(3, 'GZV.backgroundLoad: Region fully on disk; loading', toc,'s')
                         f=parfeval(p, @openTiff, 1, obj.filePath, rSpecAdjustedForCrop, obj.downSampling);
                 end
             end
             
-            goggleDebugTimingInfo(3, 'GZV.backgroundLoad: parfeval started', toc,'s')
+            masivDebugTimingInfo(3, 'GZV.backgroundLoad: parfeval started', toc,'s')
 
             obj.checkForLoadedImageTimer=timer('BusyMode', 'queue', 'ExecutionMode', 'fixedSpacing', 'Period', .01, 'TimerFcn', {@checkForLoadedImage, obj, f}, 'Name', 'zoomedView');
-            goggleDebugTimingInfo(3, 'GZV.backgroundLoad: Timer created', toc,'s')
+            masivDebugTimingInfo(3, 'GZV.backgroundLoad: Timer created', toc,'s')
             
             addLineToReadQueueFile
             if timerAutoStart
                 start(obj.checkForLoadedImageTimer)
-                goggleDebugTimingInfo(3, 'GZV.backgroundLoad: Timer started', toc,'s')
+                masivDebugTimingInfo(3, 'GZV.backgroundLoad: Timer started', toc,'s')
             end
         end
 
@@ -130,13 +130,13 @@ classdef goggleZoomedView<handle
             % The completedFcn can be either a function handle, or a cell
             % array containing the function handle and any number of
             % inputs. These inputs are then fed in to the function at
-            % run-time. To specify the created goggleZoomedView object
+            % run-time. To specify the created masivZoomedView object
             % itself, use 'obj' as a parameter
             %
             % e.g. ...'completedFcn', {@foo, 'obj'}
             %
               if ~isempty(obj.completedFcn)
-                  goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Running load completion callback', toc,'s')
+                  masivDebugTimingInfo(3, 'GZV.checkForLoadedImage: Running load completion callback', toc,'s')
                   if iscell(obj.completedFcn)
                       fun=obj.completedFcn{1};
                       if numel(obj.completedFcn)>1
@@ -178,20 +178,20 @@ function checkForLoadedImage(t, ~, obj, f)
         idx=[];
         stop(t)
         delete(t)
-        goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: TIMER ERROR', toc,'s')
+        masivDebugTimingInfo(3, 'GZV.checkForLoadedImage: TIMER ERROR', toc,'s')
         deleteLineFromQueueFile;
     end
     if ~isempty(idx)
         deleteLineFromQueueFile;
-        goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has been loaded. Processing', toc,'s')
+        masivDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has been loaded. Processing', toc,'s')
         I=processImage(I, obj);
-        goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has been filtered', toc,'s')
+        masivDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image has been filtered', toc,'s')
         obj.rawImageData=I;
-        goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image data read', toc,'s')
+        masivDebugTimingInfo(3, 'GZV.checkForLoadedImage: Image data read', toc,'s')
         stop(t)
-        goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Timer stopped', toc,'s')
+        masivDebugTimingInfo(3, 'GZV.checkForLoadedImage: Timer stopped', toc,'s')
         delete(t)
-        goggleDebugTimingInfo(3, 'GZV.checkForLoadedImage: Timer deleted', toc,'s')
+        masivDebugTimingInfo(3, 'GZV.checkForLoadedImage: Timer deleted', toc,'s')
       
         executeCompletedFcn(obj)
     end

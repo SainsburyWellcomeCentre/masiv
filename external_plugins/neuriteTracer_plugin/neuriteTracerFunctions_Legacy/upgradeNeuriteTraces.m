@@ -4,9 +4,9 @@ function [data,changed]=upgradeNeuriteTraces(data)
 % function [data,changed]=upgradeNeuriteTraces(data)
 %
 % Purpose
-% - convert "goggleTreeNode" to "neuriteTracerNode"
-% - convert "goggleMarker" to "neuriteTracerMarker"
-% - convert "goggleMarkerType" to "neuriteTracerMarkerType"
+% - convert "masivTreeNode" to "neuriteTracerNode"
+% - convert "masivMarker" to "neuriteTracerMarker"
+% - convert "masivMarkerType" to "neuriteTracerMarkerType"
 %
 %
 % Inputs
@@ -39,9 +39,9 @@ function [data,changed] = convertIt(data)
 	for ii=1:length(data.Node)
 		N=data.Node{ii};
 
-		%Replace the goggleMarkerType
+		%Replace the masivMarkerType
 		origType = N.type;
-		if isa(origType,'goggleMarkerType')
+		if isa(origType,'masivMarkerType')
 			new = neuriteTracerMarkerType;
 			new.name = origType.name;
 			new.color = origType.color;
@@ -51,7 +51,7 @@ function [data,changed] = convertIt(data)
 		end
 
 
-		if isa(N,'goggleTreeNode')
+		if isa(N,'masivTreeNode')
 			newNode=neuriteTracerNode(new,N.xVoxel,N.yVoxel,N.zVoxel);
 
 			newNode.branchType = N.branchType;
@@ -61,7 +61,7 @@ function [data,changed] = convertIt(data)
 
 			data.Node{ii}=newNode;
 			changed=1;
-		elseif isa(N,'goggleMarker') 
+		elseif isa(N,'masivMarker') 
 			newNode=neuriteTracerNode(new,N.xVoxel,N.yVoxel,N.zVoxel);
 
 			newNode.branchType = '';

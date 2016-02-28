@@ -1,4 +1,4 @@
-classdef goggleDistanceMeasurePlugin<goggleBoxPlugin
+classdef masivDistanceMeasurePlugin<masivPlugin
     %GOGGLEDISTANCEMEASUREPLUGIN A simple plugin to allow the drawing of a
     %line to measure distance (in pixels/units)
     
@@ -7,11 +7,11 @@ classdef goggleDistanceMeasurePlugin<goggleBoxPlugin
     end
     
     methods
-        function  obj=goggleDistanceMeasurePlugin(caller, ~)
-            obj=obj@goggleBoxPlugin(caller);
-            obj.goggleViewer=caller.UserData;
+        function  obj=masivDistanceMeasurePlugin(caller, ~)
+            obj=obj@masivPlugin(caller);
+            obj.MaSIV=caller.UserData;
             %% present line
-            obj.hLn=imline(obj.goggleViewer.hMainImgAx);
+            obj.hLn=imline(obj.MaSIV.hMainImgAx);
             pos=obj.hLn.getPosition();
             dx=pos(1,1)-pos(2,1);
             dy=pos(1,2)-pos(2,2);
@@ -34,6 +34,6 @@ end
 
 function deleteRequest(obj)
 delete(obj.hLn)
-deleteRequest@goggleBoxPlugin(obj);
+deleteRequest@masivPlugin(obj);
 end
 

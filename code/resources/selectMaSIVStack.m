@@ -1,18 +1,18 @@
-function selectedMaSIVStack = selectMaSIVStack(meta)
+function selectedmasivStack = selectmasivStack(meta)
 % Displays information about MaSIV stacks to the user, in order to get them to choose one
 %
-% function selectedMaSIVStack = selectDownscaledStack(meta)
+% function selectedmasivStack = selectDownscaledStack(meta)
 %
-% This function will be superceded by selectMaSIVStack
+% This function will be superceded by selectmasivStack
 
 %#ok<*AGROW>
 
-fontSz=gbSetting('font.size');
-mainFont=gbSetting('font.name');
+fontSz=masivSetting('font.size');
+mainFont=masivSetting('font.name');
 %% Check input
 
-if ~isa(meta, 'MaSIVMeta')
-    error('Input must a MaSIVMeta object')
+if ~isa(meta, 'masivMeta')
+    error('Input must a masivMeta object')
 end
 
 stacks=meta.masivStacks;
@@ -89,9 +89,9 @@ stacks=meta.masivStacks;
     uiwait(hFig);
     %% We're done, what have we selected?
     if ~isempty(selectedIdx)
-        selectedMaSIVStack=stacks(selectedIdx);
+        selectedmasivStack=stacks(selectedIdx);
     else
-        selectedMaSIVStack=[];
+        selectedmasivStack=[];
     end
     if ishandle(hFig)
     close(hFig)
@@ -135,7 +135,7 @@ stacks=meta.masivStacks;
 
     function cancelButtonClick(~,~)
         selectedIdx=[];
-        selectedMaSIVStack=[];
+        selectedmasivStack=[];
         uiresume(gcbf)
         delete(hFig)
     end
@@ -145,7 +145,7 @@ stacks=meta.masivStacks;
     end
 
     function newButtonClick(~, ~)
-        a=MaSIVStack(meta);
+        a=masivStack(meta);
         if ~isempty(a.channel)
             if a.fileOnDisk
                 msgbox('A stack matching this specification already exists. Cancelling stack creation', 'Generate MaSIV Stack')
@@ -193,7 +193,7 @@ stacks=meta.masivStacks;
         
     end
    
-end %function selectedMaSIVStack = selectDownscaledStack(meta)
+end %function selectedmasivStack = selectDownscaledStack(meta)
 
 
 function updateAvailableChannels(hChannels, stacks)

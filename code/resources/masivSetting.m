@@ -1,11 +1,11 @@
-function valOut=gbSetting(prefName, val)
-% Get or set preferences in goggleViewer YAML file 
+function valOut=masivSetting(prefName, val)
+% Get or set preferences in MaSIV YAML file 
 %
-% function valOut=gbSetting(prefName, val) %#ok<INUSD>
+% function valOut=masivSetting(prefName, val) %#ok<INUSD>
 %
 % Purpose
-% Gets or sets settings (preferences) for goggleViewer from a YAML prefs file.
-% gbSetting also stores the default preferences and creates the YAML prefs 
+% Gets or sets settings (preferences) for MaSIV from a YAML prefs file.
+% masivSetting also stores the default preferences and creates the YAML prefs 
 % file if it's missing. 
 %
 % Inputs
@@ -14,10 +14,10 @@ function valOut=gbSetting(prefName, val)
 %       To reset to default value, pass an empty cell array {}
 %
 % Examples
-% >> gbSetting('debug.logging')
+% >> masivSetting('debug.logging')
 % ans = 1
-% >> gbSetting('debug.logging',0);
-% >> gbSetting('debug.logging')
+% >> masivSetting('debug.logging',0);
+% >> masivSetting('debug.logging')
 % ans = 0
 %
 %
@@ -63,7 +63,7 @@ end
     end
     
     
-end %function valOut=gbSetting(prefName, val)
+end %function valOut=masivSetting(prefName, val)
 
 
 %----------------------------------------------------------
@@ -75,10 +75,10 @@ end
 
 
 function fName=getPrefsFilePath
-    fName=which('gogglePrefs.yml');
+    fName=which('masivPrefs.yml');
     if isempty(fName)
         createDefaultPrefsFile
-        fName=which('gogglePrefs.yml');
+        fName=which('masivPrefs.yml');
     end
 end
 
@@ -155,14 +155,14 @@ function s=returnDefaultSettings
     s.plugins.hideTutorialPlugins=0; %is 1 we hide tutorial plugins
     s.plugins.bundledPluginsDirPath=fullfile('code','plugins');
     %TODO: following line assumes that "external_plugins" is located in the repository root. Likely this will change and so code using this setting will also need to change
-    %      the .goggle_plugins is currently just there for testing
-    s.plugins.externalPluginsDirs={'external_plugins','~/.goggle_plugins'}; 
+    %      the .masiv_plugins is currently just there for testing
+    s.plugins.externalPluginsDirs={'external_plugins','~/.masiv_plugins'}; 
 end
 
 function createDefaultPrefsFile
     %% Load the default settings and write these to disk
-    baseDir=fileparts(which('goggleViewer'));
-    writeSimpleYAML(returnDefaultSettings, fullfile(baseDir, 'gogglePrefs.yml')); 
+    baseDir=fileparts(which('MaSIV'));
+    writeSimpleYAML(returnDefaultSettings, fullfile(baseDir, 'masivPrefs.yml')); 
 end
 
 function valOut=tryToSetToDefaultValue(prefName)
@@ -173,8 +173,8 @@ function valOut=tryToSetToDefaultValue(prefName)
     else
         %add new default preference to file
         fprintf('Adding default value for %s to the settings YML file\n', prefName)
-        gbSetting(prefName,thisDefaultSetting); %add the setting by writing to the preferences file
-        valOut=gbSetting(prefName); %read the setting
+        masivSetting(prefName,thisDefaultSetting); %add the setting by writing to the preferences file
+        valOut=masivSetting(prefName); %read the setting
     end %if isinf(thisDefaultSetting)
 end
 

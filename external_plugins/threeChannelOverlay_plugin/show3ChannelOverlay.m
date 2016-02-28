@@ -1,4 +1,4 @@
-classdef show3ChannelOverlay<goggleBoxPlugin
+classdef show3ChannelOverlay<masivPlugin
     %SHOW3CHANNELOVERLAY Opens the current view in a new window, with all 3
     %channels
     
@@ -7,7 +7,7 @@ classdef show3ChannelOverlay<goggleBoxPlugin
     
     methods
         function obj=show3ChannelOverlay(caller, ~)
-            obj=obj@goggleBoxPlugin(caller);
+            obj=obj@masivPlugin(caller);
             gvObj=caller.UserData;
             Meta=gvObj.Meta;
             
@@ -102,7 +102,7 @@ classdef show3ChannelOverlay<goggleBoxPlugin
             deleteRequest(obj)
         end
         function deleteRequest(obj)
-            deleteRequest@goggleBoxPlugin(obj)
+            deleteRequest@masivPlugin(obj)
         end
     end
     
@@ -171,7 +171,7 @@ function I=doUnmix(I)
 end
 
 function emissionMatrixNormalised=loadUnmixingVectorsNoGui()
-    basedir=fileparts(which('goggleViewer'));
+    basedir=fileparts(which('MaSIV'));
     sourceDirectory=fullfile(basedir, 'resources', 'unmix','sources');
     
     filesToLoad=cellfun(@(x) fullfile(sourceDirectory, [x '.csv']),  {'mCherry', 'GFP', 'Cerulean'},'UniformOutput',0 );

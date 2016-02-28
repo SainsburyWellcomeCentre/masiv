@@ -12,8 +12,8 @@ classdef neuriteTracerNode < neuriteTracerMarker
 
     methods
         function obj=neuriteTracerNode(thisType,xVoxel,yVoxel,zVoxel,branchType,isPrematureTermination,isBouton,data)
-            % Constructor of goggleTreeNode
-            obj = obj@neuriteTracerMarker(thisType,xVoxel,yVoxel,zVoxel); %call goggleMarker constructor
+            % Constructor of masivTreeNode
+            obj = obj@neuriteTracerMarker(thisType,xVoxel,yVoxel,zVoxel); %call masivMarker constructor
 
             %Define default properties
             if nargin<5
