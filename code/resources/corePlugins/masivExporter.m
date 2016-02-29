@@ -1,5 +1,5 @@
 classdef masivExporter<masivPlugin
-    %GOGGLEEXPORTER Exports a stack to the base workspace or to a file
+    %masivExporter Exports a stack to the base workspace or to a file
     properties(Access=protected)
         hFig
         hPanelPosition

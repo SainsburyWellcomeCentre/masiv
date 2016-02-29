@@ -1,5 +1,6 @@
 classdef(Abstract) masivPlugin<handle
-    %GOGGLEBOXPLUGIN Base class for masivPlugins. 
+    % masivPlugin
+    %  Base class for masivPlugins. 
     
     properties
         parentMenuItem

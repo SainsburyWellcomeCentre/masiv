@@ -1,4 +1,6 @@
-function unmixGoggleSlicesToDisk(t, emissionCSVFiles, outputChannelNames, varargin)
+function unmixmasivSlicesToDisk(t, emissionCSVFiles, outputChannelNames, varargin)
+% function unmixmasivSlicesToDisk(t, emissionCSVFiles, outputChannelNames, varargin)
+%
 f=fieldnames(t.stitchedImagePaths);
 p=inputParser;
 addParameter(p, 'idx', 1:numel(t.stitchedImagePaths.(f{1})));

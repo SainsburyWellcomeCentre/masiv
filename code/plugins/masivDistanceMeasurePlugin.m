@@ -1,5 +1,5 @@
 classdef masivDistanceMeasurePlugin<masivPlugin
-    %GOGGLEDISTANCEMEASUREPLUGIN A simple plugin to allow the drawing of a
+    %masivDistanceMeasurePlugin A simple plugin to allow the drawing of a
     %line to measure distance (in pixels/units)
     
     properties
