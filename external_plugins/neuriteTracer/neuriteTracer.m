@@ -108,15 +108,12 @@ classdef neuriteTracer<masivPlugin
                 fprintf('\n\n\tThe matlab-tree package is not installed. \n\tPlease install from: https://github.com/raacampbell13/matlab-tree\n\n\n')
                 return
             end
-
-            %Ensure the helper functions are added to the path
-            pathToAdd = masiv_plugin.absolutepath('neuriteTracerFunctions');
-            addpath(pathToAdd) %Duplicates aren't added
-
-
             obj=obj@masivPlugin(caller); %call constructor of masivPlugin
             obj.MaSIV=caller.UserData;
 
+
+            %Add the helper functions to the path. If already there, a duplicate is not created
+            addpath(masiv_plugin.absolutepath('masivMarkers'))
 
             %% Settings
             obj.fontName=masivSetting('font.name');

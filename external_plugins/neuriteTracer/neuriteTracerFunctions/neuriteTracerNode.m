@@ -1,6 +1,6 @@
-classdef masivTreeNode < masivMarker
-    % masivTreeNode
-    % masivTreeNode inherits masivMarker but adds other meta-data too
+classdef neuriteTracerNode < neuriteTracerMarker
+    % neuriteTracerNode
+    % neuriteTracerNode inherits neuriteTracerMarker and adds other meta-data
     
     properties
         branchType              %any string such as 'axon', 'dendrite', 'bulklabel', etc 
@@ -11,9 +11,9 @@ classdef masivTreeNode < masivMarker
     end
 
     methods
-        function obj=masivTreeNode(thisType,xVoxel,yVoxel,zVoxel,branchType,isPrematureTermination,isBouton,data)
+        function obj=neuriteTracerNode(thisType,xVoxel,yVoxel,zVoxel,branchType,isPrematureTermination,isBouton,data)
             % Constructor of masivTreeNode
-            obj = obj@masivMarker(thisType,xVoxel,yVoxel,zVoxel); %call masivMarker constructor
+            obj = obj@neuriteTracerMarker(thisType,xVoxel,yVoxel,zVoxel); %call masivMarker constructor
 
             %Define default properties
             if nargin<5

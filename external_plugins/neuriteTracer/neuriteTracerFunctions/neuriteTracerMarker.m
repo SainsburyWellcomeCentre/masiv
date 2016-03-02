@@ -1,4 +1,4 @@
-classdef masivMarker
+classdef neuriteTracerMarker
     properties
         type
         xVoxel
@@ -10,9 +10,9 @@ classdef masivMarker
     end
     methods
         %% Constructor
-        function obj=masivMarker(type, x, y, z)
+        function obj=neuriteTracerMarker(type, x, y, z)
             if nargin>0
-                if isa(type, 'masivMarkerType')
+                if isa(type, 'neuriteTracerMarkerType')
                     obj.type=type;
                 else
                     error('Must be a valid marker type')
@@ -23,9 +23,9 @@ classdef masivMarker
                     if any(diff([numel(x) numel(y) numel(z)]));
                         error('x y and z vectors must be of equal size')
                     end
-                    obj(numel(x))=masivMarker;
+                    obj(numel(x))=neuriteTracerMarker;
                     for ii=1:numel(x)
-                        obj(ii)=masivMarker(type, x(ii), y(ii), z(ii));
+                        obj(ii)=neuriteTracerMarker(type, x(ii), y(ii), z(ii));
                     end
                 elseif isnumeric(x)
                     obj.xVoxel=x;
@@ -60,8 +60,8 @@ classdef masivMarker
                 return
             end
             if isscalar(obj)
-                if ~isa(obj2, 'masivMarker')
-                    error('Comparator must be a masivMarker object')
+                if ~isa(obj2, 'neuriteTracerMarker')
+                    error('Comparator must be a neuriteTracerMarker object')
                 end
                 if ~isscalar(obj2)
                     e=obj2==obj;
