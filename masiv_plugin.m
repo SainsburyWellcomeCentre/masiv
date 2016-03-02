@@ -18,7 +18,6 @@ classdef (Abstract) masiv_plugin
 
     methods (Static)
 
-
         function isplugin=isMasivPlugin(fileName)
             % masiv_plugin.isMasivPlugin
             %
@@ -28,6 +27,11 @@ classdef (Abstract) masiv_plugin
             %
             % Example:
             % masiv_plugin.isMasivPlugin('myPluginFile.m')
+
+            if nargin==0
+                help('masiv_plugin.isMasivPlugin')
+                return
+            end
 
             [~,className]=fileparts(fileName);
             m=meta.class.fromName(className);
@@ -73,6 +77,11 @@ classdef (Abstract) masiv_plugin
             %
             % Rob Campbell - Basel 2016
 
+            if nargin==0
+                help('masiv_plugin.installPlugin')
+                return
+            end
+
             if nargin<2 | isempty(targetDir)
                 targetDir=pwd;
             end
@@ -91,6 +100,9 @@ classdef (Abstract) masiv_plugin
             end
 
             unzippedDir = masiv_plugin.getZip(GitHubURL,branchName);
+            if isempty(unzippedDir)
+                return
+            end
 
             %Now we query GitHub using the GitHub API in order to log the time this commit was made and the commit's SHA hash
             pluginDetails=masiv_plugin.getLastCommitDetails(GitHubURL,branchName);
@@ -114,7 +126,7 @@ classdef (Abstract) masiv_plugin
 
 
         function updatePlugin(pathToPluginDir)  
-            % Install MaSIV plugin from GitHub to a given target directory
+            % Check whether MaSIV plugin is up to date and update if not
             %
             % masiv_plugin.updatePlugin
             %
@@ -134,19 +146,13 @@ classdef (Abstract) masiv_plugin
             %
             % Rob Campbell - Basel 2016
 
-            if ~exist(pathToPluginDir,'dir')
-                fprintf('No directory found at %s\n',pathToPluginDir)
+            detailsFname = masiv_plugin.getDetailsFname(pathToPluginDir);
+            if isempty(detailsFname)
                 return
+            else
+                load(detailsFname)
             end
 
-            detailsFname = fullfile(pathToPluginDir,masiv_plugin.detailsFname);
-            if ~exist(detailsFname,'file')
-                fprintf('\n Could not find a "%s" file in directory "%s".\n Please install plugin with "masiv_plugin.installPlugin"\n\n',...
-                    masiv_plugin.detailsFname,pathToPluginDir)
-                return
-            end
-
-            load(detailsFname)
 
             %Read the Web page and find the sha of the last commit 
             response=urlread(pluginDetails.repositoryURL);
@@ -177,6 +183,9 @@ classdef (Abstract) masiv_plugin
 
             %get the zip file for this plugin and this branch using values previously stored in the plugin folder
             unzippedDir = masiv_plugin.getZip(pluginDetails.repositoryURL,pluginDetails.branchName);
+            if isempty(unzippedDir)
+                return
+            end
 
             %Save the new commit details to this folder
             pluginDetails=lastCommit;
@@ -335,7 +344,7 @@ classdef (Abstract) masiv_plugin
             API = regexprep(API,'//github.com','//api.github.com/repos');
         end %API
 
-        
+
         function zipUrl=getZipURL(url,branchName)
             % masiv_plugin.getZipURL
             %
@@ -377,7 +386,8 @@ classdef (Abstract) masiv_plugin
             try 
                 websave(zipFname,zipURL);
             catch
-                fprintf('\nFAILED to download plugin ZIP file from %s.\nCheck the URL you supplied and try again\n\n', zipURL)
+                fprintf('\nFAILED to download plugin ZIP file from %s.\nCheck the URL you supplied and try again\n\n', zipURL);
+                unzippedDir=[];
                 return
             end
 
@@ -390,7 +400,7 @@ classdef (Abstract) masiv_plugin
             if isempty(tok)
                 error('Failed to get zip file save location from zipfile list. Something stupid went wrong with installPlugin!')
             end
-            
+
             unzippedDir = tok{1}{1};
 
             %Check that this folder indeed exists (super-paranoid here)
