@@ -113,7 +113,9 @@ classdef neuriteTracer<masivPlugin
 
 
             %Add the helper functions to the path. If already there, a duplicate is not created
-            addpath(masiv_plugin.absolutepath('masivMarkers'))
+            pathToPlugin=fullfile(which('neuriteTracer'));
+            addpath(fullfile(fileparts(pathToPlugin),'neuriteTracerFunctions'))
+
 
             %% Settings
             obj.fontName=masivSetting('font.name');
