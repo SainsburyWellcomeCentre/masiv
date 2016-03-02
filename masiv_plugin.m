@@ -19,6 +19,26 @@ classdef (Abstract) masiv_plugin
     methods (Static)
 
 
+        function isplugin=isMasivPlugin(fileName)
+            % masiv_plugin.isMasivPlugin
+            %
+            % function isplugin=isMasivPlugin(fileName)
+            %
+            % Purpose: return true if an m file is a valid MaSIV plugin
+            %
+            % Example:
+            % masiv_plugin.isMasivPlugin('myPluginFile.m')
+
+            [~,className]=fileparts(fileName);
+            m=meta.class.fromName(className);
+            if ismember('masivPlugin', {m.SuperclassList.Name})
+                isplugin=true;
+            else
+                isplugin=false;
+            end
+        end %isMasivPlugin
+
+
         function varargout=installPlugin(GitHubURL,targetDir,branchName)
             % Install MaSIV plugin from GitHub to a given target directory
             %
@@ -70,35 +90,10 @@ classdef (Abstract) masiv_plugin
                 return
             end
 
-            %Attempt to download the last commit as a ZIP file 
-            %This doesn't involve an API call, so we do it first in case it fails because the number of API calls
-            %from a given IP address are limited. See protected method "masiv_plugin.checkGitHubLimit" for details.
-            zipURL = masiv_plugin.getZipURL(GitHubURL,branchName);
-            zipFname =sprintf('masiv_plugin_%s.zip',repoName); %Temporary location of the zip file (should work on Windows too)
-            tmpDir = '/tmp';
-            zipFname = fullfile(tmpDir,zipFname);
-
-            try 
-                websave(zipFname,zipURL);
-            catch
-                fprintf('\nFAILED to download plugin ZIP file from %s.\nCheck the URL you supplied and try again\n\n', zipURL)
-                return
-            end
-
-            %Now unpack the zip file in the temporary directory
-            unzipFileList=unzip(zipFname,tmpDir);
-
-            %The name of the unzipped directory
-            tok=regexp(unzipFileList{1},['(.*?',filesep,repoName,'-.+?',filesep,')'],'tokens');
-            if isempty(tok)
-                error('Failed to get zip file save location from zipfile list. Something stupid went wrong with installPlugin!')
-            end
-            unzippedDir = tok{1}{1};
-
+            unzippedDir = masiv_plugin.getZip(GitHubURL,branchName);
 
             %Now we query GitHub using the GitHub API in order to log the time this commit was made and the commit's SHA hash
             pluginDetails=masiv_plugin.getLastCommitDetails(GitHubURL,branchName);
-
 
             fprintf('Plugin last updated by %s at %s on %s\n', ...
                 pluginDetails.author.name, pluginDetails.lastCommit.time, pluginDetails.lastCommit.date) 
@@ -168,8 +163,30 @@ classdef (Abstract) masiv_plugin
             %If the commit does not match, then it's possible the repository was indeed updated, but
             %the last commit was to a different branch and is masking the update. We therefore need
             %to generate an API query to get the details of the last commit on the current branch.
+            fprintf('Checking if plugin %s is up to date on branch %s\n', pluginDetails.repoName, pluginDetails.branchName)
+            lastCommit=masiv_plugin.getLastCommitDetails(pluginDetails.repositoryURL,pluginDetails.branchName);
+            if strcmp(lastCommit.sha,pluginDetails.sha)
+                fprintf('Plugin "%s" is up to date on branch "%s".\n',pluginDetails.repoName,pluginDetails.branchName)
+                return
+            end
 
-            
+            %If we're here, the plugin is not up to date
+            fprintf('Found an update for plugin "%s". New update is from %s at %s\n', ...
+                pluginDetails.repoName,pluginDetails.lastCommit.date,pluginDetails.lastCommit.time)
+
+
+            %get the zip file for this plugin and this branch using values previously stored in the plugin folder
+            unzippedDir = masiv_plugin.getZip(pluginDetails.repositoryURL,pluginDetails.branchName);
+
+            %Save the new commit details to this folder
+            pluginDetails=lastCommit;
+            save(fullfile(unzippedDir,masiv_plugin.detailsFname),'pluginDetails')
+
+            %it should now be safe to replace the existing plugin directory
+            rmdir(pathToPluginDir,'s')
+            movefile(unzippedDir,pathToPluginDir)
+
+            fprintf('Plugin "%s" updated\n', pluginDetails.repoName)
 
         end %updatePlugin
  
@@ -182,26 +199,6 @@ classdef (Abstract) masiv_plugin
 
 
     methods (Access=protected, Static)
-
-        function isplugin=isMasivPlugin(fileName)
-            % masiv_plugin.isMasivPlugin
-            %
-            % function isplugin=isMasivPlugin(fileName)
-            %
-            % Purpose: return true if an m file is a valid MaSIV plugin
-            %
-            % Example:
-            % masiv_plugin.isMasivPlugin('myPluginFile.m')
-
-            [~,className]=fileparts(fileName);
-            m=meta.class.fromName(className);
-            if ismember('masivPlugin', {m.SuperclassList.Name})
-                isplugin=true;
-            else
-                isplugin=false;
-            end
-        end %isMasivPlugin
-
 
         function API=URL2API(url)
             % masiv_plugin.URL2API
@@ -236,8 +233,46 @@ classdef (Abstract) masiv_plugin
 
             repoName = tok{1}{1};
 
-        end %getZipURL
+        end %getRepoName
 
+
+        function unzippedDir = getZip(GitHubURL,branchName)
+            % masiv_plugin.getZip
+            %
+            %Attempt to download the last commit as a ZIP file 
+            %This doesn't involve an API call, so we do it first in case it fails because the number of API calls
+            %from a given IP address are limited. See protected method "masiv_plugin.checkGitHubLimit" for details.
+
+            zipURL = masiv_plugin.getZipURL(GitHubURL,branchName);
+            zipFname = sprintf('masiv_plugin_%s.zip',masiv_plugin.getRepoName(GitHubURL)); %Temporary location of the zip file (should work on Windows too)
+            tmpDir = '/tmp';
+            zipFname = fullfile(tmpDir,zipFname);
+
+            try 
+                websave(zipFname,zipURL);
+            catch
+                fprintf('\nFAILED to download plugin ZIP file from %s.\nCheck the URL you supplied and try again\n\n', zipURL)
+                return
+            end
+
+            %Now unpack the zip file in the temporary directory
+            unzipFileList=unzip(zipFname,tmpDir);
+            delete(zipFname)
+
+            %The name of the unzipped directory
+            tok=regexp(unzipFileList{1},['(.*?',filesep,masiv_plugin.getRepoName(GitHubURL),'-.+?',filesep,')'],'tokens');
+            if isempty(tok)
+                error('Failed to get zip file save location from zipfile list. Something stupid went wrong with installPlugin!')
+            end
+            
+            unzippedDir = tok{1}{1};
+
+            %Check that this folder indeed exists (super-paranoid here)
+            if ~exist(unzippedDir,'dir')
+                error('Expected to find the plugin unzipped at %s but it is not there\n', unzippedDir)
+            end
+
+        end %getZip
 
 
         % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
