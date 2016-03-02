@@ -182,16 +182,20 @@ function obj=getimageFilePaths(obj)
     %GETIMAGEFILEPATHS Returns paths to full-resolution images from ImageList files
     delimiterInTextFile='\r\n';
     searchPattern=[obj.stackName, '_ImageList_'];
+
     listFilePaths=dir(fullfile(obj.masivDirectory, [searchPattern '*.txt']));
-    
+
     if isempty(listFilePaths)
-        fprintf('\n\n\t*****\n\tCan not find text files listing the relative paths to the full resolution images.\n\tYou need to create these text files. Please see the documentation on the web.\n\t*****\n\n\n')
+        fprintf(['\n\n\t*****\n\tFailed to find image list files in directory "%s"\n',...
+            '\tCan not find text files listing the relative paths to the full resolution images.\n',...
+            '\tYou need to create these text files. Please see the documentation on the web.\n\t*****\n\n\n'],...
+            obj.masivDirectory)
     end
 
     obj.imageFilePaths=struct;
 
     for ii=1:numel(listFilePaths)
-        
+
         fh=fopen(fullfile(obj.masivDirectory, listFilePaths(ii).name));
             channelFilePaths=textscan(fh, '%s', 'Delimiter', delimiterInTextFile);
         fclose(fh);
