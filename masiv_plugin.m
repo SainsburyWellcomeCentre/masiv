@@ -23,10 +23,15 @@ classdef (Abstract) masiv_plugin
             %
             % function isplugin=isPlugin(fileName)
             %
-            % Purpose: return true if an m file is a valid MaSIV plugin
+            % Purpose: Return true if an m file is a valid MaSIV plugin.
+            %          Valid plugins are subclasses of masivPlugin.
+            %          fileName must be in your path or in the current directory.
             %
             % Example:
             % masiv_plugin.isPlugin('myPluginFile.m')
+            %
+            % 
+            % Alex Brown - 2016
 
             if nargin==0
                 help('masiv_plugin.isPlugin')
@@ -35,11 +40,16 @@ classdef (Abstract) masiv_plugin
 
             [~,className]=fileparts(fileName);
             m=meta.class.fromName(className);
+            if length(m)==0
+                isplugin=false;
+                return
+            end
             if ismember('masivPlugin', {m.SuperclassList.Name})
                 isplugin=true;
             else
                 isplugin=false;
             end
+
         end %isPlugin
 
 
@@ -325,9 +335,115 @@ classdef (Abstract) masiv_plugin
                 varargout{1}=pluginDetails;
             end
 
-
         end %info
 
+        function [pluginDirs,installedFromGitHub]=getPluginDirs(pathToSearch)
+            % Recursively search for all directories that contain at least one MaSIV plugin
+            %
+            % masiv_plugingetPluginDirs
+            %
+            % function [pluginDirs,installedFromGitHub,dirsToAddToPath]=getPluginDirs(pathToSearch)
+            %
+            % Purpose
+            % As a rule, each plugin (or tightly associated group of plugins) resides in its own directory. 
+            % This function recursively searches sub-directories within "pathToSearch" for directories
+            % containing MaSIV plugins. 
+            %
+            % 
+            % Inputs
+            % pathToSearch - [optional] An absolute or relative path specifying where the plugin
+            %                to be updated is installed. If missing, we search from the current directory.
+            %
+            %
+            % Outputs
+            % pluginDirs          -  a cell array of paths to plugins
+            % installedFromGitHub -  a vector defining whether each path contains plugins that were installed
+            %                        from GitHub and so can be updated by masiv_plugin. 
+            %
+            %
+            % Rob Campbell - Basel 2016   
+
+            if nargin<1
+                pathToSearch = pwd;
+            end
+
+            P=strsplit(genpath(pathToSearch),':'); 
+         
+            %Loop through P and search for files that are valid MaSIV plugins. Valid plugins are
+            %subclasses of masivPlugin
+            CWD=pwd; %Because we will have to change to each directory as we search
+
+            pluginDirs={};
+            for ii=1:length(P)
+                if isempty(P{ii})
+                    continue
+                end
+
+                mFiles=dir(fullfile(P{ii},'*.m'));
+
+                %fprintf('Looking for plugins in %s\n',P{ii})
+                cd(P{ii})
+
+                for m=1:length(mFiles) %Loop through all M files in this directory
+                    thisFile = fullfile(P{ii}, mFiles(m).name);
+                    if masiv_plugin.isPlugin(thisFile)
+                        pluginDirs{length(pluginDirs)+1}=P{ii};
+
+                        if exist(fullfile(P{ii},masiv_plugin.detailsFname),'file')
+                            installedFromGitHub(length(pluginDirs))=1;
+                        else
+                            installedFromGitHub(length(pluginDirs))=0;
+                        end
+
+                        break
+                    end
+                end
+             
+            end
+            cd(CWD)
+
+        end %getPluginDirs
+
+        function  abs_path = absolutepath( rel_path, act_path, throwErrorIfFileNotExist )
+            % returns the absolute path relative to a given startpath.
+            %
+            %   The startpath is optional, if omitted the current dir is used instead.
+            %   Both argument must be strings.
+            %
+            %   Syntax:
+            %      abs_path = ABSOLUTEPATH( rel_path, start_path )
+            %
+            %   Parameters:
+            %      rel_path           - Relative path
+            %      start_path         - Start for relative path  (optional, default = current dir)
+            %
+            %   Examples:
+            %      absolutepath( '.\data\matlab'        , 'C:\local' ) = 'c:\local\data\matlab\'
+            %      absolutepath( 'A:\MyProject\'        , 'C:\local' ) = 'a:\myproject\'
+            %
+            %      absolutepath( '.\data\matlab'        , cd         ) is the same as
+            %      absolutepath( '.\data\matlab'                     )
+            %
+            %   Jochen Lenz
+
+            % 2nd parameter is optional:
+            if nargin < 3
+                throwErrorIfFileNotExist = true;
+                if  nargin < 2
+                    act_path = pwd;
+                end
+            end
+
+            %build absolute path
+            file = java.io.File([act_path filesep rel_path]);
+            abs_path = char(file.getCanonicalPath());
+
+            %check that file exists
+            if throwErrorIfFileNotExist && ~exist(abs_path, 'file')
+                throw(MException('absolutepath:fileNotExist', 'The path %s or file %s doesn''t exist', abs_path, abs_path(1:end-1)));
+            end
+        end %absolutepath
+        
     end % static methods
 
 
@@ -682,5 +798,3 @@ classdef (Abstract) masiv_plugin
 
 
 end %class
-
-
