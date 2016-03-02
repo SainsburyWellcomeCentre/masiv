@@ -97,14 +97,14 @@ classdef (Abstract) masiv_plugin
 
 
             %Now we query GitHub using the GitHub API in order to log the time this commit was made and the commit's SHA hash
-            details=masiv_plugin.getLastCommitDetails(GitHubURL,branchName);
+            pluginDetails=masiv_plugin.getLastCommitDetails(GitHubURL,branchName);
 
 
             fprintf('Plugin last updated by %s at %s on %s\n', ...
-                details.author.name, details.lastCommit.time, details.lastCommit.date) 
+                pluginDetails.author.name, pluginDetails.lastCommit.time, pluginDetails.lastCommit.date) 
 
             %Save this structure in the unpacked zip directory
-            save(fullfile(unzippedDir,masiv_plugin.detailsFname),'details')
+            save(fullfile(unzippedDir,masiv_plugin.detailsFname),'pluginDetails')
 
 
             %Now we move the directory to the target directory and rename it to the repository name
@@ -116,6 +116,7 @@ classdef (Abstract) masiv_plugin
             end
 
         end %installPlugin
+
 
         function updatePlugin(pathToPluginDir)  
             % Install MaSIV plugin from GitHub to a given target directory
@@ -143,14 +144,32 @@ classdef (Abstract) masiv_plugin
                 return
             end
 
-            if ~exist(fullfile(pathToPluginDir,masiv_plugin.detailsFname),'file')
+            detailsFname = fullfile(pathToPluginDir,masiv_plugin.detailsFname);
+            if ~exist(detailsFname,'file')
                 fprintf('\n Could not find a "%s" file in directory "%s".\n Please install plugin with "masiv_plugin.installPlugin"\n\n',...
                     masiv_plugin.detailsFname,pathToPluginDir)
                 return
             end
 
-            %TODO: nothing happens here yet
+            load(detailsFname)
 
+            %Read the Web page and find the sha of the last commit 
+            response=urlread(pluginDetails.repositoryURL);
+            tok=regexp(response,'<a class="commit-tease-sha" href="(.+?)" data-pjax>','tokens');
+            if isempty(tok)
+                error('Failed to get commit SHA string from %s\n',pluginDetails.repositoryURL);
+            end
+            lastSHA = regexprep(tok{1}{1},'/.*/','');
+            if strcmp(pluginDetails.sha,lastSHA)
+                fprintf('Plugin "%s" is up to date.\n',pluginDetails.repoName)
+                return
+            end
+
+            %If the commit does not match, then it's possible the repository was indeed updated, but
+            %the last commit was to a different branch and is masking the update. We therefore need
+            %to generate an API query to get the details of the last commit on the current branch.
+
+            
 
         end %updatePlugin
  
@@ -269,8 +288,12 @@ classdef (Abstract) masiv_plugin
             out.lastCommit.time = tok{1}{2};
             out.lastCommit.dateNum = datenum([tok{1}{1},' ',tok{1}{2}]); %The last commit in MATLAB serial date format
 
-            out.repositoryURL = url; %Store the URL from which we obtained the repository
+            %Store the URL of the repository (not the git URL)
+            url = regexprep(url,'\.git$',''); 
+            out.repositoryURL = url;
+
             out.branchName = branchName; %Store the branch we asked for
+            out.repoName = masiv_plugin.getRepoName(url);
 
         end %getLastCommitDetails
 
