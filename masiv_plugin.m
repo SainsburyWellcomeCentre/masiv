@@ -189,10 +189,136 @@ classdef (Abstract) masiv_plugin
             fprintf('Plugin "%s" updated\n', pluginDetails.repoName)
 
         end %updatePlugin
+
+
+        function changePluginBranch(pathToPluginDir,newBranchName)  
+            % Replace an existing plugin with a version from a different Git branch
+            %
+            % masiv_plugin.changePluginBranch
+            %
+            % function changePluginBranch(pathToPluginDir,newBranchName)
+            %
+            % Purpose: 
+            % Replace an existing plugin with a version from a different Git branch.
+            %
+            % 
+            % Inputs
+            % pathToPluginDir - An absolute or relative path specifying where the plugin
+            %                   to be updated is installed.
+            % newBranchName   - A string defining the name of the branch to which we will switch.
+            %
+            % Examples
+            %   masiv_plugin.changePluginBranch('/path/to/plugin/','devel')
+            %            
+            %
+            % Rob Campbell - Basel 2016
+
+            if nargin==0
+                help('masiv_plugin.changePluginBranch')
+                return
+            end
+
+            detailsFname = masiv_plugin.getDetailsFname(pathToPluginDir);
+            if isempty(detailsFname)
+                return
+            else
+                load(detailsFname)
+            end
+
+            %Bail out if this branch does not exist on the server            
+            if ~masiv_plugin.doesBranchExistOnGitHub(pluginDetails.repositoryURL,newBranchName)
+                fprintf('There is no branch named "%s" at %s\n', newBranchName, pluginDetails.repositoryURL)
+                return
+            end
+
+
+            %Bail out if the plugin is already using this branch
+            if strcmp(pluginDetails.branchName,newBranchName)
+                fprintf('Plugin "%s" is already from branch "%s"\n',....
+                    pluginDetails.repoName, pluginDetails.branchName)
+                return
+            end
+
+
+            %get the zip file for this plugin and this branch using values previously stored in the plugin folder
+            unzippedDir = masiv_plugin.getZip(pluginDetails.repositoryURL,newBranchName);
+            if isempty(unzippedDir)
+                return
+            end            
+
+            %Get the details for this commit from the desired branch
+            pluginDetails=masiv_plugin.getLastCommitDetails(pluginDetails.repositoryURL,newBranchName);
+
+
+            %Save the new commit details to the unzipped folder
+            save(fullfile(unzippedDir,masiv_plugin.detailsFname),'pluginDetails')
+
+            %it should now be safe to replace the existing plugin directory
+            rmdir(pathToPluginDir,'s')
+            movefile(unzippedDir,pathToPluginDir)
+
+            fprintf('Plugin "%s" is switched to branch "%s"\n', pluginDetails.repoName,newBranchName)
+
+        end %changePluginBranch
  
 
+        function varargout=pluginInfo(pathToPluginDir)  
+            % Display info about plugin in a given directory
+            %
+            % masiv_plugin.pluginInfo
+            %
+            % function info=pluginInfo(pathToPluginDir)
+            %
+            % Purpose: 
+            % Display information about a plugin to screen and optionally return as a structure.
+            % 
+            %
+            % Inputs
+            % pathToPluginDir - An absolute or relative path specifying where the plugin
+            %                   to be updated is installed.
+            %
+            % Outputs
+            % info - optional structure containing information about the plugin.
+            %
+            %
+            % Examples
+            %   masiv_plugin.pluginInfo('/path/to/plugin/')
+            %            
+            %
+            % Rob Campbell - Basel 2016
 
-     
+            if nargin==0
+                help('masiv_plugin.pluginInfo')
+                return
+            end
+
+            detailsFname = masiv_plugin.getDetailsFname(pathToPluginDir);
+            if isempty(detailsFname)
+                return
+            else
+                load(detailsFname)
+            end
+
+            fprintf(['\nRepo name:\t%s\n',...
+                'Branch name:\t%s\n',...
+                'Repo URL:\t%s\n',...
+                'Last commiter:\t%s\n',...
+                'Last updated:\t%s at %s\n\n'],...
+                pluginDetails.repoName,...
+                pluginDetails.branchName,...
+                pluginDetails.repositoryURL,...
+                pluginDetails.committer.name,...
+                pluginDetails.lastCommit.date,pluginDetails.lastCommit.time)
+
+
+
+            if nargout>0
+                varargout{1}=pluginDetails;
+            end
+
+
+        end %pluginInfo
+
     end % static methods
 
 
@@ -273,6 +399,51 @@ classdef (Abstract) masiv_plugin
             end
 
         end %getZip
+
+
+        function detailsFname = getDetailsFname(pathToPluginDir)
+            % masiv_plugin.detailsFname
+            % 
+            % Get the path to a plugin's details file. This file
+            % contains information such as the name of the branch,
+            % the commit sha, the last update time, etc
+
+            if ~exist(pathToPluginDir,'dir')
+                fprintf('No directory found at %s\n',pathToPluginDir)
+                return
+            end
+
+            detailsFname = fullfile(pathToPluginDir,masiv_plugin.detailsFname);
+
+            if ~exist(detailsFname,'file')
+                fprintf('\n Could not find a "%s" file in directory "%s".\n Please install plugin with "masiv_plugin.installPlugin"\n\n',...
+                    masiv_plugin.detailsFname,pathToPluginDir)
+                detailsFname=[];
+                return
+            end
+
+        end %getDetailsFname
+
+
+
+        function exists=doesBranchExistOnGitHub(pluginURL,branchName)
+            % masiv_plugin.doesBranchExistOnGitHub
+            %
+            % function exists=doesBranchExistOnGitHub(pluginURL,branchName)
+            %
+            % Purpose: return true if branch "branchName" exists at repository "pluginURL"
+            %
+            url = regexprep(pluginURL,'\.git$','');
+            url = [url,'/commits/',branchName];
+
+            try
+                reponse=urlread(url);
+                exists=true;
+            catch
+                exists=false;
+            end
+
+        end %doesBranchExistOnGitHub
 
 
         % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
