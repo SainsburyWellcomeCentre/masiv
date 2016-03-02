@@ -10,26 +10,26 @@ classdef (Abstract) masiv_plugin
     properties (Constant)
        defaultBranchName='master' %default branch from which to download plugin
        detailsFname='last_updated_details.mat' %name of file that contains the commit details associated with the plugin
-       exampleLastCommitDetails='{"ref":"refs/heads/master","url":"https://api.github.com/repos/raacampbell/neurTraceB/git/refs/heads/master","object":{"sha":"659edbe2aa065108d028aa3fdbbc89bd60ddc91f","type":"commit","url":"https://api.github.com/repos/raacampbell/neurTraceB/git/commits/659edbe2aa065108d028aa3fdbbc89bd60ddc91f"},"created_at": "2012-11-14T14:04:24Z","note": "getting-started","stuff":{"a":"wobble","b":"bobble"}}'
-       exampleLastCommit='{"sha":"659edbe2aa065108d028aa3fdbbc89bd60ddc91f","url":"https://api.github.com/repos/raacampbell/neurTraceB/git/commits/659edbe2aa065108d028aa3fdbbc89bd60ddc91f","html_url":"https://github.com/raacampbell/neurTraceB/commit/659edbe2aa065108d028aa3fdbbc89bd60ddc91f","author":{"name":"Rob Campbell","email":"git@raacampbell.com","date":"2016-03-01T12:10:00Z"},"committer":{"name":"Rob Campbell","email":"git@raacampbell.com","date":"2016-03-01T12:10:00Z"},"tree":{"sha":"239bc4b7652c0b4e50719d862343c0f7d970183b","url":"https://api.github.com/repos/raacampbell/neurTraceB/git/trees/239bc4b7652c0b4e50719d862343c0f7d970183b"},"message":"also constructor name was wrong","parents":[{"sha":"04c987462e53a66ec72aa9ad0a134b3b240a93e2","url":"https://api.github.com/repos/raacampbell/neurTraceB/git/commits/04c987462e53a66ec72aa9ad0a134b3b240a93e2","html_url":"https://github.com/raacampbell/neurTraceB/commit/04c987462e53a66ec72aa9ad0a134b3b240a93e2"}]}'
     end
 
 
 
-    methods (Static)
 
-        function isplugin=isMasivPlugin(fileName)
-            % masiv_plugin.isMasivPlugin
+    methods (Static)
+        %These are the public (user-facing) methods provided by this abstract class
+
+        function isplugin=isPlugin(fileName)
+            % masiv_plugin.isPlugin
             %
-            % function isplugin=isMasivPlugin(fileName)
+            % function isplugin=isPlugin(fileName)
             %
             % Purpose: return true if an m file is a valid MaSIV plugin
             %
             % Example:
-            % masiv_plugin.isMasivPlugin('myPluginFile.m')
+            % masiv_plugin.isPlugin('myPluginFile.m')
 
             if nargin==0
-                help('masiv_plugin.isMasivPlugin')
+                help('masiv_plugin.isPlugin')
                 return
             end
 
@@ -40,15 +40,15 @@ classdef (Abstract) masiv_plugin
             else
                 isplugin=false;
             end
-        end %isMasivPlugin
+        end %isPlugin
 
 
-        function varargout=installPlugin(GitHubURL,targetDir,branchName)
+        function varargout=install(GitHubURL,targetDir,branchName)
             % Install MaSIV plugin from GitHub to a given target directory
             %
-            % masiv_plugin.installPlugin 
+            % masiv_plugin.install 
             %
-            % function installPlugin(GitHubURL,targetDir,branch)
+            % function install(GitHubURL,targetDir,branch)
             %
             % Purpose: 
             % Install the plugin located at a given GitHub URL to either
@@ -69,16 +69,16 @@ classdef (Abstract) masiv_plugin
             % 
             %
             % Examples
-            %   masiv_plugin.installPlugin('https://github.com/userName/repoName')
-            %   masiv_plugin.installPlugin('https://github.com/userName/repoName.git')
-            %   masiv_plugin.installPlugin('https://github.com/userName/repoName',[],'devel')
-            %   masiv_plugin.installPlugin('https://github.com/userName/repoName','/path/to/stuff/')
+            %   masiv_plugin.install('https://github.com/userName/repoName')
+            %   masiv_plugin.install('https://github.com/userName/repoName.git')
+            %   masiv_plugin.install('https://github.com/userName/repoName',[],'devel')
+            %   masiv_plugin.install('https://github.com/userName/repoName','/path/to/stuff/')
             %            
             %
             % Rob Campbell - Basel 2016
 
             if nargin==0
-                help('masiv_plugin.installPlugin')
+                help('masiv_plugin.install')
                 return
             end
 
@@ -95,7 +95,7 @@ classdef (Abstract) masiv_plugin
             targetLocation = fullfile(targetDir,repoName);
             if exist(targetLocation,'dir')
                 fprintf(['\n A plugin directory already exists at %s\n',...
-                    ' You should either:\n    a) Delete this and try again.\n  or\n    b) Use masiv_plugin.updatePlugin to update it.\n\n'],targetLocation)
+                    ' You should either:\n    a) Delete this and try again.\n  or\n    b) Use masiv_plugin.update to update it.\n\n'],targetLocation)
                 return
             end
 
@@ -122,15 +122,15 @@ classdef (Abstract) masiv_plugin
                 varargout{1}=details;
             end
 
-        end %installPlugin
+        end %install
 
 
-        function updatePlugin(pathToPluginDir)  
+        function update(pathToPluginDir)  
             % Check whether MaSIV plugin is up to date and update if not
             %
-            % masiv_plugin.updatePlugin
+            % masiv_plugin.update
             %
-            % function updatePlugin(pathToPluginDir)
+            % function update(pathToPluginDir)
             %
             % Purpose: 
             % Update an existing plugin located at pathToPluginDir.
@@ -141,7 +141,7 @@ classdef (Abstract) masiv_plugin
             % 
             %
             % Examples
-            %   masiv_plugin.updatePlugin('/path/to/plugin/')
+            %   masiv_plugin.update('/path/to/plugin/')
             %            
             %
             % Rob Campbell - Basel 2016
@@ -197,15 +197,15 @@ classdef (Abstract) masiv_plugin
 
             fprintf('Plugin "%s" updated\n', pluginDetails.repoName)
 
-        end %updatePlugin
+        end %update
 
 
-        function changePluginBranch(pathToPluginDir,newBranchName)  
+        function changeBranch(pathToPluginDir,newBranchName)  
             % Replace an existing plugin with a version from a different Git branch
             %
-            % masiv_plugin.changePluginBranch
+            % masiv_plugin.changeBranch
             %
-            % function changePluginBranch(pathToPluginDir,newBranchName)
+            % function changeBranch(pathToPluginDir,newBranchName)
             %
             % Purpose: 
             % Replace an existing plugin with a version from a different Git branch.
@@ -217,13 +217,13 @@ classdef (Abstract) masiv_plugin
             % newBranchName   - A string defining the name of the branch to which we will switch.
             %
             % Examples
-            %   masiv_plugin.changePluginBranch('/path/to/plugin/','devel')
+            %   masiv_plugin.changeBranch('/path/to/plugin/','devel')
             %            
             %
             % Rob Campbell - Basel 2016
 
             if nargin==0
-                help('masiv_plugin.changePluginBranch')
+                help('masiv_plugin.changeBranch')
                 return
             end
 
@@ -268,15 +268,15 @@ classdef (Abstract) masiv_plugin
 
             fprintf('Plugin "%s" is switched to branch "%s"\n', pluginDetails.repoName,newBranchName)
 
-        end %changePluginBranch
+        end %changeBranch
  
 
-        function varargout=pluginInfo(pathToPluginDir)  
+        function varargout=info(pathToPluginDir)  
             % Display info about plugin in a given directory
             %
-            % masiv_plugin.pluginInfo
+            % masiv_plugin.info
             %
-            % function info=pluginInfo(pathToPluginDir)
+            % function info=info(pathToPluginDir)
             %
             % Purpose: 
             % Display information about a plugin to screen and optionally return as a structure.
@@ -291,13 +291,13 @@ classdef (Abstract) masiv_plugin
             %
             %
             % Examples
-            %   masiv_plugin.pluginInfo('/path/to/plugin/')
+            %   masiv_plugin.info('/path/to/plugin/')
             %            
             %
             % Rob Campbell - Basel 2016
 
             if nargin==0
-                help('masiv_plugin.pluginInfo')
+                help('masiv_plugin.info')
                 return
             end
 
@@ -326,7 +326,7 @@ classdef (Abstract) masiv_plugin
             end
 
 
-        end %pluginInfo
+        end %info
 
     end % static methods
 
@@ -334,6 +334,7 @@ classdef (Abstract) masiv_plugin
 
 
     methods (Access=protected, Static)
+        %These are the private (invisible to the user) methods provided by this abstract class
 
         function API=URL2API(url)
             % masiv_plugin.URL2API
@@ -398,7 +399,7 @@ classdef (Abstract) masiv_plugin
             %The name of the unzipped directory
             tok=regexp(unzipFileList{1},['(.*?',filesep,masiv_plugin.getRepoName(GitHubURL),'-.+?',filesep,')'],'tokens');
             if isempty(tok)
-                error('Failed to get zip file save location from zipfile list. Something stupid went wrong with installPlugin!')
+                error('Failed to get zip file save location from zipfile list. Something stupid went wrong with install!')
             end
 
             unzippedDir = tok{1}{1};
@@ -426,7 +427,7 @@ classdef (Abstract) masiv_plugin
             detailsFname = fullfile(pathToPluginDir,masiv_plugin.detailsFname);
 
             if ~exist(detailsFname,'file')
-                fprintf('\n Could not find a "%s" file in directory "%s".\n Please install plugin with "masiv_plugin.installPlugin"\n\n',...
+                fprintf('\n Could not find a "%s" file in directory "%s".\n Please install plugin with "masiv_plugin.install"\n\n',...
                     masiv_plugin.detailsFname,pathToPluginDir)
                 detailsFname=[];
                 return
