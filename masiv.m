@@ -830,33 +830,30 @@ function setupPlugins(obj)
      
      %Add external plugins
      for externalPlugin = masivSetting('plugins.externalPluginsDirs')
-         thisExternalPlugin=externalPlugin{1};
+         thisExternalPluginDir=externalPlugin{1};
          
-         if isempty(strfind(thisExternalPlugin,'~')) %TODO: hack. fix when we know where the plugins will be
-             thisExternalPlugin=fullfile(baseDir,thisExternalPlugin);
+         if isempty(strfind(thisExternalPluginDir,'~')) %TODO: hack. fix when we know where the plugins will be
+             thisExternalPluginDir=fullfile(baseDir,thisExternalPluginDir); %assumes in MaSIV directory [WILL CHANGE]
          end
          
-         if ~exist(thisExternalPlugin,'dir')
-             fprintf('Skipping missing plugin directory %s\n', thisExternalPlugin)
+         if ~exist(thisExternalPluginDir,'dir')
+             fprintf('Skipping missing plugin directory %s\n', thisExternalPluginDir)
              continue
          else
-             fprintf('Searching for plugins in %s\n',thisExternalPlugin)
+             fprintf('Searching for plugins in %s\n',thisExternalPluginDir)
          end
-         P=strsplit(genpath(thisExternalPlugin),':'); %all sub-directories within externalPluginDir
+
+         pluginDirs=masiv_plugin.getPluginDirs(thisExternalPluginDir);
          
-         %Loop through P and add all directories to the path that end with '_plugin' and also add all sub-directories they contain
-         for ii=1:length(P)
-             if ~isempty(regexp(P{ii},'_plugin$', 'ONCE'))
-                 if ~exist(P{ii},'dir')
-                     fprintf('Expected to find plugin directory %s but failed to do so\n',P{ii})
-                     continue
-                 end
-                 [~,thisPluginDir]=fileparts(P{ii});
-                 thisPluginName=strrep(thisPluginDir,'_plugin',''); %a coarse way of getting the plugin name
-                 fprintf('Adding plugin %s in directory %s\n', thisPluginName, P{ii});
-                 addpath(genpath(P{ii})) %add plugin directory to path
-                 addPlugins(obj.mnuPlugins, obj, P{ii}); %register plugin in viewer
-             end
+         %Loop through pluginDirs and add all directories to the path
+         for ii=1:length(pluginDirs)
+            if ~exist(pluginDirs{ii},'dir')
+                fprintf('Expected to find plugin directory %s but failed to do so. Skipping\n',pluginDirs{ii})
+                 continue
+            end
+            fprintf('Adding plugins in directory %s\n', pluginDirs{ii});
+            addpath(pluginDirs{ii})
+            addPlugins(obj.mnuPlugins, obj, pluginDirs{ii}); %register plugin in viewer
          end
      end
 end

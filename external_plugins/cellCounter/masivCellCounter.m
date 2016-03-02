@@ -54,7 +54,13 @@ classdef masivCellCounter<masivPlugin
         function obj=masivCellCounter(caller, ~)
             obj=obj@masivPlugin(caller);
             obj.MaSIV=caller.UserData;
-            
+
+
+            %Add the helper functions to the path. If already there, a duplicate is not created
+            pathToPlugin=fullfile(which('masivCellCounter'));
+            addpath(fullfile(fileparts(pathToPlugin),'masivMarkers'))
+
+
             %% Settings
             obj.fontName=masivSetting('font.name');
             obj.fontSize=masivSetting('font.size');

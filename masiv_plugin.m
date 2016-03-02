@@ -337,6 +337,7 @@ classdef (Abstract) masiv_plugin
 
         end %info
 
+
         function [pluginDirs,installedFromGitHub]=getPluginDirs(pathToSearch)
             % Recursively search for all directories that contain at least one MaSIV plugin
             %
@@ -404,45 +405,6 @@ classdef (Abstract) masiv_plugin
 
         end %getPluginDirs
 
-        function  abs_path = absolutepath( rel_path, act_path, throwErrorIfFileNotExist )
-            % returns the absolute path relative to a given startpath.
-            %
-            %   The startpath is optional, if omitted the current dir is used instead.
-            %   Both argument must be strings.
-            %
-            %   Syntax:
-            %      abs_path = ABSOLUTEPATH( rel_path, start_path )
-            %
-            %   Parameters:
-            %      rel_path           - Relative path
-            %      start_path         - Start for relative path  (optional, default = current dir)
-            %
-            %   Examples:
-            %      absolutepath( '.\data\matlab'        , 'C:\local' ) = 'c:\local\data\matlab\'
-            %      absolutepath( 'A:\MyProject\'        , 'C:\local' ) = 'a:\myproject\'
-            %
-            %      absolutepath( '.\data\matlab'        , cd         ) is the same as
-            %      absolutepath( '.\data\matlab'                     )
-            %
-            %   Jochen Lenz
-
-            % 2nd parameter is optional:
-            if nargin < 3
-                throwErrorIfFileNotExist = true;
-                if  nargin < 2
-                    act_path = pwd;
-                end
-            end
-
-            %build absolute path
-            file = java.io.File([act_path filesep rel_path]);
-            abs_path = char(file.getCanonicalPath());
-
-            %check that file exists
-            if throwErrorIfFileNotExist && ~exist(abs_path, 'file')
-                throw(MException('absolutepath:fileNotExist', 'The path %s or file %s doesn''t exist', abs_path, abs_path(1:end-1)));
-            end
-        end %absolutepath
         
     end % static methods
 
