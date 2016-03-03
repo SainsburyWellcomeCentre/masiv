@@ -1,8 +1,7 @@
 classdef (Abstract) masiv_plugin
     % masiv_plugin
     %
-    % This abstract (non-instantiable) class handles the installation and updating of
-    % of MaSIV plugins from GitHub. 
+    % This abstract class handles the installation and updating of MaSIV plugins from GitHub. 
     %
     % Rob Campbell - Basel 2016
 
@@ -163,7 +162,6 @@ classdef (Abstract) masiv_plugin
                 load(detailsFname)
             end
 
-
             %Read the Web page and find the sha of the last commit 
             response=urlread(pluginDetails.repositoryURL);
             tok=regexp(response,'<a class="commit-tease-sha" href="(.+?)" data-pjax>','tokens');
@@ -189,7 +187,6 @@ classdef (Abstract) masiv_plugin
             %If we're here, the plugin is not up to date
             fprintf('Found an update for plugin "%s". New update is from %s at %s\n', ...
                 pluginDetails.repoName,pluginDetails.lastCommit.date,pluginDetails.lastCommit.time)
-
 
             %get the zip file for this plugin and this branch using values previously stored in the plugin folder
             unzippedDir = masiv_plugin.getZip(pluginDetails.repositoryURL,pluginDetails.branchName);
@@ -250,14 +247,12 @@ classdef (Abstract) masiv_plugin
                 return
             end
 
-
             %Bail out if the plugin is already using this branch
             if strcmp(pluginDetails.branchName,newBranchName)
                 fprintf('Plugin "%s" is already from branch "%s"\n',....
                     pluginDetails.repoName, pluginDetails.branchName)
                 return
             end
-
 
             %get the zip file for this plugin and this branch using values previously stored in the plugin folder
             unzippedDir = masiv_plugin.getZip(pluginDetails.repositoryURL,newBranchName);
@@ -329,8 +324,6 @@ classdef (Abstract) masiv_plugin
                 pluginDetails.committer.name,...
                 pluginDetails.lastCommit.date,pluginDetails.lastCommit.time)
 
-
-
             if nargout>0
                 varargout{1}=pluginDetails;
             end
@@ -368,7 +361,12 @@ classdef (Abstract) masiv_plugin
                 pathToSearch = pwd;
             end
 
-            P=strsplit(genpath(pathToSearch),':'); 
+            if ispc
+                splitStr=';';
+            else
+                splitStr=':';
+            end
+            P=strsplit(genpath(pathToSearch),splitStr); 
          
             %Loop through P and search for files that are valid MaSIV plugins. Valid plugins are
             %subclasses of masivPlugin
@@ -514,7 +512,6 @@ classdef (Abstract) masiv_plugin
         end %getDetailsFname
 
 
-
         function exists=doesBranchExistOnGitHub(pluginURL,branchName)
             % masiv_plugin.doesBranchExistOnGitHub
             %
@@ -655,9 +652,6 @@ classdef (Abstract) masiv_plugin
             % Converts a unix time to a human-readable string
             str=datestr(unixTime/86400 + datenum(1970,1,1));
         end %unixTime2str
-
-
-
 
 
         function out=apiResponse2Struct(response,verbose)
