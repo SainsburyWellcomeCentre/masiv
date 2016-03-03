@@ -457,23 +457,23 @@ classdef (Abstract) masiv_plugin
 
             zipURL = masiv_plugin.getZipURL(GitHubURL,branchName);
             zipFname = sprintf('masiv_plugin_%s.zip',masiv_plugin.getRepoName(GitHubURL)); %Temporary location of the zip file (should work on Windows too)
-            tmpDir = '/tmp';
-            zipFname = fullfile(tmpDir,zipFname);
+            zipFname = fullfile(tempdir,zipFname);
 
             try 
                 websave(zipFname,zipURL);
             catch
-                fprintf('\nFAILED to download plugin ZIP file from %s.\nCheck the URL you supplied and try again\n\n', zipURL);
+                fprintf('\nFAILED to download plugin ZIP file from %s\nCheck the URL you supplied and try again\n\n', zipURL);
                 unzippedDir=[];
                 return
             end
 
             %Now unpack the zip file in the temporary directory
-            unzipFileList=unzip(zipFname,tmpDir);
+            unzipFileList=unzip(zipFname,tempdir);
             delete(zipFname)
 
             %The name of the unzipped directory
-            tok=regexp(unzipFileList{1},['(.*?',filesep,masiv_plugin.getRepoName(GitHubURL),'-.+?',filesep,')'],'tokens');
+            expression = ['(.*?\',filesep,masiv_plugin.getRepoName(GitHubURL),'-.+?\',filesep,')'];
+            tok=regexp(unzipFileList{1},expression,'tokens');
             if isempty(tok)
                 error('Failed to get zip file save location from zipfile list. Something stupid went wrong with install!')
             end
