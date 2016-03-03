@@ -753,8 +753,15 @@ function setupPath()
     MaSIVBasePath = fileparts(which('masiv'));
     MaSIVDirs = fullfile(MaSIVBasePath,'code');
     
-    MaSIVPath=strsplit(genpath(MaSIVDirs), ':');
-    p=strsplit(path, ':');
+    if ispc
+        splitString=';';
+    else
+        splitString=':';
+    end
+    
+    MaSIVPath=strsplit(genpath(MaSIVDirs), splitString);
+    p=strsplit(path, splitString);
+    
     toAddToPath=setdiff(MaSIVPath, p); %only add to path if dirs aren't already present
     toAddToPath(cellfun(@isempty, toAddToPath))=[]; %remove any blank entries
     fprintf('Adding MaSIV to path for this session\n')
