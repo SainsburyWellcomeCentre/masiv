@@ -693,7 +693,17 @@ function [m, t]=convertStructArrayToMarkerAndTypeArrays(s)
     m=[];
     for ii=1:numel(f)
         t(ii).name=f{ii};
-        t(ii).color=s.(f{ii}).color;
+        col=s.(f{ii}).color;
+        if iscell(col)
+            col=col{:};
+            col=str2num(col); %#ok<ST2NM>
+            t(ii).color=col;
+        end
+        if isnumeric(col) && numel(col) == 3
+            t(ii).color=col;
+        else
+            error('Unknown color specification')
+        end
         if isfield(s.(f{ii}), 'markers')
             sm=s.(f{ii}).markers;
             m=[m masivMarker(t(ii), [sm.x], [sm.y], [sm.z])]; %#ok<AGROW>
