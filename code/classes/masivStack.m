@@ -41,6 +41,9 @@ classdef masivStack<handle
         
         originalImageFilePaths % File path to original image files (relative to base directory)
     end
+    properties(Dependent)
+        contrastLimits % The last values used for the contrast slider
+    end
     
     methods
         %% Constructor
@@ -199,6 +202,28 @@ classdef masivStack<handle
         function ofn=get.originalImageFilePaths(obj)
             ofn=obj.MetaObject.imageFilePaths.(obj.channel);
         end
+        
+        function cLims=get.contrastLimits(obj)
+            imageDescription=masivStack.infoFromTifFile(obj.fileFullPath);
+            s=parseImageDescription(imageDescription);
+            if isfield(s, 'ContrastLims')
+                cLims=str2num(s.ContrastLims); %#ok<ST2NM>
+            else
+                cLims=[];
+            end
+        end
+        
+        function set.contrastLimits(obj, val)
+            if ~isnumeric(val) || numel(val)~=2
+                error('Contrast Limit specification must have precisely two numeric values')
+            end
+            
+            txt=[obj.toText, sprintf('\nContrastLims: [%u %u]', val)];
+            
+            T=Tiff(obj.fileFullPath, 'r+');
+            T.setTag('ImageDescription', txt)
+            T.close();
+        end
    
         %% Stack creation, writing, loading, deletion
         
@@ -274,13 +299,14 @@ classdef masivStack<handle
            %
            % Used when reading in a MaSIV tif file, to create an object, or
            % check whether it matches a given object
-           txt=strsplit(txt, '\n');
-           
-           channel = getKeyPair(txt{2}, 'Channel');
-           idx     = getKeyPair(txt{3}, 'Index', @str2num);
-           xyds    = getKeyPair(txt{4}, 'XYDS', @str2num);
+%            txt=strsplit(txt, '\n');
+           s=parseImageDescription(txt);
+           channel = s.Channel;
+           idx     = str2num(s.Index); %#ok<ST2NM>
+           xyds    = str2num(s.XYDS); %#ok<ST2NM>
            
         end
+        
         function masivImageDescription=infoFromTifFile(fullPathToFile)
             % INFOFROMTEXTFILE Reads in the first ImageDescription tag of a tif file
             %
@@ -448,25 +474,6 @@ end
 
 %% Utils
 
-function t=getKeyPair(txt, expectedName, convertFun)
-    % GETKEYPAIR Gets the value of a name-value pair with known name from a string of the form 'key: value'.
-    %
-    % Used in reading spec from MaSIV Stack ImageDescription tag
-    keyval=strsplit(txt, ':');
-    if numel(keyval) > 2 && strcmp(expectedName, 'Index')
-        keyval{2}=strjoin(keyval(2:end), ':');
-        keyval=keyval(1:2);
-    end
-    if ~strcmp(keyval{1}, expectedName)
-        error('Bad text specification')
-    else
-        t=strtrim(keyval{2});
-    end
-    if nargin > 2
-        t=convertFun(t);
-    end
-end
-
 function idxStr=getIdxStringRepresentation(obj)
 
     if numel(obj.idx)==1;
@@ -481,4 +488,25 @@ function idxStr=getIdxStringRepresentation(obj)
             idxStr=mat2str(obj.idx);
         end
     end
+end
+
+function s=parseImageDescription(txt)
+    txt=getKeyValPairEntries(txt);
+    s=struct;
+    for ii=1:numel(txt);
+        keyval=cellfun(@strtrim, strsplit(txt{ii}, ':'), 'UniformOutput', false);
+        
+        if numel(keyval) > 2
+            keyval{2} = strjoin(keyval(2:end), ':');
+            keyval(3:end)=[];
+        end
+        if numel(keyval)==2
+            s.(keyval{1})=keyval{2};
+        end
+    end
+end
+
+function txt=getKeyValPairEntries(txt)
+    txt=strsplit(txt, '\n');
+    txt=txt(cellfun(@(x) ~isempty(strfind(x, ':')), txt));
 end

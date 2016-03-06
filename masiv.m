@@ -546,6 +546,8 @@ end
 
 function closeRequest(~,~,obj)
     if isempty(obj.openPluginsOverridingCloseReq)
+        % set contrast limits for this stack
+        obj.MainStack.contrastLimits=[get(obj.hjSliderContrast,'Low') get(obj.hjSliderContrast,'High')];
         delete(obj)
     else
         msgbox('One or more plugins are open that require your attention before closing')
@@ -903,7 +905,8 @@ function setupResources(obj)
 end
 
 function setupContrast(obj)
-    fprintf('Choosing a reasonable value for the contrast scale...\n')
+    
+    fprintf('Choosing a reasonable value for the contrast scale...')
     numValues=1e5; %make histogram with this many values
     arraySize=numel(obj.MainStack.I);
     decimateBy=round(arraySize/numValues);
@@ -917,25 +920,33 @@ function setupContrast(obj)
     y=y-min(y(:)); %in case of negative numbers
     m=y.*x;
     vals=cumsum(m)/sum(m);
-    %% Set up high value
-    if masivSetting('contrastSlider.doAutoContrast') 
-        thresh = masivSetting('contrastSlider.highThresh');
-        if thresh>1 || thresh<0
-            masivSetting('contrastSlider.highThresh', {}) %reset value to default
-            thresh=masivSetting('contrastSlider.highThresh');
-        end
-        
-        f=find(vals>thresh);
-        threshVal=round(x(f(1)));
-        fprintf('High contrast slider set to %d\n',threshVal)
-        set(obj.hjSliderContrast,'High',threshVal)
-    end
     %% Set up limits
     contrastLims=[0 x(end)];
     contrastLims=contrastLims+[-1 1]*0.1*range(contrastLims); % dilate the range by 10% either side for safety
+    fprintf('Done \n')
+    if isempty(obj.MainStack.contrastLimits)
+        %% Set up high value
+        if masivSetting('contrastSlider.doAutoContrast')
+            thresh = masivSetting('contrastSlider.highThresh');
+            if thresh>1 || thresh<0
+                masivSetting('contrastSlider.highThresh', {}) %reset value to default
+                thresh=masivSetting('contrastSlider.highThresh');
+            end
+            
+            f=find(vals>thresh);
+            threshVal=round(x(f(1)));
+            fprintf('High contrast slider set to %d\n',threshVal)
+            set(obj.hjSliderContrast,'High',threshVal)
+        end
+        
+    else
+        lims=obj.MainStack.contrastLimits;
+        set(obj.hjSliderContrast,'Low',lims(1));
+        set(obj.hjSliderContrast,'High',lims(2));
+    end
     
     %% Set up markers
-    majorSpacing=roundToSingleSigFig(range(contrastLims/5)); % get 6 major ticks by default
+    majorSpacing=roundToSingleSigFig(range(contrastLims/4)); % get 5 major ticks by default
     minorSpacing=majorSpacing/5;
     set(obj.hjSliderContrast,  'MajorTickSpacing',majorSpacing, 'MinorTickSpacing', minorSpacing)
     
