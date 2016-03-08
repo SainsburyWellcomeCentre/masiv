@@ -1509,8 +1509,6 @@ function importData(~, ~, obj)
         rethrow(lasterror)
     end
 
-    %Update to new objects if needed TODO: get rid of this code once everything is converted
-    [NN,c]=upgradeNeuriteTraces(m);
     if c 
         fprintf('\n\n ===> UPGRADING IMPORTED DATA TO NEW OBJECT NAMES.\n')
         fprintf('Loaded file with old object names %s\n',fileToLoad)
