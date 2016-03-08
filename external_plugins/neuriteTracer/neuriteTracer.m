@@ -1509,22 +1509,6 @@ function importData(~, ~, obj)
         rethrow(lasterror)
     end
 
-    if c 
-        fprintf('\n\n ===> UPGRADING IMPORTED DATA TO NEW OBJECT NAMES.\n')
-        fprintf('Loaded file with old object names %s\n',fileToLoad)
-        %Make a copy of the file we just loaded and replace it with the one having the new object names
-        BAK = [fileToLoad,'.ORIG_OBJECT_NAMES'];
-        copyfile(fileToLoad,BAK)
-        fprintf('Backed up file to %s\n',BAK)
-
-        %replace the data we just loaded with the updated version
-        neurite_markers=NN;
-        save(fileToLoad,'neurite_markers')
-        fprintf('Replaced %s with the updated version\n',fileToLoad)
-
-        m=NN; %replace loaded object
-    end
-
     updateMarkerTypeUISelections(obj); %TODO: confirm that we need to do this
 
     obj.neuriteTrees=m; %Store loaded data in the object
