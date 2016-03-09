@@ -417,7 +417,10 @@ function I = createDownscaledStack(obj)
     
     outputImageWidth=ceil(minWidth/obj.xyds);
     outputImageHeight=ceil(minHeight/obj.xyds);
-    
+
+    fprintf(['\nOriginal image stack has size %d by %d pixels.\n',...
+        'Downsampling by a factor of %d to yield a %d by %d downsampled stack\n\n'],...
+        minWidth, minHeight, obj.xyds, outputImageWidth, outputImageHeight)
     
     I=zeros(outputImageHeight, outputImageWidth, numel(obj.idx), 'uint16');
     if usejava('jvm')&&~feature('ShowFigureWindows') %Switch to console display if no graphics available
