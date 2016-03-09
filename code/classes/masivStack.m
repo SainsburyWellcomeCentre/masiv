@@ -2,9 +2,10 @@ classdef masivStack<handle
     % MASIVSTACK Represents a downscaled stack used by MaSIV
     %
     % This class handles the creation, use, and deletion of a particular
-    % MaSIV Stack. Stacks are stored in the MaSIV directory (the same
-    % directory as the meta file), and are pulled from disk if available,
+    % MaSIV Stack (i.e. a downsampled stack). Stacks are stored in the MaSIV directory 
+    % (the same directory as the meta file), and are pulled from disk if available,
     % or created as needed
+
     properties(Dependent, SetAccess=protected)
         name            % The name of this particular stack
         stackName       % The name of the MaSIV dataset, taken from the meta file (stackName)
@@ -228,7 +229,8 @@ classdef masivStack<handle
         %% Stack creation, writing, loading, deletion
         
         function generateStack(obj)
-            % GENERATESTACK Creates the stack (in memory) from original image files
+            % GENERATESTACK 
+            % Triggers the creation of a downsampled image stack (in memory) from the original full-size image files
             if obj.imageInMemory
                 error('Image already in memory')
             end
@@ -236,7 +238,7 @@ classdef masivStack<handle
         end
                
         function writeStackToDisk(obj)
-            %WRITESTACKTODISK Writes the stack to a MaSIV tif file. 
+            %WRITESTACKTODISK Writes the downsampled stack to a MaSIV tif file. 
             % 
             % If the stack does not already exist in memory, it will be
             % generated
@@ -385,7 +387,8 @@ function [channel, idx, xyds]=getStackSpec(metaObject)
 end
 
 function I = createDownscaledStack(obj)
-    %CREATEDOWNSAMPLEDSTACK Generates the stack from original image files
+    %CREATEDOWNSAMPLEDSTACK 
+    % Generates a downsampled image stack from the original image files
     %
     % Uses parallel toolbox to perform generation in a reasonable time
     if nargin < 1 || isempty(obj) || ~isa(obj, 'masivStack')

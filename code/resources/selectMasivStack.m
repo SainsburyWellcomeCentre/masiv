@@ -1,9 +1,8 @@
 function selectedmasivStack = selectMasivStack(meta)
-% Displays information about MaSIV stacks to the user, in order to get them to choose one
+% Displays information about downsampled MaSIV stacks so the user can choose one to load
 %
-% function selectedmasivStack = selectDownscaledStack(meta)
+% function selectedmasivStack = selectMasivStack(meta)
 %
-% This function will be superceded by selectmasivStack
 
 %#ok<*AGROW>
 
@@ -21,6 +20,7 @@ stacks=meta.masivStacks;
     hFig=dialog(...
         'Name', sprintf('Select pregenerated MaSIV stack for %s',meta.stackName), ...
         'ButtonDownFcn', '', 'CloseRequestFcn', @windowClose);
+
     % Ensure it's wide enough
     pos=hFig.Position;
     if pos(3)<800
@@ -82,11 +82,13 @@ stacks=meta.masivStacks;
         'Style', 'pushbutton', ...
         'String', 'Delete', ...
         'Callback', @deleteButtonClick);%#ok<NASGU>
+
     %% Main
     selectedChannelChanged();
     selectedIdx=[];
     selectedStackChanged();
     uiwait(hFig);
+
     %% We're done, what have we selected?
     if ~isempty(selectedIdx)
         selectedmasivStack=stacks(selectedIdx);
@@ -97,6 +99,8 @@ stacks=meta.masivStacks;
     close(hFig)
     end
 
+
+    % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     %% Callbacks
     function selectedChannelChanged(~,~)
         stacksWithMatchingChannelIdx=find(stacksWhichMatchChannel(stacks, hChannels));
@@ -107,12 +111,15 @@ stacks=meta.masivStacks;
             step=unique(diff(idx));
             if numel(step)==1
                 if step==1
-                    thisStackDisplayString=sprintf('Slices %u-%u (Layers %u-%u), every slice', idx(1), idx(end), idx(1)-1, idx(end)-1);
+                    thisStackDisplayString=sprintf('Slices %u-%u (Layers %u-%u), every slice', ...
+                     idx(1), idx(end), idx(1)-1, idx(end)-1);
                 else
-                    thisStackDisplayString=sprintf('Slices %u-%u (Layers %u-%u), every %u slices', idx(1), idx(end), idx(1)-1, idx(end)-1, step);
+                    thisStackDisplayString=sprintf('Slices %u-%u (Layers %u-%u), every %u slices', ...
+                     idx(1), idx(end), idx(1)-1, idx(end)-1, step);
                 end
             else
-                thisStackDisplayString=sprintf('Unevenly sampled stack from slice %u to %u (layers % to %u)', idx(1), idx(end), idx(1)-1, idx(end)-1);
+                thisStackDisplayString=sprintf('Unevenly sampled stack from slice %u to %u (layers % to %u)', ...
+                    idx(1), idx(end), idx(1)-1, idx(end)-1);
             end
             if stacks(ii).xyds==1
                 thisStackDisplayString=[thisStackDisplayString '. No downsampling'];
@@ -151,8 +158,8 @@ stacks=meta.masivStacks;
                 msgbox('A stack matching this specification already exists. Cancelling stack creation', 'Generate MaSIV Stack')
                 selectMatchingStack(a)
             else
-                a.generateStack;
-                a.writeStackToDisk;
+                a.generateStack; %Generate downsampled stack
+                a.writeStackToDisk; %Write the downsampled stack to disk
                 stacks=meta.masivStacks;
                 selectMatchingStack(a)
             end
