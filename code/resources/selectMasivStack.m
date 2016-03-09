@@ -1,4 +1,5 @@
 function selectedmasivStack = selectMasivStack(meta)
+%
 % Displays information about downsampled MaSIV stacks so the user can choose one to load
 %
 % function selectedmasivStack = selectMasivStack(meta)
