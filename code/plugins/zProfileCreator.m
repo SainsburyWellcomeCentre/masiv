@@ -31,8 +31,7 @@ classdef zProfileCreator<masivPlugin
                 end
             end
             try
-                chan=dss.channel;
-                o=mosaicStackOffset(t, chan, xywh, dss);
+                o=stackOffset(t, xywh, dss);
             catch err
                  deleteRequest(obj)
                  rethrow(err)
@@ -69,13 +68,16 @@ classdef zProfileCreator<masivPlugin
     
 end
 
-function offsets=mosaicStackOffset(t, channelToCalculateOn, regionSpec, dss)
-
-    nLayers=t.metaData.layers;
+function offsets=stackOffset(t, regionSpec, dss)
     
-    fileNames=dss.originalStitchedFileNames;
+    if ~isfield(t.metadata, 'layersPerSection')
+        error('Z-stack offset creation needs the layersPerSection parameter to be entered in the metadata file')
+    end
+    nLayers=t.metadata.layersPerSection;
     
-    f=fullfile(t.baseDirectory, fileNames);
+    fileNames=dss.originalImageFilePaths;
+    
+    f=fullfile(t.imageBaseDirectory, fileNames);
     
     fSource=f(nLayers+1:nLayers:end);
     fTarget=f(nLayers:nLayers:end-1);
