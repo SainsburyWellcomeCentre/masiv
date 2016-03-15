@@ -15,14 +15,14 @@ classdef show3ChannelOverlay<masivPlugin
             yView=round(gvObj.hMainImgAx.YLim);yView(yView<1)=1;
             
             sliceNum=gvObj.mainDisplay.currentZPlaneOriginalVoxels;
-            baseDir=Meta.baseDirectory;
+            baseDir=Meta.imageBaseDirectory;
 
             %% Adjust for crop
             try
-            info=imfinfo(fullfile(baseDir,Meta.stitchedImagePaths.Ch01{sliceNum}));
+            info=imfinfo(fullfile(baseDir,Meta.imageFilePaths.Ch01{sliceNum}));
             catch err
                deleteRequest(obj)
-                if ~exist(fullfile(baseDir,Meta.stitchedImagePaths.Ch01{sliceNum}), 'file')
+                if ~exist(fullfile(baseDir,Meta.imageFilePaths.Ch01{sliceNum}), 'file')
                     error('original image file not found')
                 else
                     rethrow(err)
@@ -36,16 +36,16 @@ classdef show3ChannelOverlay<masivPlugin
             tic
 
             try
-                if length(fields(Meta.stitchedImagePaths))==1
+                if length(fields(Meta.imageFilePaths))==1
                     deleteRequest(obj)
                     error('Only 1 imported channel found')
                 end
-                ch01=(openTiff(fullfile(baseDir, Meta.stitchedImagePaths.Ch01{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
-                ch02=(openTiff(fullfile(baseDir, Meta.stitchedImagePaths.Ch02{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
+                ch01=(openTiff(fullfile(baseDir, Meta.imageFilePaths.Ch01{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
+                ch02=(openTiff(fullfile(baseDir, Meta.imageFilePaths.Ch02{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
 
-                if length(fields(Meta.stitchedImagePaths))==3
+                if length(fields(Meta.imageFilePaths))==3
                     fprintf('Loading chan 3\n')
-                    ch03=(openTiff(fullfile(baseDir, Meta.stitchedImagePaths.Ch03{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
+                    ch03=(openTiff(fullfile(baseDir, Meta.imageFilePaths.Ch03{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
                 else
                     fprintf('Creating empty channel 3\n')
                     ch03 = zeros(size(ch02),class(ch02));
@@ -62,7 +62,7 @@ classdef show3ChannelOverlay<masivPlugin
             I=double(cat(3, ch01, ch02, ch03));
             fprintf('Converted to double time: %3.2fs\n', toc)
             %Only unmix if we have three channels
-            if length(fields(Meta.stitchedImagePaths))==3
+            if length(fields(Meta.imageFilePaths))==3
                 if strcmp(questdlg('Apply unmixing?', '3 channel display', 'Yes', 'No', 'Yes'), 'Yes')
                     tic
                     try

@@ -364,18 +364,23 @@ classdef masivCellCounter<masivPlugin
         end
         
         function UIdeleteMarker(obj)
+            masivDebugTimingInfo(2, 'Cellcounter.UIdeleteMarker: beginning', toc, 's')
             if isempty(obj.markers)
                 return
             end
-            matchIdx=find([obj.markers.type]==obj.currentType&[obj.markers.zVoxel]==obj.cursorZVoxels);
+            masivDebugTimingInfo(3, 'Cellcounter.UIdeleteMarker: finding markers', toc, 's')
             
-            if ~isempty(matchIdx)
-                markersOfCurrentType=obj.markers(matchIdx);
-                
+            czIdx=find([obj.markers.zVoxel]==obj.cursorZVoxels);
+            matchIdx=[obj.markers(czIdx).type]==obj.currentType;
+            matchIdxInOriginalList=czIdx(matchIdx);
+            masivDebugTimingInfo(3, 'Cellcounter.UIdeleteMarker: found markers', toc, 's')
+            if ~isempty(matchIdxInOriginalList)
+                markersOfCurrentType=obj.markers(matchIdxInOriginalList);
+                masivDebugTimingInfo(3, 'Cellcounter.UIdeleteMarker: found markers of type', toc, 's')
                 [dist, closestIdx]=minEucDist2DToMarker(markersOfCurrentType, obj);
-                
+                masivDebugTimingInfo(3, 'Cellcounter.UIdeleteMarker: found closest marker', toc, 's')
                 if dist<masivSetting('cellCounter.maximumDistanceVoxelsForDeletion')
-                    idxToDelete=matchIdx(closestIdx);
+                    idxToDelete=matchIdxInOriginalList(closestIdx);
                     obj.markers(idxToDelete)=[];
                     obj.drawMarkers;
                     
