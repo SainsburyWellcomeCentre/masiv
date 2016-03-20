@@ -10,7 +10,7 @@ classdef(Abstract) masivPlugin<handle
     
     methods
         function obj=masivPlugin(caller)
-            if isa(caller, 'uimenu')
+            if isa(caller, 'matlab.ui.container.Menu')
                 obj.MaSIV=caller.UserData;
             else
                 obj.MaSIV=caller;
