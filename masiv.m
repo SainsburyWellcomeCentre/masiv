@@ -921,7 +921,8 @@ function setupContrast(obj)
     m=y.*x;
     vals=cumsum(m)/sum(m);
     %% Set up limits
-    contrastLims=[0 x(end)];
+    highIdx=find(cumsum(y)>sum(y)*.95, 1);
+    contrastLims=[0 x(highIdx)];
     contrastLims=contrastLims+[-1 1]*0.1*range(contrastLims); % dilate the range by 10% either side for safety
     fprintf('Done \n')
     if isempty(obj.MainStack.contrastLimits)
