@@ -10,7 +10,11 @@ classdef(Abstract) masivPlugin<handle
     
     methods
         function obj=masivPlugin(caller)
-            obj.MaSIV=caller.UserData;
+            if isa(caller, 'uimenu')
+                obj.MaSIV=caller.UserData;
+            else
+                obj.MaSIV=caller;
+            end
             obj.Meta=obj.MaSIV.Meta;
             
             items=get(obj.MaSIV.mnuPlugins, 'Children');

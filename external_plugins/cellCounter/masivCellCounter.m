@@ -53,7 +53,6 @@ classdef masivCellCounter<masivPlugin
         %% Constructor
         function obj=masivCellCounter(caller, ~)
             obj=obj@masivPlugin(caller);
-            obj.MaSIV=caller.UserData;
 
 
             %Add the helper functions to the path. If already there, a duplicate is not created
