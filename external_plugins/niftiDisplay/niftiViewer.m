@@ -81,9 +81,9 @@ classdef niftiViewer<masivPlugin
             %% Clear
             obj.clearMarkers();
             %% Get Data
-            ML=[];DV=[];PA=[];deWarpedX=[];deWarpedY=[];deWarpedZ=[];col=[];
-            allCells=table(ML, DV, PA, deWarpedX, deWarpedY, deWarpedZ, col);
-            clear ML DV PA deWarpedX deWarpedY deWarpedZ col
+            ML=[];DV=[];PA=[];deWarpedX=[];deWarpedY=[];deWarpedZ=[];segmentationAcronym={};col=[];
+            allCells=table(ML, DV, PA, deWarpedX, deWarpedY, deWarpedZ, segmentationAcronym, col);
+            clear ML DV PA deWarpedX deWarpedY deWarpedZ segmentationAcronym col
             for ii=1:numel(obj.markerEditBoxes)
                 if isfield(obj.markerEditBoxes(ii).UserData, 'Active')
                     newCells=obj.markerEditBoxes(ii).UserData.Active;

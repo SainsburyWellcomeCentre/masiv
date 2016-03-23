@@ -150,6 +150,15 @@ function s=returnDefaultSettings
     %% Debug output
     s.debug.logging=1;
     s.debug.outputSpacing=12;
+    
+    %% Cell counter
+    s.cellCounter.figurePosition = [100 100 400 550];
+    s.cellCounter.markerDiameter.xy = 20;
+    s.cellCounter.markerDiameter.z = 30;
+    s.cellCounter.minimumSize = 20;
+    s.cellCounter.maximumDistanceVoxelsForDeletion = 500;
+    s.cellCounter.importExportDefault = s.defaultDirectory;
+
 
     %% Plugins directory
     s.plugins.hideTutorialPlugins=0; %is 1 we hide tutorial plugins
