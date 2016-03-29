@@ -405,9 +405,7 @@ classdef masivCellCounter<masivPlugin
                     zRadius=(masivSetting('cellCounter.markerDiameter.z')/2);
                     
                     allMarkerZVoxel=[obj.markers.zVoxel];
-                    
                     allMarkerZRelativeToCurrentPlaneVoxels=(abs(allMarkerZVoxel-obj.cursorZVoxels));
-                    
                     idx=allMarkerZRelativeToCurrentPlaneVoxels<zRadius;
                     if ~any(idx)
                         return

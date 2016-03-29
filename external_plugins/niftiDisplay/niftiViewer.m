@@ -326,6 +326,7 @@ function setMarker(obj, editBox, hClearButton, hHideButton, hSelectAll, hSelectT
     elseif strcmp(selectedAcronym, 'unsegmented')
         dat.selectedCells=obj.segmentation.unsegmentedCells;
         dat.totalCells=obj.segmentation.unsegmentedCells;
+        dat.totalCells.segmentationAcronym=repmat({'unsegmented'}, size(dat.totalCells, 1), 1);
     else
         dat.selectedCells = obj.segmentation.segmentation.findRegion(selectedAcronym).cells;
         dat.totalCells = obj.segmentation.segmentation.findRegion(selectedAcronym).totalCells;
