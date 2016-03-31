@@ -260,7 +260,7 @@ classdef masivCropper<masivPlugin
                 'FontSize', obj.fontSize+1, ...
                 'Title', 'Channels');
             
-            channels=fieldnames(obj.Meta.stitchedImagePaths);
+            channels=fieldnames(obj.Meta.imageFilePaths);
             obj.hChannels=uicontrol(...
                 'Parent', cropPanel, ...
                 'Units', 'normalized', ...
@@ -336,8 +336,8 @@ classdef masivCropper<masivPlugin
     %% Getters
     function sn=get.maxSliceNum(obj)
         
-         fnames=fieldnames(obj.Meta.stitchedImagePaths);
-         sn=numel(obj.Meta.stitchedImagePaths.(fnames{1}));
+         fnames=fieldnames(obj.Meta.imageFilePaths);
+         sn=numel(obj.Meta.imageFilePaths.(fnames{1}));
          
     end
     %% Callbacks
@@ -479,7 +479,7 @@ end
 function fileList=generateFileListToCrop(Meta, channelsToCrop, sliceFrom, sliceTo)
 fileList={};
 for ii=1:numel(channelsToCrop)
-    fileList=[fileList, fullfile(Meta.baseDirectory, Meta.stitchedImagePaths.(channelsToCrop{ii})(sliceFrom:sliceTo))];  %#ok<AGROW>
+    fileList=[fileList, fullfile(Meta.imageBaseDirectory, Meta.imageFilePaths.(channelsToCrop{ii})(sliceFrom:sliceTo))];  %#ok<AGROW>
 end
 parfor ii=1:numel(fileList)
     if ~exist(fileList{ii}, 'file')
