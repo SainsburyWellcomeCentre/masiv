@@ -1,4 +1,4 @@
-classdef  deleteStitchedSlices<masivPlugin
+classdef  deleteSlices<masivPlugin
 %DELETESTITCHEDSLICES Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -6,7 +6,7 @@ properties
     
 end
 methods
-    function obj=deleteStitchedSlices(caller, ~, channels, slices)
+    function obj=deleteSlices(caller, ~, channels, slices)
         obj=obj@masivPlugin(caller);
         %% Parse input
         if isa(caller, 'masivMeta')
@@ -51,7 +51,7 @@ methods
 end
 methods(Static)
     function f=displayString()
-         f='Delete Stitched Slices...';
+         f='Delete Slices...';
     end
 end
 
@@ -64,8 +64,8 @@ function [channels, slices]=getSlicesForDeletion(Meta, channels, slices)
     initialChannelSelection={'Ch01', 'Ch03'};
     %% Declarations: Main
     hFig=dialog(...
-        'Name', sprintf('Delete full-resolution stitched images... %s',Meta.stackName), ...
-        'ButtonDownFcn', '', 'CloseRequestFcn', @cancelButtonClick);
+        'Name', sprintf('Delete full-resolution images... %s',Meta.stackName), ...
+        'ButtonDownFcn', '', 'CloseRequestFcn', @cancelButtonClick, 'WindowStyle', 'normal');
      hOKButton=uicontrol(...
         'Parent', hFig, ...
         'Units', 'normalized', ...
@@ -97,14 +97,14 @@ function [channels, slices]=getSlicesForDeletion(Meta, channels, slices)
         'FontSize', fontSz, ...
         'Style', 'listbox', ...
         'Max', 10, 'Min', 2, ...
-        'Value', find(ismember(fieldnames(Meta.stitchedImagePaths), channels)),...
-        'String', fieldnames(Meta.stitchedImagePaths), ...
+        'Value', find(ismember(fieldnames(Meta.imageFilePaths), channels)),...
+        'String', fieldnames(Meta.imageFilePaths), ...
         'Callback', @selectedChannelChanged);
     
     %% Declarations: slices
     if isempty(slices)
         
-        slcMax=numel(Meta.stitchedImagePaths.(channels{1}));
+        slcMax=numel(Meta.imageFilePaths.(channels{1}));
         slcMin=1;
         inc=1;
     else
@@ -288,10 +288,10 @@ function filesToDelete= getFilesToDelete(Meta, channels, slices)
 
 filesToDelete={};
 for ii=1:numel(channels)
-    allFilesThisChannel=Meta.stitchedImagePaths.(channels{ii});
+    allFilesThisChannel=Meta.imageFilePaths.(channels{ii});
     filesToDeleteThisChannel=allFilesThisChannel(slices);
     
-    doesTheFileActuallyExist=logical(cellfun(@(x) exist(x, 'file'), fullfile(Meta.baseDirectory, filesToDeleteThisChannel)));
+    doesTheFileActuallyExist=logical(cellfun(@(x) exist(x, 'file'), fullfile(Meta.imageBaseDirectory, filesToDeleteThisChannel)));
     
     existingFilesToDeleteThisChannel=filesToDeleteThisChannel(doesTheFileActuallyExist);
     filesToDelete=[filesToDelete; existingFilesToDeleteThisChannel]; %#ok<AGROW>
@@ -303,7 +303,7 @@ function doDelete(Meta, filesToDelete)
 masivDebugTimingInfo(0, 'Deleting Files:')
                 swb=SuperWaitBar(numel(filesToDelete), 'Deleting Files');
                 for ii=1:numel(filesToDelete)
-                    fullFilePath=fullfile(Meta.baseDirectory, filesToDelete{ii});
+                    fullFilePath=fullfile(Meta.imageBaseDirectory, filesToDelete{ii});
                     delete(fullFilePath)
                     masivDebugTimingInfo(1, fullFilePath)
                     swb.progress;
