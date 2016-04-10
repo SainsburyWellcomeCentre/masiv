@@ -402,16 +402,21 @@ function I = createDownscaledStack(obj)
     pths=fullfile(obj.MetaObject.imageBaseDirectory, obj.MetaObject.imageFilePaths.(obj.channel)(obj.idx));
     %% Get file information to determine crop
     info=cell(numel(obj.idx), 1);
-    
-    swb=SuperWaitBar(numel(obj.idx), 'Getting image info...');
+    if usejava('jvm')&&~feature('ShowFigureWindows')
+        swb=SuperWaitBar(numel(obj.idx), 'Getting image info...');
+    end
     parfor ii=1:numel(obj.idx)
         if exist(pths{ii}, 'file') ==2;
             info{ii}=imfinfo(pths{ii});
         end
-        swb.progress(); %#ok<PFBNS>
+        if usejava('jvm')&&~feature('ShowFigureWindows')
+            swb.progress(); %#ok<PFBNS>
+        end
     end
-    delete(swb);
-    clear swb
+    if usejava('jvm')&&~feature('ShowFigureWindows')
+        delete(swb);
+        clear swb
+    end
     
     %%
     minWidth=min(cellfun(@(x) getInfoOrInf(x, 'Width'), info));
