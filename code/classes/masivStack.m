@@ -405,15 +405,17 @@ function I = createDownscaledStack(obj)
     
     swb=SuperWaitBar(numel(obj.idx), 'Getting image info...');
     parfor ii=1:numel(obj.idx)
-        info{ii}=imfinfo(pths{ii});
+        if exist(pths{ii}, 'file') ==2;
+            info{ii}=imfinfo(pths{ii});
+        end
         swb.progress(); %#ok<PFBNS>
     end
     delete(swb);
     clear swb
     
     %%
-    minWidth=min(cellfun(@(x) x.Width, info));
-    minHeight=min(cellfun(@(x) x.Height, info));
+    minWidth=min(cellfun(@(x) getInfoOrInf(x, 'Width'), info));
+    minHeight=min(cellfun(@(x) getInfoOrInf(x, 'Height'), info));
     
     outputImageWidth=ceil(minWidth/obj.xyds);
     outputImageHeight=ceil(minHeight/obj.xyds);
@@ -433,7 +435,9 @@ function I = createDownscaledStack(obj)
         swb=SuperWaitBar(numel(obj.idx), 'Generating stack...');
         parfor ii=1:numel(obj.idx)
             fName=fullfile(obj.MetaObject.imageBaseDirectory,obj.MetaObject.imageFilePaths.(obj.channel){obj.idx(ii)}); %#ok<PFBNS>
-            I(:,:,ii)=openTiff(fName, [1 1 minWidth minHeight], obj.xyds); 
+            if exist(fName, 'file')==2;
+                I(:,:,ii)=openTiff(fName, [1 1 minWidth minHeight], obj.xyds);
+            end
             swb.progress(); %#ok<PFBNS>
         end
         delete(swb);
@@ -515,4 +519,12 @@ end
 function txt=getKeyValPairEntries(txt)
     txt=strsplit(txt, '\n');
     txt=txt(cellfun(@(x) ~isempty(strfind(x, ':')), txt));
+end
+
+function p=getInfoOrInf(x, param)
+    if isempty(x)
+        p=Inf;
+    else
+        p=x.(param);
+    end
 end
