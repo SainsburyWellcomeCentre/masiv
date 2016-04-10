@@ -197,7 +197,7 @@ function obj=getimageFilePaths(obj)
     for ii=1:numel(listFilePaths)
 
         fh=fopen(fullfile(obj.masivDirectory, listFilePaths(ii).name));
-            channelFilePaths=textscan(fh, '%s', 'Delimiter', delimiterInTextFile);
+        channelFilePaths=textscan(fh, '%s', 'Delimiter', delimiterInTextFile);
         fclose(fh);
         checkForAbsolutePaths(channelFilePaths{:})
         channelName=strrep(strrep(listFilePaths(ii).name, searchPattern, ''), '.txt', '');
@@ -256,7 +256,9 @@ end
 function a=isrelpath(p)
     % ISRELPATH: Checks whether a path is relative, by looking for an
     % initial '/' (for *nix) or a drive letter (for Windows)
-    if p(1) == '/' || ~isempty(regexp(p, '[A-Z]:', 'ONCE'))
+    if isempty(p)
+        a=true;
+    elseif p(1) == '/' || ~isempty(regexp(p, '[A-Z]:', 'ONCE'))
         a=false;
     else
         a=true;
