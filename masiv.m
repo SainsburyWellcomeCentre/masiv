@@ -681,6 +681,29 @@ function y=roundToClosest(x, n)
     y=idivide(x, n, 'round')*n;
 end
 
+function sliderCallback(obj, ~)
+    persistent chk
+    if isempty(chk)
+        chk = 1;
+        pause(0.5)
+        if chk == 1;
+            chk = [];
+        end
+    else
+        currentLims={num2str(obj.getMinimum), num2str(obj.getMaximum)};
+        newLims=inputdlg({'Low', 'High'}, 'B/C Scale Limits', 1, currentLims);
+        try
+            lims=cellfun(@str2num,newLims);
+        catch
+            return
+        end
+        if ~isempty(lims)
+            setSliderRange(obj, lims);
+        end
+    end
+    
+end
+
 %% Plugins menu creation
 function addPlugins(hMenuBase, obj, pluginsDir, separateFirstEntry)
     %Add plugins in a directory to the menu
@@ -921,10 +944,15 @@ function setupContrast(obj)
     m=y.*x;
     vals=cumsum(m)/sum(m);
     %% Set up limits
-    highIdx=find(cumsum(y)>sum(y)*.95, 1);
+    highIdx=find(cumsum(y)>sum(y)*.99, 1);
     contrastLims=[0 x(highIdx)];
     contrastLims=contrastLims+[-1 1]*0.1*range(contrastLims); % dilate the range by 10% either side for safety
     fprintf('Done \n')
+    
+    %% Set up scale
+    setSliderRange(obj.hjSliderContrast, contrastLims);
+    
+    %% Set up low and high values
     if isempty(obj.MainStack.contrastLimits)
         %% Set up high value
         if masivSetting('contrastSlider.doAutoContrast')
@@ -946,13 +974,17 @@ function setupContrast(obj)
         set(obj.hjSliderContrast,'High',lims(2));
     end
     
-    %% Set up markers
+    %% Set up callback to allow range changing
+    set(obj.hjSliderContrast, 'MouseClickedCallback', @sliderCallback);
+end
+
+function setSliderRange(sliderObj, contrastLims)
     majorSpacing=roundToSingleSigFig(range(contrastLims/4)); % get 5 major ticks by default
     minorSpacing=majorSpacing/5;
-    set(obj.hjSliderContrast,  'MajorTickSpacing',majorSpacing, 'MinorTickSpacing', minorSpacing)
+    set(sliderObj,  'MajorTickSpacing',majorSpacing, 'MinorTickSpacing', minorSpacing)
     
-    obj.hjSliderContrast.Minimum=min(-majorSpacing, double(roundToClosest(contrastLims(1), majorSpacing)));
-    obj.hjSliderContrast.Maximum=roundToSingleSigFig(contrastLims(2));
+    sliderObj.Minimum=min(-majorSpacing, double(roundToClosest(contrastLims(1), majorSpacing)));
+    sliderObj.Maximum=roundToSingleSigFig(contrastLims(2));
 end
 
 function setupInfoBoxes(obj)
