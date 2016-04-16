@@ -55,8 +55,9 @@ end
             [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo, fName);
             
             eval(sprintf('r.%s=val;', prefName));
-            %% write first to a new file, then rename. Should prevent corruption.
-            tmpFname=strrep(fName, '.yml', 'tmp.yml');
+
+            %% write first to a new (temporary) file, then rename. Should prevent corruption.
+            tmpFname=[tempname,'.yml'];
             writeSimpleYAML(r, tmpFname);
             movefile(tmpFname, fName);
         end
@@ -170,7 +171,7 @@ function s=returnDefaultSettings
 end
 
 function createDefaultPrefsFile
-    %% Load the default settings and write these to disk
+    %% Load the default settings and write these to disk to the MaSIV path
     baseDir=fileparts(which('MaSIV'));
     writeSimpleYAML(returnDefaultSettings, fullfile(baseDir, 'masivPrefs.yml')); 
 end
