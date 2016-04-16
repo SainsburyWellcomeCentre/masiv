@@ -212,7 +212,7 @@ classdef masivExporter<masivPlugin
                 'FontSize', obj.fontSize+1, ...
                 'Title', 'Channels');
             
-            channels=fieldnames(obj.Meta.stitchedImagePaths);
+            channels=fieldnames(obj.Meta.imageFilePaths);
             obj.hChannels=uicontrol(...
                 'Parent', cropPanel, ...
                 'Units', 'normalized', ...
@@ -581,9 +581,8 @@ classdef masivExporter<masivPlugin
                 swb=SuperWaitBar(numel(idx), sprintf('Generating Stack #%u of %u', ii, numel(channelsToLoad)));
                  
                 parfor jj=1:numel(idx)
-                    %f=strrep(t.stitchedImagePaths.(c){idx(jj)}, toStrip, '');
-                    f=t.stitchedImagePaths.(c){idx(jj)}; %#ok<PFBNS>
-                    fName=fullfile(t.baseDirectory, f);
+                    f=t.imageFilePaths.(c){idx(jj)}; %#ok<PFBNS>
+                    fName=fullfile(t.imageBaseDirectory, f);
                     
                     info=imfinfo(fName);
                     [xoffset, yoffset]=checkTiffFileForOffset(info);
@@ -619,8 +618,8 @@ classdef masivExporter<masivPlugin
         %% Getters
         function sn=get.maxSliceNum(obj)
             
-            fnames=fieldnames(obj.Meta.stitchedImagePaths);
-            sn=numel(obj.Meta.stitchedImagePaths.(fnames{1}));
+            fnames=fieldnames(obj.Meta.imageFilePaths);
+            sn=numel(obj.Meta.imageFilePaths.(fnames{1}));
             
         end
         
