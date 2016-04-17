@@ -105,9 +105,9 @@ function offsets=getImageFilesXYOffsets(imageFileListSource, imageFileListTarget
     %% Process each pair
     swb=SuperWaitBar(numel(imageFileListTarget), 'Calculating sectional offsets...');
 
-    parfor ii=1:numel(imageFileListTarget)
+   parfor ii=1:numel(imageFileListTarget)
         swb.progress; %#ok<PFBNS>
-        if ~exist(imageFileListTarget{ii}, 'file')||~exist(imageFileListSource{ii}, 'file')
+        if ~(exist(imageFileListTarget{ii}, 'file')==2)||~(exist(imageFileListSource{ii}, 'file')==2);
             offsets(ii, :)=[0 0];
         else
             regionSpecAdjustedTarget=checkImagesForCropAndAdjustRegionSpecToMach(imageFileListTarget{ii}, regionSpec);
