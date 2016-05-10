@@ -486,7 +486,7 @@ function pos=mouseMove(~, ~, obj)
         
         newLow=obj.hjSliderContrast.getLowValue()+bAdj;
         newHigh=obj.hjSliderContrast.getHighValue()+bAdj;
-        
+
         if newLow<obj.hjSliderContrast.minimum
             newHigh=newHigh+obj.hjSliderContrast.minimum-newLow-1;
             newLow=obj.hjSliderContrast.minimum;
@@ -947,11 +947,21 @@ function setupContrast(obj)
     highIdx=find(cumsum(y)>sum(y)*.99, 1);
     contrastLims=[0 x(highIdx)];
     contrastLims=contrastLims+[-1 1]*0.1*range(contrastLims); % dilate the range by 10% either side for safety
-    fprintf('Done \n')
+    
+    %However, sometimes it chooses a high value that is too low, so stop it from choosing a too low value
+    hardMaxLimit=3E3;
+    fprintf(' Auto-selected %0.2f to %0.2f',contrastLims)
+    if contrastLims(2)<hardMaxLimit;
+        contrastLims(2)=hardMaxLimit;
+        fprintf(', but forced the high value to be %0.2f\n',hardMaxLimit)
+    else
+        fprintf('\n')
+    end
+
     
     %% Set up scale
     setSliderRange(obj.hjSliderContrast, contrastLims);
-    
+
     %% Set up low and high values
     if isempty(obj.MainStack.contrastLimits)
         %% Set up high value
