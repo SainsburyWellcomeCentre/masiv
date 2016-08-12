@@ -1,4 +1,4 @@
-classdef simpleUI<goggleBoxPlugin %simpleUI inherits goggleBoxPlugin
+classdef simpleUI<masivPlugin %simpleUI inherits masivPlugin
 
 
 	% Purpose 
@@ -40,12 +40,12 @@ classdef simpleUI<goggleBoxPlugin %simpleUI inherits goggleBoxPlugin
 	methods 
 	   %Constructor - runs once when testPlug is loaded
 	   function obj = simpleUI(caller,~)
-	   	obj=obj@goggleBoxPlugin(caller);
-	   	obj.goggleViewer=caller.UserData;            
+	   	obj=obj@masivPlugin(caller);
+	   	obj.MaSIV=caller.UserData;            
 
 	   	%% Get settings from main GUI so we can apply to plugin GUI
-        obj.fontName=gbSetting('font.name');
-        obj.fontSize=gbSetting('font.size');
+        obj.fontName=masivSetting('font.name');
+        obj.fontSize=masivSetting('font.size');
 
         %Create GUI window for plugin and position nicely on screen
         ssz=get(0, 'ScreenSize');
@@ -57,8 +57,8 @@ classdef simpleUI<goggleBoxPlugin %simpleUI inherits goggleBoxPlugin
                 'CloseRequestFcn', {@deleteRequest, obj}, ...
                 'MenuBar', 'none', ...
                 'NumberTitle', 'off', ...
-                'Name', ['Test Plugin: ' obj.goggleViewer.mosaicInfo.experimentName], ...
-                'Color', gbSetting('viewer.panelBkgdColor'), ...
+                'Name', ['Test Plugin: ' obj.MaSIV.Meta.stackName], ...
+                'Color', masivSetting('viewer.panelBkgdColor'), ...
                 'KeyPressFcn', {@keyPress, obj});
 
 
@@ -69,7 +69,7 @@ classdef simpleUI<goggleBoxPlugin %simpleUI inherits goggleBoxPlugin
          'Units', 'normalized', ...
          'FontName', obj.fontName, ...
          'FontSize', obj.fontSize, ...          
-         'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
+         'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
          'ForegroundColor','red',...
          'Position', [0.05 0.05 0.39 0.08], ...
          'String', 'EXIT', ...
@@ -87,7 +87,7 @@ classdef simpleUI<goggleBoxPlugin %simpleUI inherits goggleBoxPlugin
                     'Quit with ctrl+e, the EXIT button, or the GUI close button'],...
             'FontName', obj.fontName, ...
             'FontSize', obj.fontSize, ...          
-            'BackgroundColor', gbSetting('viewer.mainBkgdColor'), ...
+            'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
             'ForegroundColor','white',...
             'Position', [0.05 0.30 0.9 0.6]);
 
@@ -95,9 +95,9 @@ classdef simpleUI<goggleBoxPlugin %simpleUI inherits goggleBoxPlugin
         %Set up a listener for the keyboard. This will allow the plugin to 
         %respond to key presses in order to build a short-cut system. The plugin
         %can also listen to other events, such clicks and scroll wheel moves. For
-        %more examples see the source code of goggleCellCounter or the tutorial plugin,
+        %more examples see the source code of masivCellCounter or the tutorial plugin,
         %drawRandomPoints
-        obj.keyPressListener=event.listener(obj.goggleViewer, 'KeyPress', @obj.parentKeyPress);
+        obj.keyPressListener=event.listener(obj.MaSIV, 'KeyPress', @obj.parentKeyPress);
 
 	   end %close constructor method
 
@@ -108,7 +108,7 @@ classdef simpleUI<goggleBoxPlugin %simpleUI inherits goggleBoxPlugin
         end
 
         function parentClosing(obj, ~, ~)
-            deleteRequest([],[], obj,1) %force quit if the parent GUI (goggleViewer) closes
+            deleteRequest([],[], obj,1) %force quit if the parent GUI (MaSIV) closes
         end
 
 
@@ -118,14 +118,14 @@ classdef simpleUI<goggleBoxPlugin %simpleUI inherits goggleBoxPlugin
 
 
     methods(Static)
-       %This is what the plugin is named in the goggleViewer "plugins" menu
+       %This is what the plugin is named in the MaSIV "plugins" menu
        function d=displayString
         d='simpleUI';
        end % close displayString method
 
     end %close methods(Static)
 
-end %classdef testPlug<goggleBoxPlugin 
+end %classdef testPlug<masivPlugin 
 
 
 %----------------------------------------------------------------------------------------------
@@ -160,11 +160,11 @@ end
 
 
 
-%Closes the GUI and and detaches the plugin from goggleViewer. 
+%Closes the GUI and and detaches the plugin from MaSIV. 
 function deleteRequest(~, ~, obj, forceQuit)
     
-    obj.deregisterPluginAsOpenWithParentViewer; %inherited from goggleBoxPlugin
-    deleteRequest@goggleBoxPlugin(obj); %inherited from goggleBoxPlugin
+    obj.deregisterPluginAsOpenWithParentViewer; %inherited from masivPlugin
+    deleteRequest@masivPlugin(obj); %inherited from masivPlugin
     delete(obj.hFig);
     delete(obj);
     

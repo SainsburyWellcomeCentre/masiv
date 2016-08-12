@@ -9,8 +9,8 @@ function modulePipeline=setImageProcessingPipeline(modulePipeline)
     %% Keep original pipeline
     originalPipeline=modulePipeline;
     %% Settings
-    fontSz=gbSetting('font.size');
-    mainFont=gbSetting('font.name');
+    fontSz=masivSetting('font.size');
+    mainFont=masivSetting('font.name');
     
     %% Figure object
     hFig=dialog(...

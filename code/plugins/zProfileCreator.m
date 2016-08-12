@@ -1,4 +1,4 @@
-classdef zProfileCreator<goggleBoxPlugin
+classdef zProfileCreator<masivPlugin
     %ZPROFILECREATOR Creates a z profile for precise x y adjustment
     %#ok<*ST2NM>
     properties
@@ -6,10 +6,10 @@ classdef zProfileCreator<goggleBoxPlugin
     
     methods
         function obj=zProfileCreator(caller, ~)
-            obj=obj@goggleBoxPlugin(caller);
-            mainDisp=obj.goggleViewer.mainDisplay;
-            t=obj.mosaicInfo;
-            dss=obj.goggleViewer.overviewDSS;
+            obj=obj@masivPlugin(caller);
+            mainDisp=obj.MaSIV.mainDisplay;
+            t=obj.Meta;
+            dss=obj.MaSIV.MainStack;
             %% Default view
             x=num2str(round(mainDisp.viewXLimOriginalCoords(1)));
             y=num2str(round(mainDisp.viewYLimOriginalCoords(1)));
@@ -31,8 +31,7 @@ classdef zProfileCreator<goggleBoxPlugin
                 end
             end
             try
-                chan=dss.channel;
-                o=mosaicStackOffset(t, chan, xywh, dss);
+                o=stackOffset(t, xywh, dss);
             catch err
                  deleteRequest(obj)
                  rethrow(err)
@@ -47,7 +46,7 @@ classdef zProfileCreator<goggleBoxPlugin
             o=round(o);
             
             %%
-            [f,p]=uiputfile({'*.zpfl', 'Z-Profile (*.zpfl)'; '*.csv', 'CSV-File (*.csv)'; '*.*', 'All Files (*.*)'}, 'Select path to save profile', gbSetting('defaultDirectory'));
+            [f,p]=uiputfile({'*.zpfl', 'Z-Profile (*.zpfl)'; '*.csv', 'CSV-File (*.csv)'; '*.*', 'All Files (*.*)'}, 'Select path to save profile', masivSetting('defaultDirectory'));
             if isempty(f)||isempty(p)||isnumeric(p)||~exist(p, 'dir')
                 deleteRequest(obj)
             else
@@ -57,7 +56,7 @@ classdef zProfileCreator<goggleBoxPlugin
         end
         
         function deleteRequest(obj)
-            deleteRequest@goggleBoxPlugin(obj);
+            deleteRequest@masivPlugin(obj);
         end
     end
     methods(Static)
@@ -69,13 +68,16 @@ classdef zProfileCreator<goggleBoxPlugin
     
 end
 
-function offsets=mosaicStackOffset(t, channelToCalculateOn, regionSpec, dss)
-
-    nLayers=t.metaData.layers;
+function offsets=stackOffset(t, regionSpec, dss)
     
-    fileNames=dss.originalStitchedFileNames;
+    if ~isfield(t.metadata, 'layersPerSection')
+        error('Z-stack offset creation needs the layersPerSection parameter to be entered in the metadata file')
+    end
+    nLayers=t.metadata.layersPerSection;
     
-    f=fullfile(t.baseDirectory, fileNames);
+    fileNames=dss.originalImageFilePaths;
+    
+    f=fullfile(t.imageBaseDirectory, fileNames);
     
     fSource=f(nLayers+1:nLayers:end);
     fTarget=f(nLayers:nLayers:end-1);
@@ -103,9 +105,9 @@ function offsets=getImageFilesXYOffsets(imageFileListSource, imageFileListTarget
     %% Process each pair
     swb=SuperWaitBar(numel(imageFileListTarget), 'Calculating sectional offsets...');
 
-    parfor ii=1:numel(imageFileListTarget)
+   parfor ii=1:numel(imageFileListTarget)
         swb.progress; %#ok<PFBNS>
-        if ~exist(imageFileListTarget{ii}, 'file')||~exist(imageFileListSource{ii}, 'file')
+        if ~(exist(imageFileListTarget{ii}, 'file')==2)||~(exist(imageFileListSource{ii}, 'file')==2);
             offsets(ii, :)=[0 0];
         else
             regionSpecAdjustedTarget=checkImagesForCropAndAdjustRegionSpecToMach(imageFileListTarget{ii}, regionSpec);
