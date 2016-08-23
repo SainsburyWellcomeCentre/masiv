@@ -165,9 +165,11 @@ function s=returnDefaultSettings
     s.plugins.hideTutorialPlugins=0; %is 1 we hide tutorial plugins
     s.plugins.bundledPluginsDirPath=fullfile('code','plugins');
 
-    %TODO: following line assumes that "external_plugins" is located in the repository root. Likely this will change and so code using this setting will also need to change
-    %      the .masiv_plugins is currently just there for testing
-    s.plugins.externalPluginsDirs={'external_plugins','~/.masiv_plugins'}; 
+    %TODO: following line assumes that "external_plugins" is located in the 
+    %      repository root. Likely this will change and so code using this 
+    %      setting will also need to change the .masiv_plugins is currently
+    %      just there for testing.
+    s.plugins.externalPluginsDirs={'external_plugins'}; 
 end
 
 function createDefaultPrefsFile
