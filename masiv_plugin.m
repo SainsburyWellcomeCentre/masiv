@@ -497,6 +497,7 @@ classdef (Abstract) masiv_plugin
 
             if ~exist(pathToPluginDir,'dir')
                 fprintf('No directory found at %s\n',pathToPluginDir)
+                detailsFname=[];
                 return
             end
 
