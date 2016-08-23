@@ -59,8 +59,8 @@ classdef neuriteTracer<masivPlugin
         hAxon
         hDendrite
 
-        hIsTerminatedGroup
-        hIsTerminated
+        hNodeTypeGroup
+        hNodeType
 
         cursorX
         cursorY
@@ -104,8 +104,8 @@ classdef neuriteTracer<masivPlugin
         function obj=neuriteTracer(caller, ~)   
 
             if ~exist('tree','file')
-                agree=errordlg(sprintf('The matlab-tree package is not installed.\nInstall from:\nhttps://github.com/raacampbell13/matlab-tree'));
-                fprintf('\n\n\tThe matlab-tree package is not installed. \n\tPlease install from: https://github.com/raacampbell13/matlab-tree\n\n\n')
+                agree=errordlg(sprintf('The matlab-tree package is not installed.\nInstall from:\nhttps://github.com/raacampbell/matlab-tree'));
+                fprintf('\n\n\tThe matlab-tree package is not installed. \n\tPlease install from: https://github.com/raacampbell/matlab-tree\n\n\n')
                 return
             end
             obj=obj@masivPlugin(caller); %call constructor of masivPlugin
@@ -125,14 +125,16 @@ classdef neuriteTracer<masivPlugin
             try
                 pos=masivSetting('neuriteTracer.figurePosition');
             catch
+                %Add default settings
                 ssz=get(0, 'ScreenSize');
                 lb=[ssz(3)/3 ssz(4)/3];
                 pos=round([lb 400 550]);
                 masivSetting('neuriteTracer.figurePosition', pos)
                 masivSetting('neuriteTracer.markerDiameter.xy', 20);
-                masivSetting('neuriteTracer.markerDiameter.z', 30);
+                masivSetting('neuriteTracer.markerDiameter.z', 3);
                 masivSetting('neuriteTracer.minimumSize', 1) %sets when the highlights are drawn. Likely we will eventually ditch this
-                masivSetting('neuriteTracer.maximumDistanceVoxelsForDeletion', 500)
+                masivSetting('neuriteTracer.maximumDistanceVoxelsForDeletion', 500)    
+                masivSetting('neuriteTracer.nodeType',{'normal','premature','fading','bright','bouton'})
             end
             masivSetting('neuriteTracer.importExportDefault', masivSetting('defaultDirectory'))
 
@@ -237,27 +239,26 @@ classdef neuriteTracer<masivPlugin
                 'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
                 'ForegroundColor', masivSetting('viewer.textMainColor'));
 
-
-            %% Premature termination checkbox
-            obj.hIsTerminatedGroup=uibuttongroup(...
+            %% Node type popup menu panel
+            obj.hNodeTypeGroup=uibuttongroup(...
                 'Parent', obj.hFig, ...
                 'Units', 'normalized', ...
                 'Position', [0.64 0.61 0.34 0.12], ...
                 'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
                 'ForegroundColor', masivSetting('viewer.textMainColor'), ...
-                'Title', 'Termination', ...
+                'Title', 'Node type', ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize);
-            obj.hIsTerminated=uicontrol(...
-                'Parent', obj.hIsTerminatedGroup, ...
-                'Style', 'checkbox', ...
-                'Callback', {@prematureCallback,obj}, ...
+            obj.hNodeType=uicontrol(...
+                'Parent', obj.hNodeTypeGroup, ...
+                'Style', 'PopUp', ...
+                'Callback', {@nodeTypeCallback,obj}, ...
                 'Units', 'normalized', ...
-                'Position', [0.05 0.45 0.96 0.47], ...
-                'String', 'Premature', ...
+                'Position', [0.03 0.45 0.94 0.47], ...
+                'String', masivSetting('neuriteTracer.nodeType'), ...
                 'FontName', obj.fontName, ...
                 'FontSize', obj.fontSize, ...
-                'Value', 0, ...
+                'Value', 1, ...
                 'BackgroundColor', masivSetting('viewer.mainBkgdColor'), ...
                 'ForegroundColor', masivSetting('viewer.textMainColor'));
 
@@ -521,7 +522,11 @@ classdef neuriteTracer<masivPlugin
         %Marker addition and deletion
         function UIaddMarker(obj) %Adds a marker to the currently selected tree
             masivDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: Beginning',toc,'s')
-            newMarker=neuriteTracerNode(obj.currentType, obj.deCorrectedCursorX, obj.deCorrectedCursorY, obj.cursorZVoxels);
+            newMarker=neuriteTracerNode(obj.currentType, ...
+                obj.deCorrectedCursorX, ...
+                obj.deCorrectedCursorY, ...
+                obj.cursorZVoxels,...
+                struct('nodeType','normal')); %
 
             masivDebugTimingInfo(2, 'NeuriteTracer.UIaddMarker: New marker created',toc,'s')
 
@@ -582,7 +587,7 @@ classdef neuriteTracer<masivPlugin
             masivDebugTimingInfo(2, 'Entering UIdeleteMarker',toc,'s')
 
             idx = findMarkerNearestToCursor(obj);
-            thisT = obj.selectedTreeIdx;
+            thisT = obj.selectedTreeIdxbj;
 
             if isempty(idx)            
                 fprintf('No points in current z-depth.\n')
@@ -1018,7 +1023,8 @@ classdef neuriteTracer<masivPlugin
 
         end %function drawTree(obj, ~, ~)
 
-        function highlightMarker(obj)       
+        function highlightMarker(obj)
+            %Find the marker nearest the mouse cursor and highlight it (user presses Alt whilst moving mouse)
             tic
 
             idx = findMarkerNearestToCursor(obj);
@@ -1052,9 +1058,30 @@ classdef neuriteTracer<masivPlugin
 
             %If the class of the node is appropriate and it's a not a root node, we should update the UI
             %to reflect the node properties
-            if isa(obj.neuriteTrees{obj.selectedTreeIdx}.Node{1},'neuriteTracerNode') & idx>1
-                set(obj.hIsTerminated,'Value', obj.neuriteTrees{obj.selectedTreeIdx}.Node{idx}.isPrematureTermination);
-                bT=obj.neuriteTrees{obj.selectedTreeIdx}.Node{idx}.branchType;
+            obj.updateNeuriteGUI
+
+
+        end
+
+        function updateNeuriteGUI(obj)
+            %Updates (refreshes) the display on the GUI following certain user actions. 
+            %e.g. updates the node type popup menu when the user highlights a new node
+
+            highlightedNode=obj.neuriteTrees{obj.selectedTreeIdx}.Node{obj.lastNode(obj.selectedTreeIdx)};
+
+            
+            %This is the type of the highlighhted node
+            if isa(highlightedNode,'neuriteTracerNode') & obj.lastNode(obj.selectedTreeIdx)>1 %if not the root node
+                nType=highlightedNode.data.nodeType;
+                ind=strmatch(nType,obj.hNodeType.String,'Exact');
+                if isempty(ind)
+                     masivDebugTimingInfo(2, sprintf('FAILED TO FIND NODE TYPE "%s"',nType),toc,'s')
+                else
+                    set(obj.hNodeType,'Value', ind); 
+                end
+
+                bT=highlightedNode.branchType;
+
                 if strcmp(bT,'axon')
                     set(obj.hAxon,'Value',1)
                 elseif strcmp(bT,'dendrite')
@@ -1062,10 +1089,7 @@ classdef neuriteTracer<masivPlugin
                 end
             end
 
-
         end
-
-
         function clearMarkers(obj)
             %clear all trees and markers if any tree is present
             if isempty(obj.neuriteTraceHandles)
@@ -1091,6 +1115,7 @@ classdef neuriteTracer<masivPlugin
         end
 
 
+
         %------------------------------------------------------------------------------------------
         % Navigation functions
         function varargout=goToNode(obj,nodeId)
@@ -1112,6 +1137,10 @@ classdef neuriteTracer<masivPlugin
             if stdout
                 obj.MaSIV.mainDisplay.updateZoomedView;
             end
+
+            %Update the GUI to show the type of the currently selected node
+            obj.updateNeuriteGUI
+
 
             %By not having an if statement here to check for changes, we slow things down a little.
             %however, I've noticed that with the statement (e.g. if moved) it doesn't plot a new tree 
@@ -1181,7 +1210,7 @@ classdef neuriteTracer<masivPlugin
             end
             totalDistance=0;
 
-            distanceBetweenPlanes = obj.MaSIV.Meta.metaData.zres * 2;
+            distanceBetweenPlanes = obj.MaSIV.Meta.metadata.VoxelSize.z;
             if distanceBetweenPlanes==0
                 fprintf('\n\n\t WARNING! distance between planes is zero. There is a bug in the code!\n\n')
             end
@@ -1379,7 +1408,7 @@ classdef neuriteTracer<masivPlugin
                 error('enable should be the strings on or off')
             end
 
-            set(obj.hIsTerminated,'enable',enable)
+            set(obj.hNodeType,'enable',enable)
             set(obj.hDendrite,'enable',enable)
             set(obj.hAxon,'enable',enable)
         end
@@ -1553,12 +1582,15 @@ function treeCheckBoxCallback(~, ~, obj)
     obj.drawAllTrees
 end
 
-function prematureCallback(~,~,obj)
-    % Set this node as being a premature termination 
+function nodeTypeCallback(~,~,obj)
+    % This function is run when the user applies a selection with the nodeTypeCallback pop-up menu
+    %
     % The checkbox is disabled if the tree is not composed of neuriteTracerNodes 
     % or if the selected node is the root node
-    selectedNode = obj.lastNode(obj.selectedTreeIdx);
-    obj.neuriteTrees{obj.selectedTreeIdx}.Node{selectedNode}.isPrematureTermination = get(obj.hIsTerminated,'Value');
+    selectedNode = obj.lastNode(obj.selectedTreeIdx); 
+
+    nType = obj.hNodeType.String{get(obj.hNodeType,'Value')}; 
+    obj.neuriteTrees{obj.selectedTreeIdx}.Node{selectedNode}.data.nodeType = nType;
 end
 
 
