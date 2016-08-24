@@ -1,4 +1,4 @@
-classdef (Abstract) masiv_plugin
+classdef (Abstract) masiv_plugin 
     % masiv_plugin
     %
     % This abstract class handles the installation and updating of MaSIV plugins from GitHub. 
@@ -116,7 +116,7 @@ classdef (Abstract) masiv_plugin
                     while 1
                         result = str2num(input('? ','s'));
                         if ~isempty(result)
-                            if (result>0 && result<=length(extPluginDir))
+                            if result>0 && result<=length(extPluginDir)
                                 break
                             end
                         end
@@ -235,6 +235,7 @@ classdef (Abstract) masiv_plugin
             fprintf('Plugin "%s" updated\n', pluginDetails.repoName)
 
         end %update
+
 
 
         function changeBranch(pathToPluginDir,newBranchName)  
@@ -434,6 +435,154 @@ classdef (Abstract) masiv_plugin
         end %getPluginDirs
 
         
+        function removePlugin(pluginName,force)
+            % Remove an installed plugin
+            %
+            % removePlugin
+            %
+            % function removePlugin(pluginName,force)
+            %
+            %
+            % Purpose
+            % Removes an installed plugin. Either the plugin is specified by name or, if nothing is provided,
+            % a list given to the user and the user chooses interactively. 
+            %
+            % 
+            % Inputs
+            % pluginName - [optional] the name of the plugin to remove. If missing a list if provided
+            % force - [optional] false by default. If true, the user must confirm the removal
+            %
+            %
+            %
+            % Rob Campbell - Basel 2016   
+
+            if nargin<1
+                pluginName =[];
+            end
+            if nargin<2
+                force=false;
+            end
+
+            pluginsList=masiv_plugin.listExternalPlugins(1);
+
+            fprintf('\nWhich plugin do you want to delete?\n')
+
+            %do not proceed until user enters a valid answer
+            while 1
+                result = str2num(input('? ','s'));
+                if ~isempty(result)
+                    if result>0 && result<=length(pluginsList)
+                        break
+                    end
+                end
+                fprintf('Please enter one of the above numbers and press return\n')
+            end
+            toDelete = pluginsList{result};
+
+            if ~force
+                fprintf('\nAre you sure you want to DELETE plugin directory %s? [y/n]\n',toDelete)
+                %do not proceed until user enters a valid answer
+                while 1
+                    result = input('? ','s');
+                    if strcmpi(result,'y')
+                        break
+                    elseif strcmpi(result,'n')
+                        fprintf('Not deleting\n')
+                        return
+                    end
+                    fprintf('Please enter y/n and press return\n')
+                end
+            end
+
+            warning off
+            rmpath(toDelete)
+            warning on 
+            
+            success=rmdir(toDelete,'s');
+
+            if success
+                fprintf('Deleted %s\n',toDelete)
+            else
+                fprintf('FAILED to delete %s\n',toDelete)
+            end
+
+        end %removePlugin
+
+
+        function varargout=listExternalPlugins(printToScreen)
+            % Return a list of external plugins to screen or to an output variable
+            %
+            % listExternalPlugins
+            %
+            % varargout=listExternalPlugins(supressScreenPrint)
+            %
+            %
+            % Purpose
+            % Returns list of external plugins to screen (by default) or as an optional  
+            % output variable. Print to screen can be supressed.
+            %
+            % 
+            % Inputs
+            % printToScreen - [optional] false by default
+            %
+            %
+            %
+            % Rob Campbell - Basel 2016   
+
+            if nargin<1
+                printToScreen = false;
+            end
+
+            setupMaSIV_path %in private sub-directory
+            mSettings=masivSetting;
+            extPluginDir=mSettings.plugins.externalPluginsDirs;
+            if ischar(extPluginDir)
+                extPluginDir{1} = extPluginDir;
+            end
+            if ~iscell(extPluginDir)
+                error('expluginDir should be a cell array of strings')
+            end
+
+            baseDir=fileparts(which('MaSIV'));
+
+            pluginDirs={};
+            for ii=1:length(extPluginDir)
+                if exist(fullfile(baseDir,extPluginDir{ii}),'dir')
+                    thisExternalPluginDir=fullfile(baseDir,extPluginDir{ii});
+                elseif exist(extPluginDir{ii},'dir')
+                    thisExternalPluginDir=extPluginDir{ii};
+                else
+                    fprintf('Skipping directory %s -- can not find it!\n',extPluginDir{ii})
+                    continue
+                end
+                pluginDirs = [pluginDirs,masiv_plugin.getPluginDirs(thisExternalPluginDir)];
+            end
+
+            if nargout>0
+                varargout{1}=pluginDirs';
+            end
+
+            if isempty(pluginDirs)
+                fprintf('Found no external plugin directories\n')
+                return
+            end
+            
+            if printToScreen
+                fprintf('\nExternal plugins:\n\n')
+                for ii=1:length(pluginDirs)
+                    fprintf('(%d) %s\n', ii,pluginDirs{ii})
+                    if exist(fullfile(pluginDirs{ii},masiv_plugin.detailsFname))
+                        clear pluginDetails
+                        load(fullfile(pluginDirs{ii},masiv_plugin.detailsFname))
+                        fprintf('\tRepo name: %s\n',pluginDetails.repoName)
+                        fprintf('\tURL: %s\n',pluginDetails.repositoryURL)
+                        fprintf('\tAuthor: %s\n',pluginDetails.author.name)
+                    end
+                end
+            end
+            
+        end %listExternalPlugins
+
     end % static methods
 
 

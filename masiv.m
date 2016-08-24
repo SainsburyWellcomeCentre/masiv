@@ -736,36 +736,7 @@ function addPlugins(hMenuBase, obj, pluginsDir, separateFirstEntry)
     end
 end
 
-function isGBPlugin=isValidMasivPlugin(pluginsDir, pluginsFile)
-    fName=fullfile(pluginsDir, pluginsFile);
-    if isdir(fName)
-        isGBPlugin=0;
-    else
-        f=fopen(fullfile(pluginsDir, pluginsFile));
-        codeStr=fread(f, Inf, '*char')';
-        hasGBPAsSuperClass=~isempty(strfind(codeStr, '<masivPlugin'));
-        if hasGBPAsSuperClass
-            isGBPlugin=~isAbstractCode(codeStr);
-        else
-            isGBPlugin=0;
-        end
-        fclose(f);
-    end
-end
 
-function abstractPluginFlag=isAbstractCode(codeStr)
-    abstractPluginFlag=strfind(lower(codeStr), 'abstract');
-    if isempty(abstractPluginFlag)
-        abstractPluginFlag=0;
-    else
-        abstractPluginFlag=1;
-    end
-end
-
-function [pluginDisplayString, pluginStartCallback]=getPluginInfo(pluginFile)
-    pluginDisplayString=eval(strrep(pluginFile.name, '.m', '.displayString;'));
-    pluginStartCallback={eval(['@', strrep(pluginFile.name, '.m', '')])};
-end
 
 %% Constructor functions
 function runStartupTests()
