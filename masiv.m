@@ -56,7 +56,7 @@ classdef masiv < handle
             
             startDebugOutput();
             runStartupTests();
-            setupPath();
+            setupMaSIV_path %in private sub-directory
             
             if nargin<1 ||isempty(MetaIn)
                 chooseDataset(obj)
@@ -771,27 +771,6 @@ end
 function runStartupTests()
     if verLessThan('matlab', '8.4.0')
         error('%s requires MATLAB 2014b or newer',mfilename)
-    end
-end
-
-function setupPath()
-    MaSIVBasePath = fileparts(which('masiv'));
-    MaSIVDirs = fullfile(MaSIVBasePath,'code');
-    
-    if ispc
-        splitString=';';
-    else
-        splitString=':';
-    end
-    
-    MaSIVPath=strsplit(genpath(MaSIVDirs), splitString);
-    p=strsplit(path, splitString);
-    
-    toAddToPath=setdiff(MaSIVPath, p); %only add to path if dirs aren't already present
-    toAddToPath(cellfun(@isempty, toAddToPath))=[]; %remove any blank entries
-    fprintf('Adding MaSIV to path for this session\n')
-    if numel(toAddToPath)>0
-        addpath(toAddToPath{:},'-end')
     end
 end
 
