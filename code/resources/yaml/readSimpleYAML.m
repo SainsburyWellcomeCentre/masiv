@@ -32,9 +32,14 @@ function s=scanYamlFile(fid, currentDepth)
     while ~feof(fid)
         beginningPos=ftell(fid);
         wholeLine=fgetl(fid);
+
+        %If this is a line composed only of tabs (9) or spaces (32) then we ignore it
+        if all(double(wholeLine)==9) || all(double(wholeLine)==32)
+            continue
+        end
         if ~isempty(wholeLine)
-            l=strsplit(wholeLine, ':');
-            nm=l{1};
+            splitLine=strsplit(wholeLine, ':');
+            nm=splitLine{1};
             indentLevel=sum(nm==' ')/4;
             nm=strtrim(nm);
             
@@ -47,13 +52,13 @@ function s=scanYamlFile(fid, currentDepth)
                 fseek(fid, beginningPos, 'bof');
                 return
             end
-            
-            if numel(l)==1&&strcmp(nm, '-')
+
+            if numel(splitLine)==1 && strcmp(nm, '-')
                 % It's a sequence
                 fseek(fid, beginningPos, 'bof');
                 s=yaml2structarray(fid, currentDepth);
             else
-                val=l{2};
+                val=splitLine{2};
                 if isempty(val)
                     % This is a structure. Recurse the next lines
                     s.(nm)=scanYamlFile(fid, currentDepth+1);
