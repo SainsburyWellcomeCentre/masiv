@@ -194,7 +194,7 @@ classdef (Abstract) masiv_plugin
 
             %Read the Web page and find the sha of the last commit 
             response=urlread(pluginDetails.repositoryURL);
-            tok=regexp(response,'<a class="commit-tease-sha" href="(.+?)" data-pjax>','tokens');
+            tok=regexp(response,'<.*class="commit-tease.*src="(.+?)">','tokens');
             if isempty(tok)
                 error('Failed to get commit SHA string from %s\n',pluginDetails.repositoryURL);
             end
@@ -497,7 +497,7 @@ classdef (Abstract) masiv_plugin
             warning off
             rmpath(toDelete)
             warning on 
-            
+
             success=rmdir(toDelete,'s');
 
             if success
