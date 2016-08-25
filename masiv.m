@@ -710,7 +710,7 @@ function addPlugins(hMenuBase, obj, pluginsDir, separateFirstEntry)
     if nargin<4||isempty(separateFirstEntry)
         separateFirstEntry=0;
     end
-    
+
     if ~exist(pluginsDir, 'dir')
         error('plugins directory not found')
     else
@@ -814,10 +814,12 @@ function setupPlugins(obj)
      for externalPlugin = masivSetting('plugins.externalPluginsDirs')
          thisExternalPluginDir=externalPlugin{1};
          
-         if isempty(strfind(thisExternalPluginDir,'~')) %TODO: hack. fix when we know where the plugins will be
-             thisExternalPluginDir=fullfile(baseDir,thisExternalPluginDir); %assumes in MaSIV directory [WILL CHANGE]
+        %if the directory does not exist, then append the masiv base dir and hope for the best
+        %TODO: we will eventually not need this, since there should be no external plugins in masiv
+         if ~exist(thisExternalPluginDir,'dir') 
+             thisExternalPluginDir=fullfile(baseDir,thisExternalPluginDir); 
          end
-         
+
          if ~exist(thisExternalPluginDir,'dir')
              fprintf('Skipping missing plugin directory %s\n', thisExternalPluginDir)
              continue
