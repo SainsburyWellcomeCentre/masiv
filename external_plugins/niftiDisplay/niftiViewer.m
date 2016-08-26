@@ -81,8 +81,8 @@ classdef niftiViewer<masivPlugin
             %% Clear
             obj.clearMarkers();
             %% Get Data
-            ML=[];DV=[];PA=[];deWarpedX=[];deWarpedY=[];deWarpedZ=[];segmentationAcronym={};col=[];
-            allCells=table(ML, DV, PA, deWarpedX, deWarpedY, deWarpedZ, segmentationAcronym, col);
+            ML=[];DV=[];PA=[];deWarpedX=[];deWarpedY=[];deWarpedZ=[];originalIdx=[];segmentationAcronym={};contralateral=[];col=[];
+            allCells=table(ML, DV, PA, deWarpedX, deWarpedY, deWarpedZ, originalIdx, segmentationAcronym, contralateral, col);
             clear ML DV PA deWarpedX deWarpedY deWarpedZ segmentationAcronym col
             for ii=1:numel(obj.markerEditBoxes)
                 if isfield(obj.markerEditBoxes(ii).UserData, 'Active')
@@ -132,6 +132,7 @@ classdef niftiViewer<masivPlugin
             markerX=markerX(inViewIdx);
             markerY=markerY(inViewIdx);
             markerSz=markerSz(inViewIdx);
+            markerCol=markerCol(inViewIdx, :);
             
             %% Draw
             masivDebugTimingInfo(2, 'niftiViewer.drawMarkers: Beginning drawing',toc,'s')
@@ -177,9 +178,9 @@ end
 function markers=getWorkspaceMarkers(brainName)
     markers=[];
     bwsVariables=evalin('base', 'whos;');
-    segBrainVariables=bwsVariables(strcmp({bwsVariables.class}, 'segmentedBrain'));
+    segBrainVariables=bwsVariables(strcmp({bwsVariables.class}, 'warpedBrain'));
     if isempty(segBrainVariables)
-        msgbox('No segmented brain objects in the workspace. Quitting.')
+        msgbox('No warped brain objects in the workspace. Quitting.')
         return
     end
     if numel(segBrainVariables)>1

@@ -43,7 +43,7 @@ classdef show3ChannelOverlay<masivPlugin
                 ch01=(openTiff(fullfile(baseDir, Meta.imageFilePaths.Ch01{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
                 ch02=(openTiff(fullfile(baseDir, Meta.imageFilePaths.Ch02{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
 
-                if length(fields(Meta.imageFilePaths))==3
+                if length(fields(Meta.imageFilePaths))>=3
                     fprintf('Loading chan 3\n')
                     ch03=(openTiff(fullfile(baseDir, Meta.imageFilePaths.Ch03{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
                 else
@@ -62,7 +62,7 @@ classdef show3ChannelOverlay<masivPlugin
             I=double(cat(3, ch01, ch02, ch03));
             fprintf('Converted to double time: %3.2fs\n', toc)
             %Only unmix if we have three channels
-            if length(fields(Meta.imageFilePaths))==3
+            if length(fields(Meta.imageFilePaths))>=3
                 if strcmp(questdlg('Apply unmixing?', '3 channel display', 'Yes', 'No', 'Yes'), 'Yes')
                     tic
                     try
