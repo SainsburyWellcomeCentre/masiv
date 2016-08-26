@@ -736,8 +736,6 @@ function addPlugins(hMenuBase, obj, pluginsDir, separateFirstEntry)
     end
 end
 
-
-
 %% Constructor functions
 function runStartupTests()
     if verLessThan('matlab', '8.4.0')
@@ -867,6 +865,7 @@ function setupContrastController(obj)
     set(obj.hjSliderContrast,'PaintTicks',true, 'PaintLabels',true, ...
         'Background',java.awt.Color(0.1, 0.1, 0.1), 'Foreground', java.awt.Color(0.8, 0.8, 0.8), ...
         'StateChangedCallback',@(h,e) adjustContrast(h,e,obj));
+    
 end
 
 function setupResources(obj)
