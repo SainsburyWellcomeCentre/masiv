@@ -815,8 +815,11 @@ function setupPlugins(obj)
         %if the directory does not exist, then append the masiv base dir and hope for the best
         %TODO: we will eventually not need this, since there should be no external plugins in masiv
          if ~exist(thisExternalPluginDir,'dir') 
-             thisExternalPluginDir=fullfile(baseDir,thisExternalPluginDir); 
+             delete(gcf)
+             error(['The external plugin directory ''%s'' does not appear to exist.'...
+                   'Please specify the location of this directory in the preferences YML file, using the full (absolute) path'], thisExternalPluginDir)
          end
+         
 
          if ~exist(thisExternalPluginDir,'dir')
              fprintf('Skipping missing plugin directory %s\n', thisExternalPluginDir)
