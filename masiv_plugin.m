@@ -127,6 +127,10 @@ classdef (Abstract) masiv_plugin
                 end
 
                 targetDir = extPluginDir{result};
+                if ~exist(targetDir,'dir')
+                    fprintf('Making directory %s\n',targetDir)
+                    mkdir(targetDir)
+                end
             end
 
             %This is where we will attempt to the install the plugin. Do not proceed if the directory already exists
