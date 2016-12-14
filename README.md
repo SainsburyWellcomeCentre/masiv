@@ -40,7 +40,7 @@ The purpose of this is to produce a text file containing a list of all of the st
  - Specify downsampling factor in XY. 10 works nicely for data acquired at 0.5 microns per pixel. A reasonable starting point would be a downsampling factor that will reduce the size of the images to one roughly the number of pixels on your monitor. If the stitched images are 10,000 pixels wide, and your monitor has 1600x1200 pixels, a factor of 6-7 would be about right.
   - The downsampled stack will be created and saved to disk, then the viewer will open.
 
-** A note on the preferences file **
+### A note on the preferences file ###
 
 If you are working on a multi-user analysis machine you will want to have a copy of the MASIV preferences in your home directory. If you use the version in the MASIV source directory then you risk running into permissions issues or having your preferences overwritten by another user. Simply copy the masivPrefs.yml file to a directory in your path that you have write access to and that is higher up the path hierarchy then the MASIV  directories. Type "path" into the prompt. You may find that your user directory is already at the top of the list, in which case you can create a copy there. MASIV will then automatically use this copy. 
 
