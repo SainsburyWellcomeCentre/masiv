@@ -1,5 +1,7 @@
 classdef masiv < handle
     
+
+
     properties(Access=protected, Hidden)        
         %% Internal tracking
         numScrolls=0
@@ -7,7 +9,8 @@ classdef masiv < handle
         panyInt=0
         %% open plugin windows that override close requests
         openPluginsOverridingCloseReq={}
-    end
+    end %protected properties
+
     
     properties
         %% Handles to visible objects
@@ -32,10 +35,10 @@ classdef masiv < handle
         MainStack 
         mainDisplay
         additionalDisplays
-        contrastMode=0;
-        dragOrigin=NaN;
-        
-    end
+        contrastMode=0
+        dragOrigin=NaN 
+    end %properties
+
     
     events
         CacheChanged
@@ -48,14 +51,16 @@ classdef masiv < handle
         ViewClicked
         KeyPress
         ViewerClosing
-    end
+    end %events
    
-    methods % Constructor
+
+    methods
         function obj=masiv(MetaIn, idx)
+            % Constructor
             obj=obj@handle; % base class initialisation
             
-            startDebugOutput();
-            runStartupTests();
+            startDebugOutput;
+            runStartupTests;
             setupMaSIV_path %This function is in the private sub-directory
             
             if nargin<1 ||isempty(MetaIn)
@@ -89,9 +94,24 @@ classdef masiv < handle
             
             %% Show the figure, we're done here!
             obj.hFig.Visible='on';
-        end 
-    end
+        end % close constructor
+
+
+        function delete(obj)
+             % Destructor
+            notify(obj, 'ViewerClosing')
+            delete(obj.MainStack)
+            deleteInfoPanel(obj, 'all')
+            delete(timerfind);
+            if ishandle(obj.hFig)
+                masivSetting('viewer.mainFigurePosition', obj.hFig.Position)
+                delete(obj.hFig);
+            end
+        end %destructor
+
+    end %methods
     
+
     methods(Access=protected)
         
         %% ---Scrolling
@@ -346,25 +366,29 @@ classdef masiv < handle
         end
     end  %methods(Access=protected)
     
+
     methods 
         % Keep track of open plugins that want the viewer to cancel close requests
         function registerOpenPluginForCloseReqs(obj, plg)
             if isempty(obj.getCloseReqRegistrationIndexOfPlugin(plg))
                 obj.openPluginsOverridingCloseReq{end+1}=plg;
             end
-        end
+        end %registerOpenPluginForCloseReqs
+
         function deregisterOpenPluginForCloseReqs(obj, plg)
             plgIdx=obj.getCloseReqRegistrationIndexOfPlugin(plg);
             if ~isempty(plgIdx)
                 obj.openPluginsOverridingCloseReq(plgIdx)=[];
             end
-        end
+        end %deregisterOpenPluginForCloseReqs
+
         function idx=getCloseReqRegistrationIndexOfPlugin(obj, plg)
             idx=cellfun(@(x) eq(plg, x), obj.openPluginsOverridingCloseReq);
-        end
+        end %getCloseReqRegistrationIndexOfPlugin
 
-        %public method for allowing plugins to centre the image on any desired locaion
+
         function varargout=centreViewOnCoordinate(obj,xPos,yPos)
+            % Public method for allowing plugins to centre the image on any desired locaion
             C=zeros(2);
             C(1,1)=xPos;
             C(2,2)=yPos;
@@ -380,32 +404,19 @@ classdef masiv < handle
             if nargout>0
                 varargout{1}=moved;
             end
-
-
-        end
-    end
+        end %centreViewOnCoordinate
+    end %methods
     
-    methods % Destructor
-        function delete(obj)
-            notify(obj, 'ViewerClosing')
-            delete(obj.MainStack)
-            deleteInfoPanel(obj, 'all')
-            delete(timerfind);
-            if ishandle(obj.hFig)
-                masivSetting('viewer.mainFigurePosition', obj.hFig.Position)
-                delete(obj.hFig);
-            end
-        end
-    end
-end
+end %MaSIV
+
 
 function startDebugOutput
-tic
-clc
+    tic
+    clc
 end    
 
 %% Callbacks
-function hFigMain_KeyPress (~, eventdata, obj)
+function hFigMain_KeyPress(~, eventdata, obj)
 
     startDebugOutput
 
@@ -432,21 +443,20 @@ function hFigMain_KeyPress (~, eventdata, obj)
         notify(obj, 'KeyPress', KeyPressEventData(eventdata))
     end
     if shiftMod
-         if ~obj.contrastMode
-             obj.contrastMode=1;
-             obj.hFig.Pointer='custom';
-         end
+        if ~obj.contrastMode
+            obj.contrastMode=1;
+            obj.hFig.Pointer='custom';
+        end
     end
-        
 end
 
 function hFigMain_KeyRelease(~, eventdata, obj)
-shiftMod=ismember('shift', eventdata.Modifier);
+    shiftMod=ismember('shift', eventdata.Modifier);
     if ~shiftMod
-            if obj.contrastMode
-                obj.contrastMode=0;
-                obj.hFig.Pointer='arrow';
-            end
+        if obj.contrastMode
+            obj.contrastMode=0;
+            obj.hFig.Pointer='arrow';
+        end
     end
 end
 
