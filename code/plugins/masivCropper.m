@@ -454,7 +454,7 @@ else
     s=SuperWaitBar(numel(fNames), 'Executing Crops');
     parfor ii=1:numel(fNames)
         s.progress; %#ok<PFBNS>
-        I=openTiff(fNames{ii}, regionSpec, 1);
+        I=masiv.fileio.openTiff(fNames{ii}, regionSpec, 1);
         
         tagStruct=duplicateTagStructure(fNames{ii});
         tagStruct.ImageLength=size(I, 1);

@@ -40,12 +40,12 @@ classdef show3ChannelOverlay<masivPlugin
                     deleteRequest(obj)
                     error('Only 1 imported channel found')
                 end
-                ch01=(openTiff(fullfile(baseDir, Meta.imageFilePaths.Ch01{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
-                ch02=(openTiff(fullfile(baseDir, Meta.imageFilePaths.Ch02{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
+                ch01=(masiv.fileio.openTiff(fullfile(baseDir, Meta.imageFilePaths.Ch01{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
+                ch02=(masiv.fileio.openTiff(fullfile(baseDir, Meta.imageFilePaths.Ch02{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
 
                 if length(fields(Meta.imageFilePaths))>=3
                     fprintf('Loading chan 3\n')
-                    ch03=(openTiff(fullfile(baseDir, Meta.imageFilePaths.Ch03{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
+                    ch03=(masiv.fileio.openTiff(fullfile(baseDir, Meta.imageFilePaths.Ch03{sliceNum}), [xView(1) yView(1) range(xView)+1 range(yView+1)], 1));
                 else
                     fprintf('Creating empty channel 3\n')
                     ch03 = zeros(size(ch02),class(ch02));

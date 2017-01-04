@@ -585,10 +585,10 @@ classdef masivExporter<masivPlugin
                     fName=fullfile(t.imageBaseDirectory, f);
                     
                     info=imfinfo(fName);
-                    [xoffset, yoffset]=checkTiffFileForOffset(info);
+                    [xoffset, yoffset]=masiv.fileio.checkTiffFileForOffset(info);
                     regionSpecAdjustedForCrop=regionSpec-[xoffset yoffset 0 0];
                     
-                    I(:,:,jj)=openTiff(fName, regionSpecAdjustedForCrop);
+                    I(:,:,jj)=masiv.fileio.openTiff(fName, regionSpecAdjustedForCrop);
                     swb.progress; %#ok<PFBNS>
                 end
                 delete(swb)

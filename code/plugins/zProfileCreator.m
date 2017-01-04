@@ -113,8 +113,8 @@ function offsets=getImageFilesXYOffsets(imageFileListSource, imageFileListTarget
             regionSpecAdjustedTarget=checkImagesForCropAndAdjustRegionSpecToMach(imageFileListTarget{ii}, regionSpec);
             regionSpecAdjustedSource=checkImagesForCropAndAdjustRegionSpecToMach(imageFileListSource{ii}, regionSpec);
             
-            targetImageFFT=fft2(openTiff(imageFileListTarget{ii}, regionSpecAdjustedTarget, 1));
-            sourceImageFFT=fft2(openTiff(imageFileListSource{ii}, regionSpecAdjustedSource, 1));
+            targetImageFFT=fft2(masiv.fileio.openTiff(imageFileListTarget{ii}, regionSpecAdjustedTarget, 1));
+            sourceImageFFT=fft2(masiv.fileio.openTiff(imageFileListSource{ii}, regionSpecAdjustedSource, 1));
             output=dftregistration(targetImageFFT, sourceImageFFT, 1);
             offsets(ii, :)=output(3:4);
         end

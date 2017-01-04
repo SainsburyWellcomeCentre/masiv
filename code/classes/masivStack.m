@@ -264,7 +264,7 @@ classdef masivStack<handle
              if obj.imageInMemory
                 error('Image already in memory')
              end
-            obj.I_internal=loadTiffStack(obj.fileFullPath, [], 'g');
+            obj.I_internal=masiv.fileio.loadTiffStack(obj.fileFullPath, [], 'g');
         end
         
         function stdout=deleteStackFromDisk(obj)
@@ -427,7 +427,7 @@ function I = createDownscaledStack(obj)
     if usejava('jvm')&&~feature('ShowFigureWindows') %Switch to console display if no graphics available
         parfor ii=1:numel(obj.idx)
             fName=fullfile(obj.MetaObject.imageBaseDirectory, obj.MetaObject.imageFilePaths.(obj.channel){obj.idx(ii)}); %#ok<PFBNS>
-            I(:,:,ii)=openTiff(fName, [1 1 minWidth minHeight], obj.xyds);
+            I(:,:,ii)=masiv.fileio.openTiff(fName, [1 1 minWidth minHeight], obj.xyds);
             fprintf('Generating downscaledStack: processing image %u of %u', numel(idx), ii)
         end        
     else
@@ -435,7 +435,7 @@ function I = createDownscaledStack(obj)
         parfor ii=1:numel(obj.idx)
             fName=fullfile(obj.MetaObject.imageBaseDirectory,obj.MetaObject.imageFilePaths.(obj.channel){obj.idx(ii)}); %#ok<PFBNS>
             if exist(fName, 'file')==2;
-                I(:,:,ii)=openTiff(fName, [1 1 minWidth minHeight], obj.xyds);
+                I(:,:,ii)=masiv.fileio.openTiff(fName, [1 1 minWidth minHeight], obj.xyds);
             end
             swb.progress(); %#ok<PFBNS>
         end

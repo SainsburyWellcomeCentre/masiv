@@ -45,9 +45,9 @@ parfor ii=1:numel(q.idx)
     else
         displayName=strrep(t.stitchedImagePaths.Ch01{idx}, '_StitchedImage_Ch_1.tif', '');
         fprintf('\tLoading %s\n', displayName)
-        ch1=double(openTiff(fname1));
-        ch2=double(openTiff(fname2));
-        ch3=double(openTiff(fname3));
+        ch1=double(masiv.fileio.openTiff(fname1));
+        ch2=double(masiv.fileio.openTiff(fname2));
+        ch3=double(masiv.fileio.openTiff(fname3));
         fprintf('\tFiltering %s\n', displayName)
         if ~isempty(q.gaussianBlurRadius)
             ch1=doFilter(ch1, q.gaussianBlurRadius);

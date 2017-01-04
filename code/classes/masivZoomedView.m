@@ -93,10 +93,10 @@ classdef masivZoomedView<handle
             
             if ~isfield(info, 'XPosition') % No crop so just load the whole thing
                 masivDebugTimingInfo(3, 'mZV.backgroundLoad: Uncropped image. Performing standard load', toc,'s')
-                f=parfeval(p, @openTiff, 1,obj.filePath, rSpec, obj.downSampling);
+                f=parfeval(p, @masiv.fileio.openTiff, 1,obj.filePath, rSpec, obj.downSampling);
             else
                 masivDebugTimingInfo(3, 'mZV.backgroundLoad: Cropped image. Checking status of requested region', toc,'s')
-                [xoffset, yoffset]=checkTiffFileForOffset(info);
+                [xoffset, yoffset]=masiv.fileio.checkTiffFileForOffset(info);
                 rSpecAdjustedForCrop=rSpec-[xoffset yoffset 0 0];
 
                 switch checkRSpecImageStatus(info, rSpecAdjustedForCrop)
@@ -108,7 +108,7 @@ classdef masivZoomedView<handle
                         f=setUpAsyncPartialLoad(obj, info, rSpec, rSpecAdjustedForCrop);
                     case 2 % requested region is fully on disk
                         masivDebugTimingInfo(3, 'mZV.backgroundLoad: Region fully on disk; loading', toc,'s')
-                        f=parfeval(p, @openTiff, 1, obj.filePath, rSpecAdjustedForCrop, obj.downSampling);
+                        f=parfeval(p, @masiv.fileio.openTiff, 1, obj.filePath, rSpecAdjustedForCrop, obj.downSampling);
                 end
             end
             
@@ -288,7 +288,7 @@ function f=setUpAsyncPartialLoad(obj, info, rSpec, rSpecAdjustedForCrop)
     I=upsampleDSSToRegionSpec(DSS, currentDSFactor, obj.filePath, rSpec);
     rSpecThatCanBeLoaded=getRSpecPortionThatIsOnDisk(rSpecAdjustedForCrop, info);
     
-    f=parfeval(@openTiff, 1, obj.filePath, rSpecThatCanBeLoaded, obj.downSampling);
+    f=parfeval(@masiv.fileio.openTiff, 1, obj.filePath, rSpecThatCanBeLoaded, obj.downSampling);
     
     insertImageFcn=@(IDetail, obj) insertDetailIntoImage(I, IDetail, rSpecAdjustedForCrop, rSpecThatCanBeLoaded, currentDSFactor);
     
