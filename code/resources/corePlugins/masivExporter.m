@@ -597,7 +597,7 @@ classdef masivExporter<masivPlugin
                     case 'Workspace'
                         assignin('base', [obj.hName.String '_' c], I)
                     case 'Disk:'
-                        saveTiffStack(I, fullfile(obj.hDestPath.String, [obj.hName.String '_' c '.tif']), 'g');
+                        masiv.fileio.saveTiffStack(I, fullfile(obj.hDestPath.String, [obj.hName.String '_' c '.tif']), 'g');
                 end
             end
             

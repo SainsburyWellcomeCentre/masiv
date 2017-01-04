@@ -252,7 +252,7 @@ classdef masivStack<handle
             tagList={'ImageDescription', obj.toText};
             %% Write file locally first to prevent network transport errors
             tempFileName=[tempname '.tif'];
-            saveTiffStack(obj.I, tempFileName, 'g', tagList);
+            masiv.fileio.saveTiffStack(obj.I, tempFileName, 'g', tagList);
             thisStackFilePath=generateValidNewFileName(obj);
             swb=SuperWaitBar(1, strrep(sprintf('Moving file in to place (%s)', thisStackFilePath), '_', '\_'));
             movefile(tempFileName, thisStackFilePath)
