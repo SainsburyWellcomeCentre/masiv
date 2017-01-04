@@ -63,8 +63,8 @@ end
         end
     end
     
-    
 end %function valOut=masivSetting(prefName, val)
+
 
 
 %----------------------------------------------------------
@@ -72,6 +72,7 @@ function [r, fName, fileInfo]=doInitialReadOfSettingsFile
     fName=getPrefsFilePath;
     r=readSimpleYAML(fName);
     fileInfo=dir(fName);
+    fprintf('Reading settings from %s\n',fName) 
 end
 
 
@@ -82,6 +83,7 @@ function fName=getPrefsFilePath
         fName=which('masivPrefs.yml');
     end
 end
+
 
 function thisSetting = getThisSetting(thisStruct,settingName)
     %Read setting defined by string settingName from from structure thisStruct
@@ -172,11 +174,13 @@ function s=returnDefaultSettings
     s.plugins.externalPluginsDirs={'external_plugins'}; 
 end
 
+
 function createDefaultPrefsFile
     %% Load the default settings and write these to disk to the MaSIV path
     baseDir=fileparts(which('MaSIV'));
     writeSimpleYAML(returnDefaultSettings, fullfile(baseDir, 'masivPrefs.yml')); 
 end
+
 
 function valOut=tryToSetToDefaultValue(prefName)
     defaultSettings = returnDefaultSettings;

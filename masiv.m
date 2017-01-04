@@ -56,7 +56,7 @@ classdef masiv < handle
             
             startDebugOutput();
             runStartupTests();
-            setupMaSIV_path %in private sub-directory
+            setupMaSIV_path %This function is in the private sub-directory
             
             if nargin<1 ||isempty(MetaIn)
                 chooseDataset(obj)
