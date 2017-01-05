@@ -77,7 +77,8 @@ classdef masivMeta < handle
                 fprintf('\n\n\tINSTRUCTIONS')
                 fprintf('\n\n\tYou will need to generate down-scaled image stacks in order to proceed.')
                 fprintf('\n\tClick "New", then the channel you want to build, then the section range.')
-                fprintf('\n\tSee documention on the web for more information.\n\n\n')
+                fprintf('\n\tSee the ReadMe and documention on the web for more information:')
+                fprintf('\n\thttps://github.com/alexanderbrown/masiv\n\n\n')
             end
         end
         
@@ -188,7 +189,8 @@ function obj=getimageFilePaths(obj)
     if isempty(listFilePaths)
         fprintf(['\n\n\t*****\n\tFailed to find image list files in directory "%s"\n',...
             '\tCan not find text files listing the relative paths to the full resolution images.\n',...
-            '\tYou need to create these text files. Please see the documentation on the web.\n\t*****\n\n\n'],...
+            '\tYou need to create these text files. Please see the ReadMe and documentation on the web:\n',...
+            '\thttps://github.com/alexanderbrown/masiv\n\t*****\n\n\n'],...
             obj.masivDirectory)
     end
 
