@@ -103,9 +103,10 @@ classdef masivStack<handle
             end
             
         end
+
+
         
         %% Getters and Setters
-        
         function nm=get.stackName(obj)
             nm=obj.MetaObject.stackName;
         end
@@ -397,24 +398,33 @@ function I = createDownscaledStack(obj)
     
     %% Start default parallel pool if not already
     gcp;
-    
+
     %% Generate full file path
     pths=fullfile(obj.MetaObject.imageBaseDirectory, obj.MetaObject.imageFilePaths.(obj.channel)(obj.idx));
     %% Get file information to determine crop
-    info=cell(numel(obj.idx), 1);
+    thisStackInfo=cell(numel(obj.idx), 1);
     swb=SuperWaitBar(numel(obj.idx), 'Getting image info...');
     parfor ii=1:numel(obj.idx)
         if exist(pths{ii}, 'file') ==2;
-            info{ii}=imfinfo(pths{ii});
+            thisStackInfo{ii}=imfinfo(pths{ii});
         end
         swb.progress(); %#ok<PFBNS>
     end
+
     delete(swb);
     clear swb
+
+    %Issue a warning to the user that no images were found
+    if all(cellfun(@isempty, thisStackInfo))
+        fprintf('\n\n\t**** No images found. Quitting. *****\n\n\n\n')
+        I=[];
+        return
+    end
+
     
     %%
-    minWidth=min(cellfun(@(x) getInfoOrInf(x, 'Width'), info));
-    minHeight=min(cellfun(@(x) getInfoOrInf(x, 'Height'), info));
+    minWidth=min(cellfun(@(x) getInfoOrInf(x, 'Width'), thisStackInfo));
+    minHeight=min(cellfun(@(x) getInfoOrInf(x, 'Height'), thisStackInfo));
     
     outputImageWidth=ceil(minWidth/obj.xyds);
     outputImageHeight=ceil(minHeight/obj.xyds);
