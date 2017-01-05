@@ -18,17 +18,14 @@
 
 * Clone the repo and add only the root MASIV directory to the MATLAB path.
 * Dependencies:
-    * MATLAB
-        * Image Processing Toolbox
-        * Parallel Processing Toolbox
-        * Statistics Toolbox
+    * Image Processing Toolbox
+    * Parallel Processing Toolbox
+    * Statistics and Machine Learning Toolbox
     * [Subpixel Registration](http://www.mathworks.com/matlabcentral/fileexchange/18401-efficient-subpixel-image-registration-by-cross-correlation)
 * Run 'masiv'
 
 ### Using MASIV ###
-1. If data were stitched with "stitchit". CD to data directory in MATLAB and run ``generate_MaSIV_list('stitchedImages_100')``
-or whatever the directory name is.
-The purpose of this is to produce a text file containing a list of all of the stitched image slices in your data set. 
+1. A text file listing the location of the stitched images needs to be breated. e.g. If data were stitched with [StitchIt](https://github.com/BaselLaserMouse/StitchIt): `cd` to the data directory in MATLAB and run ``generate_MaSIV_list('stitchedImages_100')``or whatever the directory name is.
 2. From the MATLAB command line run 'masiv'
 3. With the GUI windows that pops up, select the base path of the stitched experiment you would like to view. This is the directory that contains the master Mosaic file, the stitched images sub-directory, and the text files you made in the first step. 
 4. If you have already run masiv on this data set you will be able to select the down-sampled stack to work with. 
@@ -44,6 +41,12 @@ The purpose of this is to produce a text file containing a list of all of the st
 
 If you are working on a multi-user analysis machine you will want to have a copy of the MASIV preferences in your home directory. If you use the version in the MASIV source directory then you risk running into permissions issues or having your preferences overwritten by another user. Simply copy the masivPrefs.yml file to a directory in your path that you have write access to and that is higher up the path hierarchy then the MASIV  directories. Type "path" into the prompt. You may find that your user directory is already at the top of the list, in which case you can create a copy there. MASIV will then automatically use this copy. 
 
+### Plugins ###
+
+* [neurite tracer](https://github.com/raacampbell/neuriteTracer)
+* [cell counter](https://github.com/alexanderbrown/masiv-cell-counter)
+* [nifi display](https://github.com/alexanderbrown/masiv-nifti-display)
+* [three channel overlay](https://github.com/alexanderbrown/masiv-three-channel-overlay)
 
 ### Problems? ###
 Please [file an issue](https://github.com/alexanderbrown/masiv/issues) if you have questions, bugs, suggestions, or problems.
