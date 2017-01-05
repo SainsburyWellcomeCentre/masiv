@@ -183,6 +183,8 @@ end
 
 function dt=selectMATLABDataType(info)
 switch info.BitDepth
+    case(48)
+      error('   ** RGB TIFF not currently supported **')
     case(16)
         dt='uint16';
     case(8)
