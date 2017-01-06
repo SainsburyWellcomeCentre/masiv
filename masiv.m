@@ -1,5 +1,8 @@
 classdef masiv < handle
-    
+    % masiv
+    %
+    % MaSIV is a MATLAB-based viewer for very large 3D image stacks
+    % https://github.com/alexanderbrown/masiv
 
 
     properties(Access=protected, Hidden)        
@@ -826,8 +829,9 @@ function setupPlugins(obj)
         %TODO: we will eventually not need this, since there should be no external plugins in masiv
          if ~exist(thisExternalPluginDir,'dir') 
              delete(gcf)
-             error(['The external plugin directory ''%s'' does not appear to exist.'...
-                   'Please specify the location of this directory in the preferences YML file, using the full (absolute) path'], thisExternalPluginDir)
+             error(['\nThe external plugin directory ''%s'' does not appear to exist.\n'...
+                    'If you have external plugins, you should create this directory and define it in the YML preferences file.\n',...
+                    'For more details see the MaSIV Wiki: https://github.com/alexanderbrown/masiv/wiki\n\n'], thisExternalPluginDir)
          end
          
 
