@@ -7,7 +7,7 @@
 * It works by creating a downsampled stack, which is then navigated as you would a regular 3D image stack. 
 * However, the program pulls data from the hard disk to a cache when zoomed in, allowing all the original detail to be viewed
 * Features can be added using [plugins](https://github.com/alexanderbrown/masiv/wiki/Plugins)
-
+* Works on Linux, OS X, and Windows
 
 ### What kind of data can I view in MaSIV? 
 
