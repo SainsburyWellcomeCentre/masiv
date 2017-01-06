@@ -456,7 +456,7 @@ else
         s.progress; %#ok<PFBNS>
         I=masiv.fileio.openTiff(fNames{ii}, regionSpec, 1);
         
-        tagStruct=duplicateTagStructure(fNames{ii});
+        tagStruct=masiv.fileio.duplicateTagStructure(fNames{ii});
         tagStruct.ImageLength=size(I, 1);
         tagStruct.ImageWidth=size(I, 2);
         tagStruct.RowsPerStrip=size(I, 1);

@@ -1,4 +1,7 @@
 function tagStruct=duplicateTagStructure(filePath)
+% Reads in and reproduces the Tiff tag structure of an image, for use in
+% writing to a new image
+
 if ~ischar(filePath) || ~exist(filePath, 'file')
     error('Not a valid path, or the filoe can not be opened')
 end
