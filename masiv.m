@@ -974,7 +974,7 @@ function setupInfoBoxes(obj)
 end
 
 function startParallelPool()
-     h=splashWindow('Starting Parallel Pool', 'MaSIV');
+     h=masiv.resources.splashWindow('Starting Parallel Pool', 'MaSIV');
      drawnow;
      G=gcp;
      G.IdleTimeout=inf;
