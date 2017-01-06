@@ -61,7 +61,7 @@ classdef masiv < handle
             
             startDebugOutput;
             runStartupTests;
-            setupMaSIV_path %This function is in the private sub-directory
+            masiv.utils.setupMaSIV_path
             
             if nargin<1 ||isempty(MetaIn)
                 chooseDataset(obj)
@@ -734,9 +734,9 @@ function addPlugins(hMenuBase, obj, pluginsDir, separateFirstEntry)
     end
     
     for ii=1:numel(filesInPluginsDirectory)
-        if isValidMasivPlugin(pluginsDir, filesInPluginsDirectory(ii).name)
+        if masiv.utils.isValidMasivPlugin(pluginsDir, filesInPluginsDirectory(ii).name)
             
-            [pluginDisplayString, pluginStartCallback]=getPluginInfo(filesInPluginsDirectory(ii));
+            [pluginDisplayString, pluginStartCallback]=masiv.utils.getPluginInfo(filesInPluginsDirectory(ii));
                        
             hItem=uimenu(hMenuBase, 'Label', pluginDisplayString, 'Callback', pluginStartCallback, 'UserData', obj);
             if separateFirstEntry&&ii==1
@@ -838,7 +838,7 @@ function setupPlugins(obj)
              fprintf('Searching for plugins in %s\n',thisExternalPluginDir)
          end
 
-         pluginDirs=masiv_plugin.getPluginDirs(thisExternalPluginDir);
+         pluginDirs=masiv.pluginManager.getPluginDirs(thisExternalPluginDir);
          
          %Loop through pluginDirs and add all directories to the path
          for ii=1:length(pluginDirs)

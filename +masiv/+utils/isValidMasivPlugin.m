@@ -7,7 +7,7 @@ function isGBPlugin=isValidMasivPlugin(pluginsDir, pluginsFile)
         codeStr=fread(f, Inf, '*char')';
         hasGBPAsSuperClass=~isempty(strfind(codeStr, '<masivPlugin'));
         if hasGBPAsSuperClass
-            isGBPlugin=~isAbstractCode(codeStr);
+            isGBPlugin=~masiv.utils.isAbstractCode(codeStr);
         else
             isGBPlugin=0;
         end
