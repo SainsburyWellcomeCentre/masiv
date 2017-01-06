@@ -63,6 +63,9 @@ classdef masivMeta < handle
         function val=get.stackName(obj)
             if isfield(obj.metadata, 'stackName') && ~isempty(obj.metadata.stackName)
                 val=obj.metadata.stackName;
+                if isnumeric(val)
+                    val=num2str(val);
+                end
             else
                 val=obj.imageBaseDirectory;
             end
