@@ -27,7 +27,4 @@
 * Run 'masiv'
 
 ### Using MaSIV 
-Please see the [Wiki](https://github.com/alexanderbrown/masiv/wiki) for further information. 
-
-### Problems or question? 
-[file an issue](https://github.com/alexanderbrown/masiv/issues)!
+Please see the [Wiki](https://github.com/alexanderbrown/masiv/wiki) for further information and [file an issue](https://github.com/alexanderbrown/masiv/issues) if you run into bugs or have a question.
