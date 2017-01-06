@@ -6,7 +6,8 @@
 * MASIV is an image viewer, designed for large (>100GB) 3D image datasets.
 * It works by creating a downsampled stack, which is then navigated as you would a regular 3D image stack. 
 * However, the program pulls data from the hard disk to a cache when zoomed in, allowing all the original detail to be viewed
-* A plugin class can be easily subclassed to create user-defined plugins. For example, a cell counter plugin is included.
+* Features can be added using [plugins](https://github.com/alexanderbrown/masiv/wiki/Plugins)
+
 
 ### What kind of data can I view in MASIV? ###
 
@@ -40,13 +41,6 @@
 ### A note on the preferences file ###
 
 If you are working on a multi-user analysis machine you will want to have a copy of the MASIV preferences in your home directory. If you use the version in the MASIV source directory then you risk running into permissions issues or having your preferences overwritten by another user. Simply copy the masivPrefs.yml file to a directory in your path that you have write access to and that is higher up the path hierarchy then the MASIV  directories. Type "path" into the prompt. You may find that your user directory is already at the top of the list, in which case you can create a copy there. MASIV will then automatically use this copy. 
-
-### Plugins ###
-
-* [neurite tracer](https://github.com/raacampbell/neuriteTracer)
-* [cell counter](https://github.com/alexanderbrown/masiv-cell-counter)
-* [nifi display](https://github.com/alexanderbrown/masiv-nifti-display)
-* [three channel overlay](https://github.com/alexanderbrown/masiv-three-channel-overlay)
 
 ### Problems? ###
 Please [file an issue](https://github.com/alexanderbrown/masiv/issues) if you have questions, bugs, suggestions, or problems.
