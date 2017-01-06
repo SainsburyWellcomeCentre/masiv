@@ -64,10 +64,10 @@ function s=scanYamlFile(fid, currentDepth)
                     s.(nm)=scanYamlFile(fid, currentDepth+1);
                 else
                     % Name-value pair
-                    if ~isempty(str2num(val))
-                        val=str2num(val);
-                    else
+                    if isempty(str2num(val)) || (val(1)=='0') 
                         val=strtrim(val);
+                    else
+                        val=str2num(val);
                     end
                     %Handle cell array of strings
                     if isstr(val)
