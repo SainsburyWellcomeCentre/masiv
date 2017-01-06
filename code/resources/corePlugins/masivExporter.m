@@ -609,7 +609,7 @@ classdef masivExporter<masivPlugin
                     case 'Workspace'
                         assigin('base', [obj.hName.String '_' 'params'], s);
                     case 'Disk:'
-                        writeSimpleYAML(s, fullfile(obj.hDestPath.String, [obj.hName.String '.yml']));
+                        masiv.yaml.writeSimpleYAML(s, fullfile(obj.hDestPath.String, [obj.hName.String '.yml']));
             end
             close(obj.hFig)
 

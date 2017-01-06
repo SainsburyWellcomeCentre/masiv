@@ -58,7 +58,7 @@ end
 
             %% write first to a new (temporary) file, then rename. Should prevent corruption.
             tmpFname=[tempname,'.yml'];
-            writeSimpleYAML(r, tmpFname);
+            masiv.yaml.writeSimpleYAML(r, tmpFname);
             movefile(tmpFname, fName);
         end
     end
@@ -70,7 +70,7 @@ end %function valOut=masivSetting(prefName, val)
 %----------------------------------------------------------
 function [r, fName, fileInfo]=doInitialReadOfSettingsFile
     fName=getPrefsFilePath;
-    r=readSimpleYAML(fName);
+    r=masiv.yaml.readSimpleYAML(fName);
     fileInfo=dir(fName);
     fprintf('Reading settings from %s\n',fName) 
 end
@@ -178,7 +178,7 @@ end
 function createDefaultPrefsFile
     %% Load the default settings and write these to disk to the MaSIV path
     baseDir=fileparts(which('MaSIV'));
-    writeSimpleYAML(returnDefaultSettings, fullfile(baseDir, 'masivPrefs.yml')); 
+    masiv.yaml.writeSimpleYAML(returnDefaultSettings, fullfile(baseDir, 'masivPrefs.yml')); 
 end
 
 
@@ -201,7 +201,7 @@ function [r, fileInfo]=checkFileTimestampAndReloadIfChanged(r, fileInfo, fName)
     newFileInfo=dir(fName);
     if (numel(newFileInfo.date)~=numel(fileInfo.date)) || any(newFileInfo.date~=fileInfo.date)
         %% And reload it if it has
-        r=readSimpleYAML(fName);
+        r=masiv.yaml.readSimpleYAML(fName);
         fileInfo=dir(fName);
     end
 end

@@ -106,7 +106,7 @@ classdef masivMeta < handle
         function md=getMeta(filePath)
             % GETMETA Used to read the MaSIV metadata from a file 
             % (YML format in the current version)
-            md=readSimpleYAML(filePath);
+            md=masiv.yaml.readSimpleYAML(filePath);
         end
         
         function metaFilePath=getMetaFile()
@@ -167,7 +167,7 @@ classdef masivMeta < handle
             end
             %% Write YML file
             fileFullPath=fullfile(masivDir, [s.stackName '_Meta.yml']);
-            writeSimpleYAML(s, fileFullPath);
+            masiv.yaml.writeSimpleYAML(s, fileFullPath);
             msgbox(sprintf('MaSIV Metadata file created at:\n\t%s\nYou now need to create ImageList files so that MaSIV can find your images. See the docs for details', fileFullPath))
             
 
