@@ -59,18 +59,19 @@ function s=scanYamlFile(fid, currentDepth)
                 s=yaml2structarray(fid, currentDepth);
             else
                 val=splitLine{2};
+                val=strtrim(val);
                 if isempty(val)
                     % This is a structure. Recurse the next lines
                     s.(nm)=scanYamlFile(fid, currentDepth+1);
                 else
                     % Name-value pair
                     if isempty(str2num(val)) || (val(1)=='0') 
-                        val=strtrim(val);
+
                     else
                         val=str2num(val);
                     end
                     %Handle cell array of strings
-                    if isstr(val)
+                    if ischar(val)
                         tok=regexp(val,'{(.*)}','tokens');
                         if ~isempty(tok) 
                             val = strsplit(tok{1}{1},',');
