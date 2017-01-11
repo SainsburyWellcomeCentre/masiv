@@ -155,9 +155,10 @@ classdef masiv < handle
             
             switch scrollAction
             case 'zAxisScroll'
-                if masivSetting('navigation.scrollLayerInvert')
+                if masivSetting('navigation.scrollLayerInvert')==1
                     nScrolls=nScrolls*-1;
                 end
+
                 masivDebugTimingInfo(0, 'masiv:Calling mDisplay.seekZ',toc, 's')
                 stdout=obj.mainDisplay.seekZ(nScrolls);
                 if stdout
@@ -171,7 +172,7 @@ classdef masiv < handle
                 end
             case 'zoomScroll'
                 zoomRate=masivSetting('navigation.zoomRate'); %to zoom out
-                if masivSetting('navigation.scrollZoomInvert')
+                if masivSetting('navigation.scrollZoomInvert')==1
                     nScrolls=nScrolls*-1;
                 end
                 if nScrolls<0
@@ -221,7 +222,7 @@ classdef masiv < handle
         end
         
         function executePan(obj, xMove,yMove)
-            if masivSetting('navigation.panModeInvert')
+            if masivSetting('navigation.panModeInvert')==1
                 xMove=-xMove;
                 yMove=-yMove;
             end
