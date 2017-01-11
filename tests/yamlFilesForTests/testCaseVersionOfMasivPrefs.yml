@@ -1,0 +1,78 @@
+defaultDirectory: /mnt/data/TissueCyte/hanyu/YH292_161104_hd/YH292_MaSIV/
+font:
+    name: Helvetica
+    size: 12
+
+defaultVoxelSize: [1 1 5]
+viewer:
+    panelBkgdColor: [0.1 0.1 0.1]
+    mainBkgdColor: [0.2 0.2 0.2]
+    textMainColor: [0.8 0.8 0.8]
+    mainFigurePosition: [405 304 1410 832]
+
+navigation:
+    panIncrement: [10 120]
+    scrollIncrement: [10 1]
+    zoomRate: 1.5
+    panModeInvert: 0
+    scrollZoomInvert: 1
+    scrollLayerInvert: 1
+    keyboardUpdatePeriod: 0.005
+
+viewerDisplay:
+    nPixelsWidthForZoomedView: 2000
+    minZoomLevelForDetailedLoad: 1.5
+
+cache:
+    sizeLimitMiB: 1024
+
+viewInfoPanel:
+    fileNotOnDiskTextColor: [0.8 0.24 0]
+    fileOnDiskTextColor: [0 0.8 0.32]
+
+readQueueInfoPanel:
+    max: 50
+
+contrastSlider:
+    highThresh: 0.5
+    doAutoContrast: 1
+
+debug:
+    logging: 1
+    outputSpacing: 12
+
+plugins:
+    hideTutorialPlugins: 0
+    bundledPluginsDirPath: code/plugins
+    externalPluginsDirs: {~/work/Anatomy/MaSIV_plugins_dev/,~/.masiv_plugins}
+
+preLoader:
+    nBefore: 10
+    nAfter: 10
+    position: [1000 500 200 200]
+
+cellCounter:
+    figurePosition: [2087 438 432 562]
+    markerDiameter:
+        xy: 20
+        z: 30
+
+    minimumSize: 20
+    maximumDistanceVoxelsForDeletion: 500
+    importExportDefault: /mnt/data/TissueCyte/hanyu/YH292_161104_hd/YH292_MaSIV/
+
+neuriteTracer:
+    figurePosition: [901 145 566 724]
+    markerDiameter:
+        xy: 20
+        z: 3
+
+    minimumSize: 1
+    maximumDistanceVoxelsForDeletion: 500
+    nodeType: {normal,premature,fading,bright,bouton}
+    autosave:
+        enable: 1
+        everypoints: 30
+
+    importExportDefault: /mnt/data/TissueCyte/hanyu/YH292_161104_hd/YH292_MaSIV/
+

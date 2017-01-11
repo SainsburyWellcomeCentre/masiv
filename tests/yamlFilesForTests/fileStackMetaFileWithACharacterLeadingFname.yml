@@ -1,0 +1,7 @@
+VoxelSize:
+    x: 1
+    y: 1
+    z: 9
+
+stackName: fileName
+imageBaseDirectory: ../

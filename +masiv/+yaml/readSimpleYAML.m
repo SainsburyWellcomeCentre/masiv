@@ -65,11 +65,17 @@ function s=scanYamlFile(fid, currentDepth)
                     s.(nm)=scanYamlFile(fid, currentDepth+1);
                 else
                     % Name-value pair
-                    if isempty(str2num(val)) || (val(1)=='0') 
-
+                    % Ensure we only convert to numbers stuff that is likely to indeed be a number
+                    if isempty(str2num(val)) 
+                        %Strings that contain non-numeric characters return empty and so remain strings
+                    elseif regexp(val,'^0[0-9]+$')
+                        %Strings that start with a "0" and then contain only numbers we keep as strings
+                        %This will keep the string "0123" as a string but allow 0.123" to be converted to a number
                     else
+                        %Otherwise we convert to a stirng. 
                         val=str2num(val);
                     end
+
                     %Handle cell array of strings
                     if ischar(val)
                         tok=regexp(val,'{(.*)}','tokens');
@@ -79,11 +85,14 @@ function s=scanYamlFile(fid, currentDepth)
                     end
 
                     s.(nm)=val;
-                end
-            end
-        end
-    end
-end
+                end % if isempty(val)
+            end % if numel(splitLine)==1 && strcmp(nm, '-')
+
+        end % if ~isempty(wholeLine)
+    end % while ~feof(fid)
+end %function s=scanYamlFile(fid, currentDepth)
+
+
 
 function s=yaml2structarray(fid, currentDepth)
     s=[];
@@ -109,14 +118,4 @@ function s=yaml2structarray(fid, currentDepth)
     end
 
 end
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
