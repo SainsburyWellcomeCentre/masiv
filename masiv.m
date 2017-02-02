@@ -918,7 +918,7 @@ function setupContrast(obj)
     contrastLims=contrastLims+[-1 1]*0.1*range(contrastLims); % dilate the range by 10% either side for safety
     
     %However, sometimes it chooses a high value that is too low, so stop it from choosing a too low value
-    hardMaxLimit=3E3;
+    hardMaxLimit=10E3;
     fprintf(' Auto-selected %0.2f to %0.2f',contrastLims)
     if contrastLims(2)<hardMaxLimit;
         contrastLims(2)=hardMaxLimit;
