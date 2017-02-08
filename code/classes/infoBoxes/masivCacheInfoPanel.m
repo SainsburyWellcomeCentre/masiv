@@ -85,7 +85,11 @@ classdef masivCacheInfoPanel<handle
         function updateCacheStatusDisplay(obj, ~, ~)
             cacheLimit=masivSetting('cache.sizeLimitMiB');
             cacheUsed=obj.gzvm.cacheMemoryUsed;
-            fracUsed=cacheUsed/cacheLimit;
+            if cacheLimit==0
+                fracUsed=0;
+            else
+                fracUsed=cacheUsed/cacheLimit;
+            end
             obj.cacheStatusText.String=sprintf('%u/%uMiB (%u%%) in use', round(cacheUsed), cacheLimit, round(fracUsed*100));
             obj.foregroundBlockingPatch.Position=[fracUsed, 0, max(0,1-fracUsed), 1];
         end
