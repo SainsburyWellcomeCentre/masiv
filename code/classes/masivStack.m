@@ -438,7 +438,7 @@ function I = createDownscaledStack(obj)
         parfor ii=1:numel(obj.idx)
             fName=fullfile(obj.MetaObject.imageBaseDirectory, obj.MetaObject.imageFilePaths.(obj.channel){obj.idx(ii)}); %#ok<PFBNS>
             I(:,:,ii)=masiv.fileio.openTiff(fName, [1 1 minWidth minHeight], obj.xyds);
-            fprintf('Generating downscaledStack: processing image %u of %u', numel(idx), ii)
+            fprintf('Generating downscaledStack: processing image %u of %u', numel(obj.idx), ii)
         end        
     else
         swb=SuperWaitBar(numel(obj.idx), 'Generating stack...');
