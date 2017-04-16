@@ -265,7 +265,7 @@ classdef masivStack<handle
              if obj.imageInMemory
                 error('Image already in memory')
              end
-            obj.I_internal=masiv.fileio.loadTiffStack(obj.fileFullPath, [], 'g');
+            obj.I_internal=masiv.fileio.loadTiffStack(obj.fileFullPath, []);
         end
         
         function stdout=deleteStackFromDisk(obj)

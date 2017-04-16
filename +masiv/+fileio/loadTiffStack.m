@@ -8,7 +8,11 @@ if ~exist(fileName, 'file')
 end
 
 if nargin<3||isempty(outputMode)
-    outputMode='n';
+    if usejava('desktop') 
+        outputMode='g';
+    else
+        outputMode='n';
+    end
 end
 if ~ischar(outputMode)||~any(strcmp(outputMode, {'n', 'c', 'g'}))
     error('Invalid output mode. Choose ''c'' for command-line output; ''g'' for graphical output or ''n'' for none')
