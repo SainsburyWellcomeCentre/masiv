@@ -18,9 +18,12 @@ classdef masivMeta < handle
     properties(SetAccess=protected)
         imageFilePaths % Full file paths to individual slices of the MaSIV Stack
     end
+
+    properties
+        masivDirectory  % The directory in which the meta file and masiv tif stacks are stored
+    end
     
     properties(SetAccess=protected)
-        masivDirectory  % The directory in which the meta file and masiv tif stacks are stored
         metaFileName    % The file name of the masiv meta file 
         metadata        % Deserialised meta data
     end
