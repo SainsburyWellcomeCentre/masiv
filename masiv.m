@@ -673,10 +673,28 @@ function v=getPixelValueAtCoordinate(obj, x, y)
     zoomedViewStatus=obj.mainDisplay.zoomedViewNeeded &&... %Are we at a zoom level?
                      obj.mainDisplay.zoomedViewManager.currentSliceFileExistsOnDisk && ... %Can we find the file?
                      ~strcmp(obj.mainDisplay.zoomedViewManager.hImg.Visible, 'off'); %Has it been successfully loaded?
+
+    %If despite this there are no image data in the zoomed view, we force ourselves to use the non-zoomed view
+    if isfield(obj.mainDisplay.zoomedViewManager.hImg, 'CData')
+        if isempty(obj.mainDisplay.zoomedViewManager.hImg.CData)
+            v=0;
+            masivDebugTimingInfo(0, 'ERROR: masiv.getPixelValueAtCoordinate - zoomed data are missing and should not be',toc, 's')
+            zoomedViewStatus=0;
+        end
+    end
+
+    %Ensure the pixel we are going to index is within range
     if zoomedViewStatus
         [~, xIdx]=min(abs(x-obj.mainDisplay.zoomedViewManager.hImg.XData));
         [~, yIdx]=min(abs(y-obj.mainDisplay.zoomedViewManager.hImg.YData));
-        v=obj.mainDisplay.zoomedViewManager.hImg.CData(yIdx, xIdx);
+        try
+            v=obj.mainDisplay.zoomedViewManager.hImg.CData(yIdx, xIdx);
+        catch
+            v=0;
+            msg = sprintf('ERROR in masiv.getPixelValueAtCoordinate - failed to index image of size %dx%d with x=%d and y=%d',...
+                size(obj.mainDisplay.zoomedViewManager.hImg.CData), xIdx, yIdx);
+            masivDebugTimingInfo(0, msg,toc, 's')            
+        end
     else
         [~, xIdx]=min(abs(x-obj.mainDisplay.overviewStack.xCoordsVoxels));
         [~, yIdx]=min(abs(y-obj.mainDisplay.overviewStack.yCoordsVoxels));
