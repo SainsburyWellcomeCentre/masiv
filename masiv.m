@@ -843,16 +843,6 @@ function setupPlugins(obj)
      %Add external plugins
      for externalPlugin = masivSetting('plugins.externalPluginsDirs')
          thisExternalPluginDir=externalPlugin{1};
-         
-        %if the directory does not exist, then append the masiv base dir and hope for the best
-        %TODO: we will eventually not need this, since there should be no external plugins in masiv
-         if ~exist(thisExternalPluginDir,'dir') 
-             delete(gcf)
-             error(['\nThe external plugin directory ''%s'' does not appear to exist.\n'...
-                    'If you have external plugins, you should create this directory and define it in the YML preferences file.\n',...
-                    'For more details see the MaSIV Wiki: https://github.com/alexanderbrown/masiv/wiki\n\n'], thisExternalPluginDir)
-         end
-         
 
          if ~exist(thisExternalPluginDir,'dir')
              fprintf('Skipping missing plugin directory %s\n', thisExternalPluginDir)
