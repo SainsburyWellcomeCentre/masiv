@@ -86,13 +86,19 @@ function writeYamlStructArrayEntry(fid,s, indentLevel)
                 fprintf(fid, repmat(' ', 1,4*(indentLevel+1)));
             end
             
-            if isnumeric(s(jj).(f{ii}))
-                fprintf(fid, '%s: %s', f{ii}, mat2str(s(jj).(f{ii})));
-            elseif ischar(s(jj).(f{ii}))
+            thisVal=(s(jj).(f{ii}));
+            
+            if isnumeric(thisVal)
+                fprintf(fid, '%s: %s', f{ii}, mat2str(thisVal));
+            elseif ischar(thisVal)
                 fprintf(fid, '%s: %s', f{ii}, s(jj).(f{ii}));
-            elseif isstruct(s(jj).(f{ii}))
+            elseif isstruct(thisVal)
                 fprintf(fid, sprintf('%s:\n', f{ii}));
-                writeYamlEntry(fid,s(jj).(f{ii}), indentLevel+1+1)
+                if isscalar(thisVal)
+                    writeYamlEntry(fid, thisVal, indentLevel+1+1)
+                else
+                    writeYamlStructArrayEntry(fid, thisVal, indentLevel+1+1)
+                end
             end
             fprintf(fid, '\n');
         end
