@@ -242,7 +242,7 @@ classdef masiv < handle
                 arrayfun(@(thisAxis) ylim(thisAxis.axes,newLim), obj.additionalDisplays)
                 movedFlag=1;
             end
-            
+
             if movedFlag
                 obj.changeAxes;
                 notify(obj, 'Panned')
@@ -250,11 +250,11 @@ classdef masiv < handle
                 masivDebugTimingInfo(0, 'masiv: Pan did not cause an axis change',toc, 's')
             end
         end
-        
+
         function [xMove,yMove]=checkPanWithinLimits(obj, xMove,yMove)
             xl=xlim(obj.hMainImgAx);
             yl=ylim(obj.hMainImgAx);
-            
+
             if xl(1) + xMove < 0
                 xMove = -xl(1);
             end
@@ -281,11 +281,11 @@ classdef masiv < handle
                 notify(obj, 'CursorPositionChangedWithinImageAxes', CursorPositionData(C, v));
             else
                 notify(obj, 'CursorPositionChangedOutsideImageAxes')
-            end 
-    
+            end
+
             pos=[x,y];
         end
-        
+
         %% --- Zooming
         function executeZoom(obj, zoomfactor)
             C = get (obj.hMainImgAx, 'CurrentPoint');
@@ -303,11 +303,11 @@ classdef masiv < handle
             yl=ylim(obj.hMainImgAx);
             x=pointToCenterUpon(1, 1);
             y=pointToCenterUpon(2, 2);
-            
+
             %% Calculate move
             centrePointX=mean(xl);
             centrePointY=mean(yl);
-            
+
             xMove=round(x-centrePointX);
             yMove=round(y-centrePointY);
             %% Check move is within limits
@@ -326,7 +326,7 @@ classdef masiv < handle
                 moved=0;
             end
         end
-        
+
         %% ---Update axes
         function changeAxes(obj)
             masivDebugTimingInfo(0, 'masiv: Calling mainDisplay updateZoomedView...',toc, 's')
@@ -341,7 +341,7 @@ classdef masiv < handle
             obj.updateMouseCoordsInPanel;
             notify(obj, 'ViewChanged')
         end
-        
+
         %% Info Panel Functions
         function addInfoPanel(obj, hPanel)
             if isempty(obj.infoPanels)
@@ -350,7 +350,7 @@ classdef masiv < handle
                 obj.infoPanels{end+1}=hPanel;
             end
         end
-        
+
         function deleteInfoPanel(obj, hPanel)
             if ischar(hPanel)&&strcmp(hPanel, 'all')
                 obj.deleteInfoPanel(1:numel(obj.infoPanels))
@@ -369,7 +369,7 @@ classdef masiv < handle
             end
         end
     end  %methods(Access=protected)
-    
+
 
     methods 
         % Keep track of open plugins that want the viewer to cancel close requests
@@ -439,7 +439,7 @@ function hFigMain_KeyPress(~, eventdata, obj)
                 obj.formatKeyPanAndAddToQueue(eventdata);
             case 'c'
                 updateContrastHistogram(obj.mainDisplay, obj.hAxContrastHist)
-           
+
             otherwise
                 notify(obj, 'KeyPress', KeyPressEventData(eventdata))
         end
@@ -476,14 +476,14 @@ end
 
 function pos=mouseMove(~, ~, obj)
     pos=obj.updateMouseCoordsInPanel;
-    
+
     if obj.contrastMode && ~any(isnan(obj.dragOrigin))
         %% Contrast
         gain=2;
         delta=pos-obj.dragOrigin;
         delta(1)=delta(1)/range(xlim); % make it relative
         delta(2)=delta(2)/range(ylim);
-        
+
         m=obj.hjSliderContrast.getLowValue();
         rng=obj.hjSliderContrast.getHighValue-m;
         newVal=obj.hjSliderContrast.getHighValue()+delta(2)*rng*gain; % scales quite nicely
@@ -493,11 +493,11 @@ function pos=mouseMove(~, ~, obj)
         else
             obj.hjSliderContrast.setHighValue(m+0);
         end
-        
-        
+
+
         %% Brightness
         bAdj=delta(1)*(obj.hjSliderContrast.maximum-obj.hjSliderContrast.minimum);
-        
+
         newLow=obj.hjSliderContrast.getLowValue()+bAdj;
         newHigh=obj.hjSliderContrast.getHighValue()+bAdj;
 
@@ -505,26 +505,26 @@ function pos=mouseMove(~, ~, obj)
             newHigh=newHigh+obj.hjSliderContrast.minimum-newLow-1;
             newLow=obj.hjSliderContrast.minimum;
         end
-        
+
         if newHigh>obj.hjSliderContrast.maximum
             newLow=newLow+obj.hjSliderContrast.maximum-newHigh-1;
             newHigh=obj.hjSliderContrast.maximum;
         end
-        
+
         obj.hjSliderContrast.setHighValue(newHigh);
         obj.hjSliderContrast.setLowValue(newLow);
-        
+
         %% Reset
         obj.dragOrigin=pos;
     end
-    
+
 end
 
 function hFigMain_ScrollWheel(~, eventdata, obj)
     startDebugOutput
 
     masivDebugTimingInfo(0, 'masiv: WheelScroll event fired',toc, 's')
-    
+
     modifiers = get(obj.hFig,'currentModifier');          
     %If user ctrl-scrolls we zoom instead of change z-level
     if ismember('control',modifiers)    
@@ -637,11 +637,11 @@ function exportViewToWorkspace(~,~,obj)
         xView(1), xView(2), ...
         yView(1), yView(2), ...
         obj.mainDisplay.currentZPlaneOriginalLayerID);
-    
+
     retry=1;
     while retry
         imageName=inputdlg('Image variable name:', 'Export Image to Base Workspace', 1, {proposedImageName});
-       
+
         if isempty(imageName)
             return
         else
@@ -733,7 +733,6 @@ function sliderCallback(obj, ~)
             setSliderRange(obj, lims);
         end
     end
-    
 end
 
 %% Plugins menu creation
@@ -746,26 +745,26 @@ function addPlugins(hMenuBase, obj, pluginsDir, separateFirstEntry)
     if ~exist(pluginsDir, 'dir')
         error('plugins directory not found')
     else
-        fprintf('Adding plugins in directory %s to menu\n',pluginsDir)       
+        fprintf('Adding plugins in directory %s to menu\n',pluginsDir) 
     end
-    
+
     filesInPluginsDirectory=dir(fullfile(pluginsDir, '*.m'));
     if isempty(filesInPluginsDirectory)
         fprintf('Found no .m files that could be plugins in directory %s\n',pluginsDir)
         return
     end
-    
+
     for ii=1:numel(filesInPluginsDirectory)
         if masiv.utils.isValidMasivPlugin(pluginsDir, filesInPluginsDirectory(ii).name)
-            
             [pluginDisplayString, pluginStartCallback]=masiv.utils.getPluginInfo(filesInPluginsDirectory(ii));
-                       
             hItem=uimenu(hMenuBase, 'Label', pluginDisplayString, 'Callback', pluginStartCallback, 'UserData', obj);
-            if separateFirstEntry&&ii==1
+            if separateFirstEntry && ii==1
                 hItem.Separator='on';
             end
         end
     end
+
+    fprintf('Finished adding plugins.\n')
 end
 
 %% Constructor functions
@@ -776,7 +775,7 @@ function runStartupTests()
 end
 
 function chooseDataset(obj)
-	obj.Meta=masivMeta;
+    obj.Meta=masivMeta;
     if isempty(obj.Meta.metadata)
         obj.Meta=[];
     end
