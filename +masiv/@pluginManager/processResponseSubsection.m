@@ -20,7 +20,7 @@ function [subsectionName,data]=processResponseSubsection(response)
     end
     block = block{1}{1};
 
-    tok=regexp(block,'"(.+?)"\: *"(.*?)"','tokens');
+    tok=regexp(block,'"(.+?)"\: *"?(.*?)"?[,}]','tokens');
     if isempty(tok)
         error('failed to get data from sub-section')
     end
