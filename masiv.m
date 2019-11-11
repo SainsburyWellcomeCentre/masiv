@@ -825,7 +825,7 @@ end
 
 function setupPlugins(obj)
      baseDir=fileparts(which('MaSIV')); %viewer installation base directory
-     addPlugins(obj.mnuImage, obj, fullfile(baseDir,'code','resources','corePlugins'), 1);
+     addPlugins(obj.mnuImage, obj, fullfile(baseDir,'code','masiv_resources','corePlugins'), 1);
      obj.mnuPlugins=uimenu(obj.hFig, 'Label', 'Plugins');
      
      %Optionally add tutorial plugins
