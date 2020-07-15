@@ -1,5 +1,6 @@
 # MaSIV README
 
+<img src="https://raw.githubusercontent.com/wiki/SainsburyWellcomeCentre/masiv/images/Screen_shot.png" />
 
 ### What does MaSIV do? 
 
